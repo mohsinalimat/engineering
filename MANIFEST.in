@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include engineering *.css
+recursive-include engineering *.csv
+recursive-include engineering *.html
+recursive-include engineering *.ico
+recursive-include engineering *.js
+recursive-include engineering *.json
+recursive-include engineering *.md
+recursive-include engineering *.png
+recursive-include engineering *.py
+recursive-include engineering *.svg
+recursive-include engineering *.txt
+recursive-exclude engineering *.pyc
