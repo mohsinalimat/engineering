@@ -163,6 +163,9 @@ doc_events = {
         "on_cancel": "engineering.engineering.doc_events.payment_entry.on_cancel",
         "on_trash": "engineering.engineering.doc_events.payment_entry.on_trash",
     },
+    "Customer": {
+        "onload": "engineering.engineering.doc_events.customer.onload",
+    },
     ("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
 	}

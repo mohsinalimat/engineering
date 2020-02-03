@@ -53,7 +53,7 @@ def check_counter_series(name, company_series = None):
         return 1
     elif check == None:
         # if no current value is found for naming series inserting that naming series with current value 0
-        frappe.db.sql(f"insert into tabSeries (name, current) values ('{name}', 0)")
+        frappe.db.sql("insert into tabSeries (name, current) values ('{}', 0)".format(name))
         return 1
     else:
         return int(frappe.db.get_value('Series', name, 'current', order_by="name")) + 1
@@ -77,10 +77,10 @@ def before_naming(self, method = None):
                 if check == 0:
                     pass
                 elif not check:
-                    frappe.db.sql(f"insert into tabSeries (name, current) values ('{name}', 0)")
+                    frappe.db.sql("insert into tabSeries (name, current) values ('{}', 0)".format(name))
                 
                 # Updating the naming series decremented by 1 for current naming series
-                frappe.db.sql(f"update `tabSeries` set current = {int(self.series_value) - 1} where name = '{name}'")
+                frappe.db.sql("update `tabSeries` set current = {} where name = '{}'".format(int(self.series_value) - 1, name))
 
 @frappe.whitelist()
 def docs_before_naming(self, method = None):
