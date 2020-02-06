@@ -38,6 +38,14 @@ def create_main_sales_invoice(self):
             target.ref_invoice = self.name
             target.authority = "Unauthorized"
 
+            for index, i in enumerate(source.items):
+                if source.items[index].net_rate:
+                    if source.items[index].net_rate != source.items[index].rate:
+                        full_amount = source.items[index].full_qty * source.items[index].full_rate
+                        amount_diff = source.items[index].amount - source.items[index].net_amount
+
+                        target.items[index].rate = (full_amount - amount_diff) / source.items[index].full_qty
+
             if source.debit_to:
                 target.debit_to = source.debit_to.replace(source_company_abbr, target_company_abbr)
             if source.taxes_and_charges:
@@ -45,6 +53,7 @@ def create_main_sales_invoice(self):
 
                 for index, i in enumerate(source.taxes):
                     target.taxes[index].charge_type = "Actual"
+                    target.taxes[index].included_in_print_rate = 0
                     target.taxes[index].account_head = source.taxes[index].account_head.replace(source_company_abbr, target_company_abbr)
 
             if self.amended_from:

@@ -13,38 +13,11 @@ def load_dashboard_info(self):
 
         doctype = "Sales Invoice" if party_type=="Customer" else "Purchase Invoice"
 
-        companies_group = frappe.db.sql("""
-            SELECT 
-            for_value 
-            From `tabUser Permission` 
-            WHERE allow = 'Company' and `user` = '{}'
-            GROUP BY `for_value`
-        """.format(frappe.session.user))
-
-        where_company = ''
-
-        if companies_group:
-            company_list = []
-            
-            for i in companies_group:
-                company_list.append(i[0])
-            
-            where_company = f"AND company IN '{company_list}'"
-        else:
-            company_list = []
-
-        if company_list:
-            companies = frappe.get_all(doctype, filters={
-                'docstatus': 1,
-                party_type.lower(): party,
-                'company': ["IN", company_list]
-            }, distinct=1, fields=['company'])
-        else:
-            companies = frappe.get_all(doctype, filters={
-                'docstatus': 1,
-                party_type.lower(): party
-            }, distinct=1, fields=['company'])
-        
+        companies = frappe.get_list(doctype, filters={
+            'docstatus': 1,
+            party_type.lower(): party
+        }, distinct=1, fields=['company'], user=frappe.session.user)
+                
         company_wise_info = []
 
         company_wise_grand_total = frappe.get_all(doctype,
@@ -78,7 +51,6 @@ def load_dashboard_info(self):
                     "grand_total": d.grand_total,
                     "base_grand_total": d.base_grand_total
                 })
-
 
         company_wise_total_unpaid = frappe._dict(frappe.db.sql("""
             select company, sum(debit_in_account_currency) - sum(credit_in_account_currency)

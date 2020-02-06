@@ -23,7 +23,10 @@ frappe.ui.form.on('Delivery Note', {
 		if (frm.doc.__islocal){
 			frm.trigger('naming_series');
 		}
-    },
+	},
+	on_submit: function(frm){
+		frm.trigger('onload_post_render')
+	},
     onload_post_render: function(frm){
 		frm.trigger('si_menu_hide');
     },

@@ -171,5 +171,17 @@ doc_events = {
 	}
 }
 
+override_whitelisted_methods = {
+	"frappe.core.page.permission_manager.permission_manager.get_roles_and_doctypes": "engineering.permission.get_roles_and_doctypes",
+	"frappe.core.page.permission_manager.permission_manager.get_permissions": "engineering.permission.get_permissions",
+	"frappe.core.page.permission_manager.permission_manager.add": "engineering.permission.add",
+	"frappe.core.page.permission_manager.permission_manager.update": "engineering.permission.update",
+	"frappe.core.page.permission_manager.permission_manager.remove": "engineering.permission.remove",
+	"frappe.core.page.permission_manager.permission_manager.reset": "engineering.permission.reset",
+	"frappe.core.page.permission_manager.permission_manager.get_users_with_role": "engineering.permission.get_users_with_role",
+	"frappe.core.page.permission_manager.permission_manager.get_standard_permissions": "engineering.permission.get_standard_permissions",
+	"frappe.desk.notifications.get_open_count": "engineering.api.get_open_count",
+}
+
 
 fixtures = ['Custom Field']	

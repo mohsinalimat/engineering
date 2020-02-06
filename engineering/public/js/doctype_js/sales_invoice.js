@@ -12,6 +12,9 @@ frappe.ui.form.on('Sales Invoice', {
 			frm.trigger('naming_series');
 		}
 	},
+	onload_post_render: function(frm) {
+		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
+	},
 	naming_series: function(frm) {
 		if (frm.doc.company && !frm.doc.amended_from){
 			frappe.call({
