@@ -127,7 +127,7 @@ def delete_payment_entry(self):
     try:
         frappe.db.set_value("Payment Entry", self.name, 'ref_payment', '')    
         frappe.db.set_value("Payment Entry", ref_name, 'ref_payment', '')
-        frappe.delete_doc("Payment Entry", ref_name, force = 1)
+        frappe.delete_doc("Payment Entry", ref_name, force = 1, ignore_permissions=True)
     except Exception as e:
         frappe.db.rollback()
         frappe.throw(e)

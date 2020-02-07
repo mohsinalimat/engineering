@@ -1,5 +1,6 @@
 frappe.ui.form.on('Sales Invoice', {
 	refresh: function(frm){
+		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
 			frm.set_value("ref_invoice", "");
 		}
@@ -11,6 +12,9 @@ frappe.ui.form.on('Sales Invoice', {
 		if (frm.doc.__islocal){
 			frm.trigger('naming_series');
 		}
+	},
+	onload: function(frm){
+		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
 	},
 	onload_post_render: function(frm) {
 		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
