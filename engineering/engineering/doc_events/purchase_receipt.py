@@ -131,3 +131,84 @@ def make_purchase_invoice(source_name, target_doc=None):
     }, target_doc, set_missing_values)
 
     return doclist
+
+@frappe.whitelist()
+def make_inter_company_delivery_note(source_name, target_doc=None):
+    return make_inter_company_transaction("Purchase Receipt", source_name, target_doc)
+
+def get_inter_company_details(doc, doctype):
+    if doctype in ["Sales Invoice", "Sales Order", "Delivery Note"]:
+        party = frappe.db.get_value("Supplier", {"disabled": 0, "is_internal_supplier": 1, "represents_company": doc.company}, "name")
+        company = frappe.get_cached_value("Customer", doc.customer, "represents_company")
+    else:
+        party = frappe.db.get_value("Customer", {"disabled": 0, "is_internal_customer": 1, "represents_company": doc.company}, "name")
+        company = frappe.get_cached_value("Supplier", doc.supplier, "represents_company")
+
+    return {
+        "party": party,
+        "company": company
+    }
+
+def validate_inter_company_transaction(doc, doctype):
+
+    details = get_inter_company_details(doc, doctype)
+    price_list = doc.selling_price_list if doctype in ["Sales Invoice", "Sales Order", "Delivery Note"] else doc.buying_price_list
+    valid_price_list = frappe.db.get_value("Price List", {"name": price_list, "buying": 1, "selling": 1})
+    if not valid_price_list:
+        frappe.throw(_("Selected Price List should have buying and selling fields checked."))
+
+    party = details.get("party")
+    if not party:
+        partytype = "Supplier" if doctype in ["Sales Invoice", "Sales Order", "Delivery Note"] else "Customer"
+        frappe.throw(_("No {0} found for Inter Company Transactions.").format(partytype))
+
+    company = details.get("company")
+    default_currency = frappe.get_cached_value('Company', company, "default_currency")
+    if default_currency != doc.currency:
+        frappe.throw(_("Company currencies of both the companies should match for Inter Company Transactions."))
+
+    return
+
+def make_inter_company_transaction(doctype, source_name, target_doc=None):
+    if doctype in ["Delivery Note", "Purchase Receipt"]:
+        source_doc = frappe.get_doc(doctype, source_name)
+        target_doctype = "Delivery Note"
+
+        validate_inter_company_transaction(source_doc, doctype)
+        details = get_inter_company_details(source_doc, doctype)
+
+        def set_missing_values(source, target):
+            target.run_method("set_missing_values")
+
+        def update_details(source_doc, target_doc, source_parent):
+            target_doc.inter_company_invoice_reference = source_doc.name
+            if target_doc.doctype in ["Purchase Invoice", "Purchase Order", "Purchase Receipt"]:
+                target_doc.company = details.get("company")
+                target_doc.supplier = details.get("party")
+                target_doc.selling_price_list = source_doc.buying_price_list
+            else:
+                target_doc.company = details.get("company")
+                target_doc.customer = details.get("party")
+                target_doc.buying_price_list = source_doc.selling_price_list
+
+        doclist = get_mapped_doc(doctype, source_name,	{
+            doctype: {
+                "doctype": target_doctype,
+                "postprocess": update_details,
+                "field_no_map": [
+                    "taxes_and_charges"
+                ]
+            },
+            doctype +" Item": {
+                "doctype": target_doctype + " Item",
+                "field_no_map": [
+                    "income_account",
+                    "expense_account",
+                    "cost_center",
+                    "warehouse"
+                ]
+            }
+
+        }, target_doc, set_missing_values)
+
+        return doclist

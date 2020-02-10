@@ -56,6 +56,13 @@ frappe.ui.form.on('Purchase Receipt', {
 				})
 			},
 			__("Create"));
+			frm.add_custom_button(__("Inter Company Delivery Note"), function () {
+                frappe.model.open_mapped_doc({
+                    method: "engineering.engineering.doc_events.purchase_receipt.make_inter_company_delivery_note",
+                    frm: cur_frm
+                })
+            },
+            __("Create"));
 		}
 	}
 });
