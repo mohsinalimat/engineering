@@ -141,6 +141,11 @@ doc_events = {
 	"Sales Order": {
 		"before_naming": "engineering.api.before_naming",
 	},
+	"Purchase Order": {
+		"on_submit": "engineering.engineering.doc_events.purchase_order.on_submit",
+		"before_naming": "engineering.api.before_naming",
+		"on_cancel": "engineering.engineering.doc_events.purchase_order.on_cancel"
+	},
 	"Purchase Invoice": {
 		"on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
@@ -166,9 +171,9 @@ doc_events = {
 	"Customer": {
 		"onload": "engineering.engineering.doc_events.customer.onload",
 	},
-	"Company": {
-		"on_update": "engineering.engineering.doc_events.company.on_update",
-	},    
+	# "Company": {
+	# 	"on_update": "engineering.engineering.doc_events.company.on_update",
+	# },    
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
 	}

@@ -47,7 +47,32 @@ def change_delivery_authority(name):
 @frappe.whitelist()
 def on_submit(self, test):
     """Custom On Submit Fuction"""
+    # frappe.throw("Maki")
     change_delivery_authority(self.name)
+    # create_purchase_receipt(self)
+
+def create_purchase_receipt(self):
+    check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
+    if check_inter_company_transaction:
+        if check_inter_company_transaction == 1:
+            pr = make_inter_company_transaction(self, "Purchase Order", self.name)
+
+            try:
+                pr.save(ignore_permissions = True)
+                pr.submit()
+                frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_no', so.name)
+                frappe.db.set_value('Purchase Order', self.name, 'sales_order', so.name)
+                frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_date', so.transaction_date)
+                
+                url = get_url_to_form("Sales Order", so.name)
+                frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=so.name)), title="Sales Order Cancelled", indicator="green")
+
+            except Exception as e:
+                frappe.db.rollback()
+                frappe.throw(e)
+            else:
+                frappe.db.commit()
+
 
 @frappe.whitelist()
 def create_invoice(source_name, target_doc=None):

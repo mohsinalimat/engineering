@@ -4,6 +4,14 @@ frappe.ui.form.on('Delivery Note', {
             frm.trigger('naming_series');
         }
     },
+    validate:function(frm){
+        let item = frm.doc.items;
+        $.each(item,(i,row) => {
+            if (row.real_qty > row.qty) {
+                row.real_qty = row.qty;
+            }
+        });
+    },
     naming_series: function(frm) {
         if (frm.doc.company && !frm.doc.amended_from){
             console.log(1)
