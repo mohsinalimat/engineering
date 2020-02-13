@@ -82,6 +82,7 @@ def create_purchase_receipt(self):
                 pr = make_inter_company_transaction(self, "Delivery Note", "Purchase Receipt", "inter_company_delivery_reference", field_map=field_map, child_field_map = child_field_map)
 
                 try:
+                    pr.save(ignore_permissions = True)
                     for index, item in enumerate(self.items):
                         against_sales_order = self.items[index].against_sales_order
                         try:
@@ -93,7 +94,8 @@ def create_purchase_receipt(self):
                             schedule_date = frappe.db.get_value("Purchase Order", purchase_order, 'schedule_date')
                             pr.items[index].purchase_order = purchase_order
                             pr.items[index].schedule_date = schedule_date
-
+                            frappe.db.set_value("Delivery Note Item", self.items[index].name, 'pr_detail', pr.items[index].name)
+                    
                     pr.save(ignore_permissions = True)
 
                     frappe.db.set_value("Delivery Note", self.name, 'inter_company_receipt_reference', pr.name)
