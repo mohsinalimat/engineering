@@ -32,7 +32,7 @@ def delete_purchase_receipt(self):
                 frappe.db.set_value("Purchase Receipt", self.inter_company_receipt_reference, 'inter_company_delivery_reference', '')
                 
                 frappe.delete_doc("Purchase Receipt", self.inter_company_receipt_reference, force = 1, ignore_permissions=True)
-                # frappe.msgprint(_("Purchase Receipt <b>{name}</b> has been deleted!".format(name=self.inter_company_delivery_reference)), title="Purchase Receipt Deleted", indicator="red")
+                frappe.msgprint(_("Purchase Order <b>{name}</b> has been deleted!".format(name=self.inter_company_receipt_reference)), title="Purchase Order Deleted", indicator="red")
             except Exception as e:
                 frappe.db.rollback()
                 frappe.throw(e)
