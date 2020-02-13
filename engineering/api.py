@@ -3,6 +3,7 @@ from frappe import _
 import json
 
 from frappe.desk.notifications import get_filters_for
+from frappe.model.mapper import get_mapped_doc
 
 def check_sub_string(string, sub_string): 
     """Function to check if string has sub string"""
@@ -104,59 +105,157 @@ def docs_before_naming(self, method = None):
 @frappe.whitelist()
 @frappe.read_only()
 def get_open_count(doctype, name, items=[]):
-	'''Get open count for given transactions and filters
+    '''Get open count for given transactions and filters
 
-	:param doctype: Reference DocType
-	:param name: Reference Name
-	:param transactions: List of transactions (json/dict)
-	:param filters: optional filters (json/list)'''
+    :param doctype: Reference DocType
+    :param name: Reference Name
+    :param transactions: List of transactions (json/dict)
+    :param filters: optional filters (json/list)'''
 
-	if frappe.flags.in_migrate or frappe.flags.in_install:
-		return {
-			"count": []
-		}
+    if frappe.flags.in_migrate or frappe.flags.in_install:
+        return {
+            "count": []
+        }
 
-	frappe.has_permission(doc=frappe.get_doc(doctype, name), throw=True)
+    frappe.has_permission(doc=frappe.get_doc(doctype, name), throw=True)
 
-	meta = frappe.get_meta(doctype)
-	links = meta.get_dashboard_data()
+    meta = frappe.get_meta(doctype)
+    links = meta.get_dashboard_data()
 
-	# compile all items in a list
-	if not items:
-		for group in links.transactions:
-			items.extend(group.get("items"))
+    # compile all items in a list
+    if not items:
+        for group in links.transactions:
+            items.extend(group.get("items"))
 
-	if not isinstance(items, list):
-		items = json.loads(items)
+    if not isinstance(items, list):
+        items = json.loads(items)
 
-	out = []
-	for d in items:
-		if d in links.get("internal_links", {}):
-			# internal link
-			continue
+    out = []
+    for d in items:
+        if d in links.get("internal_links", {}):
+            # internal link
+            continue
 
-		filters = get_filters_for(d)
-		fieldname = links.get("non_standard_fieldnames", {}).get(d, links.fieldname)
-		data = {"name": d}
-		if filters:
-			# get the fieldname for the current document
-			# we only need open documents related to the current document
-			filters[fieldname] = name
-			total = len(frappe.get_list(d, fields="name",
-				filters=filters, limit=100, distinct=True, ignore_ifnull=True, user = frappe.session.user))
-			data["open_count"] = total
+        filters = get_filters_for(d)
+        fieldname = links.get("non_standard_fieldnames", {}).get(d, links.fieldname)
+        data = {"name": d}
+        if filters:
+            # get the fieldname for the current document
+            # we only need open documents related to the current document
+            filters[fieldname] = name
+            total = len(frappe.get_list(d, fields="name",
+                filters=filters, limit=100, distinct=True, ignore_ifnull=True, user = frappe.session.user))
+            data["open_count"] = total
 
-		total = len(frappe.get_list(d, fields="name",
-			filters={fieldname: name}, limit=100, distinct=True, ignore_ifnull=True, user = frappe.session.user))
-		data["count"] = total
-		out.append(data)
+        total = len(frappe.get_list(d, fields="name",
+            filters={fieldname: name}, limit=100, distinct=True, ignore_ifnull=True, user = frappe.session.user))
+        data["count"] = total
+        out.append(data)
 
-	out = {
-		"count": out,
-	}
+    out = {
+        "count": out,
+    }
 
-	module = frappe.get_meta_module(doctype)
-	if hasattr(module, "get_timeline_data"):
-		out["timeline_data"] = module.get_timeline_data(doctype, name)
+    module = frappe.get_meta_module(doctype)
+    if hasattr(module, "get_timeline_data"):
+        out["timeline_data"] = module.get_timeline_data(doctype, name)
 
-	return out
+    return out
+
+def get_inter_company_details(doc, doctype):
+    party = None
+    company = None
+
+    if doctype in ["Sales Invoice", "Delivery Note", "Sales Order"]:
+        party = frappe.db.get_value("Supplier", {"disabled": 0, "is_internal_supplier": 1, "represents_company": doc.company}, "name")
+        company = frappe.get_cached_value("Customer", doc.customer, "represents_company")
+    elif doctype in ["Purchase Order", "Purchase Receipt", "Purchase Invoice"]:
+        party = frappe.db.get_value("Customer", {"disabled": 0, "is_internal_customer": 1, "represents_company": doc.company}, "name")
+        company = frappe.get_cached_value("Supplier", doc.supplier, "represents_company")
+
+    return {
+        "party": party,
+        "company": company
+    }
+
+def validate_inter_company_transaction(doc, doctype):
+    price_list = None
+    details = get_inter_company_details(doc, doctype)
+
+    if doctype in ["Sales Invoice", "Delivery Note", "Sales Order"]:
+        price_list = doc.selling_price_list
+    elif doctype in ["Purchase Order", "Purchase Receipt", "Purchase Invoice"]:
+        price_list = doc.buying_price_list
+    
+    if price_list:
+        valid_price_list = frappe.db.get_value("Price List", {"name": price_list, "buying": 1, "selling": 1})
+    else:
+        frappe.throw(_("Selected Price List should have buying and selling fields checked."))
+    
+    if not valid_price_list:
+        frappe.throw(_("Selected Price List should have buying and selling fields checked."))
+    
+    party = details.get("party")
+    if not party:
+        partytype = "Supplier" if doctype in ["Sales Invoice", "Delivery Note", "Sales Order"] else "Customer"
+        frappe.throw(_("No {0} found for Inter Company Transactions.").format(partytype))
+    
+    company = details.get("company")
+    if company:
+        default_currency = frappe.get_cached_value('Company', company, "default_currency")
+        if default_currency != doc.currency:
+            frappe.throw(_("Company currencies of both the companies should match for Inter Company Transactions."))
+    else:
+        frappe.throw(_("Company currencies of both the companies should match for Inter Company Transactions."))
+    
+    return
+
+def make_inter_company_transaction(self, doctype, target_doctype, link_field, target_doc=None, field_map={}, child_field_map={}):
+    source_doc  = frappe.get_doc(doctype, self.name)
+
+    validate_inter_company_transaction(source_doc, doctype)
+    details = get_inter_company_details(source_doc, doctype)
+
+    def set_missing_values(source, target):
+        if self.amended_from:
+            name = frappe.db.get_value(target_doctype, {link_field: self.amended_from}, "name")
+            target.amended_from = name
+
+        target.run_method("set_missing_values")
+
+    def update_details(source_doc, target_doc, source_parent):
+        if target_doc.doctype in ["Purchase Invoice", "Purchase Receipt", "Purchase Order"]:
+            target_doc.company = details.get("company")
+            target_doc.supplier = details.get("party")
+            target_doc.buying_price_list = source_doc.selling_price_list
+        elif target_doc.doctype in ["Sales Invoice", "Delivery Note", "Sales Order"]:
+            target_doc.company = details.get("company")
+            target_doc.customer = details.get("party")
+            target_doc.selling_price_list = source_doc.buying_price_list
+        else:
+            frappe.throw(_("Invalid Request!"))
+    
+    doclist = get_mapped_doc(doctype, self.name,	{
+        doctype: {
+            "doctype": target_doctype,
+            "postprocess": update_details,
+            "field_map": field_map,
+            "field_no_map": [
+                "taxes_and_charges",
+                "series_value"
+            ],
+        },
+        doctype +" Item": {
+            "doctype": target_doctype + " Item",
+            "field_map": child_field_map,
+            "field_no_map": [
+                "income_account",
+                "expense_account",
+                "cost_center",
+                "warehouse"
+            ],
+        }
+
+    }, target_doc, set_missing_values)
+
+    return doclist
