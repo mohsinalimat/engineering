@@ -242,7 +242,7 @@ def make_inter_company_transaction(self, doctype, target_doctype, link_field, ta
             "field_map": field_map,
             "field_no_map": [
                 "taxes_and_charges",
-                # "series_value"
+                "series_value"
             ],
         },
         doctype +" Item": {
