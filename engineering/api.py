@@ -220,8 +220,25 @@ def make_inter_company_transaction(self, doctype, target_doctype, link_field, ta
         if self.amended_from:
             name = frappe.db.get_value(target_doctype, {link_field: self.amended_from}, "name")
             target.amended_from = name
+        
+        if source.taxes_and_charges:
+            target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
+            source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
+            
+            target.taxes_and_charges = source.taxes_and_charges.replace(
+                source_company_abbr, target_company_abbr
+            )
+            
+            # if not target.taxes:
+            target.taxes = source.taxes
+            
+            for index, item in enumerate(source.taxes):
+                target.taxes[index].account_head = item.account_head.replace(
+                    source_company_abbr, target_company_abbr
+                )
 
         target.run_method("set_missing_values")
+        
 
     def update_details(source_doc, target_doc, source_parent):
         if target_doc.doctype in ["Purchase Invoice", "Purchase Receipt", "Purchase Order"]:
@@ -242,7 +259,7 @@ def make_inter_company_transaction(self, doctype, target_doctype, link_field, ta
             "field_map": field_map,
             "field_no_map": [
                 "taxes_and_charges",
-                "series_value"
+                "series_value",
             ],
         },
         doctype +" Item": {

@@ -14,21 +14,14 @@ def validate(self, method):
     pass
 
 def on_submit(self, method):
-    # try:
-    #     create_purchase_invoice(self)
-    # except Exception as e:
-    #     frappe.db.rollback()
-    #     frappe.throw(_("Purchase Invoice Exception: " + e))
-    # else:
-    #     frappe.db.commit()
-    pass
-    # create_purchase_invoice(self)
+    create_purchase_invoice(self)
+    self.db_set('inter_company_invoice_reference', self.sales_invoice_ref)
 
 def on_cancel(self, method):
-    pass
+    cancel_purchase_invoice(self)
 
 def on_trash(self, method):
-    pass
+    delete_purchase_invoice(self)
 
 
 def create_purchase_invoice(self):
@@ -36,26 +29,21 @@ def create_purchase_invoice(self):
     
     def get_purchase_invoice_entry(source_name, target_doc=None, ignore_permissions= True):
         def set_missing_value(source, target):
-            try:
-                alternate_supplier = frappe.db.get_value("Company", source.supplier, "alternate_company")
-            except:
-                alternate_supplier = None
-            
-            target_company = frappe.db.get_value("Company", source.company, "alternate_company")
-            target_company_abbr = frappe.db.get_value("Company", target_company, "abbr")
-            source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
-            target.company = target_company
+            target.company = frappe.db.get_value("Company", source.company, "alternate_company")
             target.ref_invoice = self.name
             target.authority = "Unauthorized"
 
-            for index, i in enumerate(source.items):
-                if source.items[index].net_rate:
-                    if source.items[index].net_rate != source.items[index].rate:
-                        full_amount = source.items[index].full_qty * source.items[index].full_rate
-                        amount_diff = source.items[index].amount - source.items[index].net_amount
+            target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
+            source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
-                        target.items[index].rate = (full_amount - amount_diff) / source.items[index].full_qty
+            for index, item in enumerate(source.items):
+                if item.net_rate:
+                    if item.net_rate != item.rate:
+                        full_amount = item.full_qty * item.full_rate
+                        amount_diff = item.amount - item.net_amount
+
+                        target.items[index].rate = (full_amount - amount_diff) / item.full_qty
             
             if source.credit_to:
                 target.credit_to = source.credit_to.replace(source_company_abbr, target_company_abbr)
@@ -63,16 +51,16 @@ def create_purchase_invoice(self):
             if source.taxes_and_charges:
                 target.taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
 
-                for index, i in enumerate(source.taxes):
+                for index, item in enumerate(source.taxes):
                     target.taxes[index].charge_type = "Actual"
-                    target.taxes[index].account_head = source.taxes[index].account_head.replace(source_company_abbr, target_company_abbr)
+                    target.taxes[index].account_head = item.account_head.replace(
+                        source_company_abbr, target_company_abbr
+                    )
 
             if self.amended_from:
-                name = frappe.db.get_value("Purchase Invoice", {"ref_invoice": source.amended_from}, "name")
-                target.amended_from = name
-            
-            if alternate_supplier:
-                target.supplier = alternate_supplier
+                target.amended_from = frappe.db.get_value(
+                    "Purchase Invoice", {"ref_invoice": source.amended_from}, "name"
+                )
             
             target.run_method('set_missing_values')
         
@@ -87,23 +75,15 @@ def create_purchase_invoice(self):
             target_doc.expense_account = doc.default_expense_account
             target_doc.cost_center = doc.cost_center
             
-            if source_doc.pr_ref:
-                target_doc.pr_detail = source_doc.pr_ref
-            
-            if source_doc.po_ref:
-                target_doc.po_detail = source_doc.po_ref
-            
-            if source_doc.po_doc_ref:
-                target_doc.purchase_order = source_doc.po_doc_ref
-            
-            if source_doc.pr_doc_ref:
-                target_doc.purchase_receipt = source_doc.pr_doc_ref
-
             if source_doc.warehouse:
-                target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
+                target_doc.warehouse = source_doc.warehouse.replace(
+                    source_company_abbr, target_company_abbr
+                )
             
             if source_doc.rejected_warehouse:
-                target_doc.rejected_warehouse = source_doc.rejected_warehouse.replace(source_company_abbr, target_company_abbr)
+                target_doc.rejected_warehouse = source_doc.rejected_warehouse.replace(
+                    source_company_abbr, target_company_abbr
+                )
         
         fields = {
             "Purchase Invoice": {
@@ -113,13 +93,14 @@ def create_purchase_invoice(self):
                 },
                 "field_no_map":{
                     "authority",
+                    "company_series",
                 }
             },
             "Purchase Invoice Item": {
                 "doctype": "Purchase Invoice Item",
                 "field_map": {
-                    "item_design": "item_code",
-                    "item_code": "item_design",
+                    "item_varient": "item_code",
+                    "item_code": "item_varient",
                     # Rate
                     "full_rate": "rate",
                     "rate": "discounted_rate",
@@ -154,12 +135,29 @@ def create_purchase_invoice(self):
         )
 
         return doclist
-
-    if authority == "Authorized":
-        
+    
+    if authority == "Authorized" and (not self.sales_invoice_ref):
         pi = get_purchase_invoice_entry(self.name)
-        frappe.msgprint(pi.company)
         pi.save(ignore_permissions= True)
-        self.db_set('ref_invoice', pi.name)
         pi.submit()
+
+        self.db_set('ref_invoice', pi.name)
+
+def cancel_purchase_invoice(self):
+    if not self.sales_invoice_ref:
+        pi = None
+        if self.ref_invoice:
+            pi = frappe.get_doc("Purchase Invoice", {'ref_invoice':self.name})
         
+        if pi:
+            pi.flags.ignore_permissions = True
+            if pi.docstatus == 1:
+                pi.cancel()
+
+def delete_purchase_invoice(self):
+    if self.ref_invoice:
+        
+        frappe.db.set_value("Purchase Invoice", self.name, 'ref_invoice', '')
+        frappe.db.set_value("Purchase Invoice", self.ref_invoice, 'ref_invoice', '')
+
+        frappe.delete_doc("Purchase Invoice", self.ref_invoice, force = 1, ignore_permissions=True)

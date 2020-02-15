@@ -94,8 +94,8 @@ def make_purchase_invoice(source_name, target_doc=None):
         "Purchase Receipt Item": {
             "doctype": "Purchase Invoice Item",
             "field_map": {
-                "item_code": "item_design",
-                "item_series": "item_code",
+                "item_code": "item_varient",
+                "item_varient": "item_code",
                 "parent": "purchase_receipt_docname",
                 "name":"purchase_receipt_childname",
                 "purchase_order_item": "pr_childname",
