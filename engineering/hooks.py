@@ -15,8 +15,8 @@ app_license = "MIT"
 # ------------------
 
 # include js, css files in header of desk.html
-app_include_css = ["/assets/engineering/css/engineering.css"]
-# app_include_js = "/assets/engineering/js/engineering.js"
+app_include_css = ["/assets/engineering/css/restrict_button.css"]
+app_include_js = ["/assets/engineering/js/restrict_access.js"]
 
 # include js, css files in header of web template
 # web_include_css = "/assets/engineering/css/engineering.css"
@@ -128,70 +128,82 @@ app_include_css = ["/assets/engineering/css/engineering.css"]
 # }
 
 doctype_js = {
-    "Sales Order": "public/js/doctype_js/sales_order.js",
-    "Delivery Note": "public/js/doctype_js/delivery_note.js",
-    "Sales Invoice": "public/js/doctype_js/sales_invoice.js",
-    "Purchase Order": "public/js/doctype_js/purchase_order.js",
-    "Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
-    "Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
-    "Payment Entry": "public/js/doctype_js/payment_entry.js",
+	"Sales Order": "public/js/doctype_js/sales_order.js",
+	"Delivery Note": "public/js/doctype_js/delivery_note.js",
+	"Sales Invoice": "public/js/doctype_js/sales_invoice.js",
+	"Purchase Order": "public/js/doctype_js/purchase_order.js",
+	"Purchase Receipt": "public/js/doctype_js/purchase_receipt.js",
+	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
+	"Payment Entry": "public/js/doctype_js/payment_entry.js",
 }
 
 doc_events = {
-    "Sales Order": {
-        "before_naming": "engineering.api.before_naming",
-    },
-    "Purchase Order": {
-        "on_submit": "engineering.engineering.doc_events.purchase_order.on_submit",
-        "before_naming": "engineering.api.before_naming",
-        "on_cancel": "engineering.engineering.doc_events.purchase_order.on_cancel",
-        "on_trash": "engineering.engineering.doc_events.purchase_order.on_trash",
-    },
-    "Purchase Invoice": {
-        "on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
-        "on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
-        "on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
-        "before_naming": "engineering.api.before_naming",
-    },
-    "Delivery Note": {
-        "before_naming": "engineering.api.before_naming",
-        "on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
-        "on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
-        "on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
-    },
-    "Sales Invoice": {
-        "before_naming": "engineering.api.before_naming",
-        "on_submit": "engineering.engineering.doc_events.sales_invoice.on_submit",
-        "on_cancel": "engineering.engineering.doc_events.sales_invoice.on_cancel",
-        "on_trash": "engineering.engineering.doc_events.sales_invoice.on_trash",
-    },
-    "Payment Entry": {
-        "before_naming": "engineering.api.before_naming",
-        "on_submit": "engineering.engineering.doc_events.payment_entry.on_submit",
-        "on_cancel": "engineering.engineering.doc_events.payment_entry.on_cancel",
-        "on_trash": "engineering.engineering.doc_events.payment_entry.on_trash",
-    },
-    "Customer": {
-        "onload": "engineering.engineering.doc_events.customer.onload",
-    },
-    "Company": {
-        "on_update": "engineering.engineering.doc_events.company.on_update",
-    },    
-    ("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
-        "before_naming": "engineering.api.docs_before_naming",
-    }
+	"Sales Order": {
+		"before_naming": "engineering.api.before_naming",
+	},
+	"Purchase Order": {
+		"on_submit": "engineering.engineering.doc_events.purchase_order.on_submit",
+		"before_naming": "engineering.api.before_naming",
+		"on_cancel": "engineering.engineering.doc_events.purchase_order.on_cancel",
+		"on_trash": "engineering.engineering.doc_events.purchase_order.on_trash",
+	},
+	"Purchase Invoice": {
+		"on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
+		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
+		"on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
+		"before_naming": "engineering.api.before_naming",
+	},
+	"Delivery Note": {
+		"before_naming": "engineering.api.before_naming",
+		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
+		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
+		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
+	},
+	"Sales Invoice": {
+		"before_naming": "engineering.api.before_naming",
+		"validate": "engineering.engineering.doc_events.sales_invoice.validate",
+		"on_submit": "engineering.engineering.doc_events.sales_invoice.on_submit",
+		"on_cancel": "engineering.engineering.doc_events.sales_invoice.on_cancel",
+		"on_trash": "engineering.engineering.doc_events.sales_invoice.on_trash",
+	},
+	"Payment Entry": {
+		"before_naming": "engineering.api.before_naming",
+		"on_submit": "engineering.engineering.doc_events.payment_entry.on_submit",
+		"on_cancel": "engineering.engineering.doc_events.payment_entry.on_cancel",
+		"on_trash": "engineering.engineering.doc_events.payment_entry.on_trash",
+	},
+	"Customer": {
+		"onload": "engineering.engineering.doc_events.customer.onload",
+	},
+	"Company": {
+		"on_update": "engineering.engineering.doc_events.company.on_update",
+	},
+	"Cost Center": {
+		"validate": "engineering.engineering.doc_events.cost_center.validate",
+		"before_rename": "engineering.engineering.doc_events.cost_center.before_rename",
+	},
+	"Warehouse": {
+		"validate": "engineering.engineering.doc_events.warehouse.validate",
+		"before_rename": "engineering.engineering.doc_events.warehouse.before_rename",
+	},
+	"Account": {
+		"validate": "engineering.engineering.doc_events.account.validate",
+	},
+	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
+		"before_naming": "engineering.api.docs_before_naming",
+	}
 }
 
 override_whitelisted_methods = {
-    "frappe.core.page.permission_manager.permission_manager.get_roles_and_doctypes": "engineering.permission.get_roles_and_doctypes",
-    "frappe.core.page.permission_manager.permission_manager.get_permissions": "engineering.permission.get_permissions",
-    "frappe.core.page.permission_manager.permission_manager.add": "engineering.permission.add",
-    "frappe.core.page.permission_manager.permission_manager.update": "engineering.permission.update",
-    "frappe.core.page.permission_manager.permission_manager.remove": "engineering.permission.remove",
-    "frappe.core.page.permission_manager.permission_manager.reset": "engineering.permission.reset",
-    "frappe.core.page.permission_manager.permission_manager.get_users_with_role": "engineering.permission.get_users_with_role",
-    "frappe.core.page.permission_manager.permission_manager.get_standard_permissions": "engineering.permission.get_standard_permissions",
-    "frappe.desk.notifications.get_open_count": "engineering.api.get_open_count",
+	"frappe.core.page.permission_manager.permission_manager.get_roles_and_doctypes": "engineering.permission.get_roles_and_doctypes",
+	"frappe.core.page.permission_manager.permission_manager.get_permissions": "engineering.permission.get_permissions",
+	"frappe.core.page.permission_manager.permission_manager.add": "engineering.permission.add",
+	"frappe.core.page.permission_manager.permission_manager.update": "engineering.permission.update",
+	"frappe.core.page.permission_manager.permission_manager.remove": "engineering.permission.remove",
+	"frappe.core.page.permission_manager.permission_manager.reset": "engineering.permission.reset",
+	"frappe.core.page.permission_manager.permission_manager.get_users_with_role": "engineering.permission.get_users_with_role",
+	"frappe.core.page.permission_manager.permission_manager.get_standard_permissions": "engineering.permission.get_standard_permissions",
+	"frappe.desk.notifications.get_open_count": "engineering.api.get_open_count",
 }
 
 

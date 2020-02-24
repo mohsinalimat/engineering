@@ -1,5 +1,8 @@
 {
-	"css/engineering.css": [
-		"public/css/engineering.css"
+	"css/restrict_button.css": [
+		"public/css/restrict_button.css"
+	],
+	"js/restrict_access.js": [
+		"public/css/restrict_access.js"
 	]
 }

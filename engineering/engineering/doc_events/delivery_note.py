@@ -115,8 +115,8 @@ def change_delivery_authority(name):
 
     status = frappe.get_value("Delivery Note", name, "status")
     
-    if status == 'Completed':
-        frappe.db.set_value("Delivery Note",name, "authority", "Unauthorized")
+    if status == 100.0:
+        frappe.db.set_value("Delivery Note",name, "status", "Completed")
     else:
         frappe.db.set_value("Delivery Note",name, "authority", "Authorized")
     

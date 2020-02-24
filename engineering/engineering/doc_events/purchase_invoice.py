@@ -11,153 +11,153 @@ from engineering.api import make_inter_company_transaction
 
 
 def validate(self, method):
-    pass
+	pass
 
 def on_submit(self, method):
-    create_purchase_invoice(self)
-    self.db_set('inter_company_invoice_reference', self.sales_invoice_ref)
+	create_purchase_invoice(self)
+	self.db_set('inter_company_invoice_reference', self.sales_invoice_ref)
 
 def on_cancel(self, method):
-    cancel_purchase_invoice(self)
+	cancel_purchase_invoice(self)
 
 def on_trash(self, method):
-    delete_purchase_invoice(self)
+	delete_purchase_invoice(self)
 
 
 def create_purchase_invoice(self):
-    authority = frappe.db.get_value("Company", self.company, "authority")
-    
-    def get_purchase_invoice_entry(source_name, target_doc=None, ignore_permissions= True):
-        def set_missing_value(source, target):
+	authority = frappe.db.get_value("Company", self.company, "authority")
+	
+	def get_purchase_invoice_entry(source_name, target_doc=None, ignore_permissions= True):
+		def set_missing_value(source, target):
 
-            target.company = frappe.db.get_value("Company", source.company, "alternate_company")
-            target.ref_invoice = self.name
-            target.authority = "Unauthorized"
+			target.company = frappe.db.get_value("Company", source.company, "alternate_company")
+			target.ref_invoice = self.name
+			target.authority = "Unauthorized"
 
-            target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
-            source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
+			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
+			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
-            for index, item in enumerate(source.items):
-                if item.net_rate:
-                    if item.net_rate != item.rate:
-                        full_amount = item.full_qty * item.full_rate
-                        amount_diff = item.amount - item.net_amount
+			for index, item in enumerate(source.items):
+				if item.net_rate:
+					if item.net_rate != item.rate:
+						full_amount = item.full_qty * item.full_rate
+						amount_diff = item.amount - item.net_amount
 
-                        target.items[index].rate = (full_amount - amount_diff) / item.full_qty
-            
-            if source.credit_to:
-                target.credit_to = source.credit_to.replace(source_company_abbr, target_company_abbr)
-            
-            if source.taxes_and_charges:
-                target.taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
+						target.items[index].rate = (full_amount - amount_diff) / item.full_qty
+			
+			if source.credit_to:
+				target.credit_to = source.credit_to.replace(source_company_abbr, target_company_abbr)
+			
+			if source.taxes_and_charges:
+				target.taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
 
-                for index, item in enumerate(source.taxes):
-                    target.taxes[index].charge_type = "Actual"
-                    target.taxes[index].account_head = item.account_head.replace(
-                        source_company_abbr, target_company_abbr
-                    )
+				for index, item in enumerate(source.taxes):
+					target.taxes[index].charge_type = "Actual"
+					target.taxes[index].account_head = item.account_head.replace(
+						source_company_abbr, target_company_abbr
+					)
 
-            if self.amended_from:
-                target.amended_from = frappe.db.get_value(
-                    "Purchase Invoice", {"ref_invoice": source.amended_from}, "name"
-                )
-            
-            target.run_method('set_missing_values')
-        
-        def update_accounts(source_doc, target_doc, source_parent):
-            target_company = frappe.db.get_value("Company", source_parent.company, "alternate_company")
-            target_company_abbr = frappe.db.get_value("Company", target_company, "abbr")
-            source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
+			if self.amended_from:
+				target.amended_from = frappe.db.get_value(
+					"Purchase Invoice", {"ref_invoice": source.amended_from}, "name"
+				)
+			
+			target.run_method('set_missing_values')
+		
+		def update_accounts(source_doc, target_doc, source_parent):
+			target_company = frappe.db.get_value("Company", source_parent.company, "alternate_company")
+			target_company_abbr = frappe.db.get_value("Company", target_company, "abbr")
+			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 
-            doc = frappe.get_doc("Company", target_company)
+			doc = frappe.get_doc("Company", target_company)
 
-            target_doc.income_account = doc.default_income_account
-            target_doc.expense_account = doc.default_expense_account
-            target_doc.cost_center = doc.cost_center
-            
-            if source_doc.warehouse:
-                target_doc.warehouse = source_doc.warehouse.replace(
-                    source_company_abbr, target_company_abbr
-                )
-            
-            if source_doc.rejected_warehouse:
-                target_doc.rejected_warehouse = source_doc.rejected_warehouse.replace(
-                    source_company_abbr, target_company_abbr
-                )
-        
-        fields = {
-            "Purchase Invoice": {
-                "doctype": "Purchase Invoice",
-                "field_map": {
-                    "ref_invoice": "name",
-                },
-                "field_no_map":{
-                    "authority",
-                    "company_series",
-                }
-            },
-            "Purchase Invoice Item": {
-                "doctype": "Purchase Invoice Item",
-                "field_map": {
-                    "item_varient": "item_code",
-                    "item_code": "item_varient",
-                    # Rate
-                    "full_rate": "rate",
-                    "rate": "discounted_rate",
-                    # Quantity
-                    "full_qty": "qty",
-                    "received_full_qty": "received_qty",
-                    "rejected_full_qty": "rejected_qty",
-                    "qty": "real_qty",
-                    "received_real_qty": "received_full_qty",
-                    "rejected_real_qty": "rejected_full_qty",
-                    # Ref Links
-                    "purchase_receipt_docname": "purchase_receipt",
-                    "purchase_receipt_childname": "pr_detail",
-                    "po_docname": "purchase_order",
-                    "po_childname": "po_detail",
-                },
-                "field_no_map": {
-                    "full_rate",
-                    "full_qty",
-                    "series",
-                },
-                "postprocess": update_accounts,
-            }
-        }
-        doclist = get_mapped_doc(
-            "Purchase Invoice",
-            source_name,
-            fields,
-            target_doc,
-            set_missing_value,
-            ignore_permissions=ignore_permissions
-        )
+			target_doc.income_account = doc.default_income_account
+			target_doc.expense_account = doc.default_expense_account
+			target_doc.cost_center = doc.cost_center
+			
+			if source_doc.warehouse:
+				target_doc.warehouse = source_doc.warehouse.replace(
+					source_company_abbr, target_company_abbr
+				)
+			
+			if source_doc.rejected_warehouse:
+				target_doc.rejected_warehouse = source_doc.rejected_warehouse.replace(
+					source_company_abbr, target_company_abbr
+				)
+		
+		fields = {
+			"Purchase Invoice": {
+				"doctype": "Purchase Invoice",
+				"field_map": {
+					"ref_invoice": "name",
+				},
+				"field_no_map":{
+					"authority",
+					"company_series",
+				}
+			},
+			"Purchase Invoice Item": {
+				"doctype": "Purchase Invoice Item",
+				"field_map": {
+					"item_varient": "item_code",
+					"item_code": "item_varient",
+					# Rate
+					"full_rate": "rate",
+					"rate": "discounted_rate",
+					# Quantity
+					"full_qty": "qty",
+					"received_full_qty": "received_qty",
+					"rejected_full_qty": "rejected_qty",
+					"qty": "real_qty",
+					"received_real_qty": "received_full_qty",
+					"rejected_real_qty": "rejected_full_qty",
+					# Ref Links
+					"purchase_receipt_docname": "purchase_receipt",
+					"purchase_receipt_childname": "pr_detail",
+					"po_docname": "purchase_order",
+					"po_childname": "po_detail",
+				},
+				"field_no_map": {
+					"full_rate",
+					"full_qty",
+					"series",
+				},
+				"postprocess": update_accounts,
+			}
+		}
+		doclist = get_mapped_doc(
+			"Purchase Invoice",
+			source_name,
+			fields,
+			target_doc,
+			set_missing_value,
+			ignore_permissions=ignore_permissions
+		)
 
-        return doclist
-    
-    if authority == "Authorized" and (not self.sales_invoice_ref):
-        pi = get_purchase_invoice_entry(self.name)
-        pi.save(ignore_permissions= True)
-        pi.submit()
+		return doclist
+	
+	if authority == "Authorized" and (not self.sales_invoice_ref):
+		pi = get_purchase_invoice_entry(self.name)
+		pi.save(ignore_permissions= True)
+		pi.submit()
 
-        self.db_set('ref_invoice', pi.name)
+		self.db_set('ref_invoice', pi.name)
 
 def cancel_purchase_invoice(self):
-    if not self.sales_invoice_ref:
-        pi = None
-        if self.ref_invoice:
-            pi = frappe.get_doc("Purchase Invoice", {'ref_invoice':self.name})
-        
-        if pi:
-            pi.flags.ignore_permissions = True
-            if pi.docstatus == 1:
-                pi.cancel()
+	if not self.sales_invoice_ref:
+		pi = None
+		if self.ref_invoice:
+			pi = frappe.get_doc("Purchase Invoice", {'ref_invoice':self.name})
+		
+		if pi:
+			pi.flags.ignore_permissions = True
+			if pi.docstatus == 1:
+				pi.cancel()
 
 def delete_purchase_invoice(self):
-    if self.ref_invoice:
-        
-        frappe.db.set_value("Purchase Invoice", self.name, 'ref_invoice', '')
-        frappe.db.set_value("Purchase Invoice", self.ref_invoice, 'ref_invoice', '')
+	if self.ref_invoice:
+		
+		frappe.db.set_value("Purchase Invoice", self.name, 'ref_invoice', '')
+		frappe.db.set_value("Purchase Invoice", self.ref_invoice, 'ref_invoice', '')
 
-        frappe.delete_doc("Purchase Invoice", self.ref_invoice, force = 1, ignore_permissions=True)
+		frappe.delete_doc("Purchase Invoice", self.ref_invoice, force = 1, ignore_permissions=True)
