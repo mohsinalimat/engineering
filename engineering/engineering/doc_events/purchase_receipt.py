@@ -4,6 +4,7 @@ from frappe.utils import flt, cint, nowdate
 
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
+from frappe.utils import get_url_to_form
 from frappe.contacts.doctype.address.address import get_company_address
 
 def get_invoiced_qty_map(purchase_receipt):
@@ -212,3 +213,32 @@ def make_inter_company_transaction(doctype, source_name, target_doc=None):
 		}, target_doc, set_missing_values)
 
 		return doclist
+
+def on_cancel(self, method):
+	cancel_delivery_note(self)
+
+def cancel_delivery_note(self):
+	try:
+		check_inter_company_transaction = frappe.get_value("Company", self.supplier, "allow_inter_company_transaction")
+	except:
+		check_inter_company_transaction = None
+	
+	
+	if check_inter_company_transaction:
+		if check_inter_company_transaction == 1:
+			company = frappe.get_doc("Company", self.supplier)
+			inter_company_list = [item.company for item in company.allowed_to_transact_with]
+			
+			
+			if self.company in inter_company_list:
+				# try:
+					
+				pr = frappe.get_doc("Delivery Note", self.inter_company_delivery_reference)
+				pr.flags.ignore_permissions = True
+				pr.cancel()
+
+				url = get_url_to_form("Delivery Note", pr.name)
+				frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=pr.name)), title="Purchase Receipt Cancelled", indicator="red")
+				# except:
+				# 	frappe.throw(str(self.company))
+				# 	pass

@@ -5,6 +5,8 @@ import json
 from frappe.desk.notifications import get_filters_for
 from frappe.model.mapper import get_mapped_doc
 
+from frappe.utils import getdate
+
 def check_sub_string(string, sub_string): 
 	"""Function to check if string has sub string"""
 
@@ -13,9 +15,11 @@ def check_sub_string(string, sub_string):
 
 def naming_series_name(name, company_series = None):
 	"""Function to convert naming series name"""
+
+	from erpnext.accounts.utils import get_fiscal_year
 	
 	if check_sub_string(name, '.YYYY.'):
-		name = name.replace('.YYYY.', '.2020.')
+		name = name.replace('.YYYY.', '2020')
 	
 	# changing value of fiscal according to current fiscal year 
 	if check_sub_string(name, '.fiscal.'):
@@ -68,6 +72,7 @@ def before_naming(self, method = None):
 	# if from is not ammended and series_value is greater than zero then 
 	if not self.amended_from:
 		if self.series_value:
+			
 			if self.series_value > 0:
 				
 				# renaming the name for naming series
@@ -75,7 +80,7 @@ def before_naming(self, method = None):
 				
 				# Checking the current series value
 				check = frappe.db.get_value('Series', name, 'current', order_by="name")
-				
+				frappe.msgprint(str(check))
 				# if no current value is found inserting 0 for current value for this naming series
 				if check == 0:
 					pass

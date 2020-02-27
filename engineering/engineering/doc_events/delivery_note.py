@@ -11,7 +11,8 @@ def on_submit(self, method):
     change_delivery_authority(self.name)
 
 def on_cancel(self, method):
-    cancel_purchase_receipt(self)
+    # cancel_purchase_receipt(self)
+    pass
 
 def on_trash(self, method):
     delete_purchase_receipt(self)

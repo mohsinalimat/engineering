@@ -11,18 +11,29 @@ from engineering.api import make_inter_company_transaction
 
 
 def validate(self, method):
-	pass
+	cal_full_amount(self)
+
+def before_save(self, method):
+	update_status_updater_args(self)
+
+def before_cancel(self, method):
+	update_status_updater_args(self)
 
 def on_submit(self, method):
 	create_purchase_invoice(self)
+	update_status_updater_args(self)
 	self.db_set('inter_company_invoice_reference', self.sales_invoice_ref)
 
 def on_cancel(self, method):
 	cancel_purchase_invoice(self)
+	update_status_updater_args(self)
 
 def on_trash(self, method):
 	delete_purchase_invoice(self)
 
+def cal_full_amount(self):
+	for item in self.items:
+		item.full_amount = max((item.full_rate * item.full_qty), (item.rate * item.qty))
 
 def create_purchase_invoice(self):
 	authority = frappe.db.get_value("Company", self.company, "authority")
@@ -138,7 +149,19 @@ def create_purchase_invoice(self):
 	
 	if authority == "Authorized" and (not self.sales_invoice_ref):
 		pi = get_purchase_invoice_entry(self.name)
+		
+		pi.naming_series = 'A' + pi.naming_series
+		pi.series_value = self.series_value
+
 		pi.save(ignore_permissions= True)
+
+		if self.disable_rounded_total:
+			pi.real_difference_amount = pi.rounded_total - self.rounded_total
+		else:
+			pi.real_difference_amount = pi.grand_total - self.grand_total
+		
+		pi.save(ignore_permissions= True)
+		
 		pi.submit()
 
 		self.db_set('ref_invoice', pi.name)
@@ -161,3 +184,6 @@ def delete_purchase_invoice(self):
 		frappe.db.set_value("Purchase Invoice", self.ref_invoice, 'ref_invoice', '')
 
 		frappe.delete_doc("Purchase Invoice", self.ref_invoice, force = 1, ignore_permissions=True)
+
+def update_status_updater_args(self):
+	self.status_updater[0]['target_parent_field'] = 'full_amount'

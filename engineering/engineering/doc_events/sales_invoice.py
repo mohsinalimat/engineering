@@ -235,6 +235,9 @@ def create_sales_invoice(self):
 		
 		si.naming_series = 'A' + si.naming_series
 		si.series_value = self.series_value
+		si.save(ignore_permissions = True)
+
+		si.real_difference_amount = si.rounded_total - self.rounded_total
 		
 		si.save(ignore_permissions = True)
 		si.submit() 

@@ -98,6 +98,8 @@ def create_payment_entry(self):
 	if authority == "Authorized":
 		pe = get_payment_entry(self.name)
 		try:
+			pe.naming_series = 'A' + pe.naming_series
+			pe.series_value = self.series_value
 			pe.save(ignore_permissions= True)
 			self.db_set('ref_payment', pe.name)
 			frappe.db.commit()
@@ -105,9 +107,43 @@ def create_payment_entry(self):
 		except Exception as e:
 			frappe.db.rollback()
 			frappe.throw(e)
+	
+	if authority == "Unauthorized":
+		if not self.ref_payment:
+			for item in self.references:
+				if item.reference_doctype == "Sales Invoice":
+					diff_value = frappe.db.get_value("Sales Invoice", item.reference_name, 'real_difference_amount')
+
+					if item.allocated_amount > diff_value:
+						frappe.throw("Allocated Amount Cannot be Greater Than Difference Amount {}".format(diff_value))
+					else:
+						frappe.db.set_value("Sales Invoice", item.reference_name, 'real_difference_amount', diff_value - item.allocated_amount)
+				
+				if item.reference_doctype == "Purchase Invoice":
+					diff_value = frappe.db.get_value("Purchase Invoice", item.reference_name, 'real_difference_amount')
+
+					if item.allocated_amount > diff_value:
+						frappe.throw("Allocated Amount Cannot be Greater Than Difference Amount {}".format(diff_value))
+					else:
+						frappe.db.set_value("Purchase Invoice", item.reference_name, 'real_difference_amount', diff_value - item.allocated_amount)
+
 
 # Cancel Invoice on Cancel
 def cancel_payment_entry(self):
+	if authority == "Unauthorized":
+		if not self.ref_payment:
+			for item in self.references:
+				if item.reference_doctype == "Sales Invoice":
+					diff_value = frappe.db.get_value("Sales Invoice", item.reference_name, 'real_difference_amount')
+
+					frappe.db.set_value("Sales Invoice", item.reference_name, 'real_difference_amount', diff_value + item.allocated_amount)
+				
+				if item.reference_doctype == "Purchase Invoice":
+					diff_value = frappe.db.get_value("Purchase Invoice", item.reference_name, 'real_difference_amount')
+
+					frappe.db.set_value("Purchase Invoice", item.reference_name, 'real_difference_amount', diff_value + item.allocated_amount)
+
+
 	if self.ref_payment:
 		pe = frappe.get_doc("Payment Entry", {'ref_payment':self.name})
 	else:

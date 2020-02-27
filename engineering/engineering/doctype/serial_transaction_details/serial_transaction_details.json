@@ -1,0 +1,130 @@
+{
+ "creation": "2020-02-25 12:36:11.891348",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "company",
+  "purchase_document_type",
+  "purchase_document_no",
+  "purchase_date",
+  "purchase_time",
+  "purchase_rate",
+  "supplier",
+  "column_break_9",
+  "delivery_document_type",
+  "delivery_document_no",
+  "delivery_date",
+  "delivery_time",
+  "is_cancelled",
+  "customer"
+ ],
+ "fields": [
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_document_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Creation Document Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_document_no",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Creation Document No",
+   "options": "purchase_document_type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_date",
+   "fieldtype": "Date",
+   "label": "Creation Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_time",
+   "fieldtype": "Time",
+   "label": "Creation Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "purchase_rate",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Incoming Rate",
+   "options": "Company:company:default_currency",
+   "read_only": 1
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "label": "Supplier",
+   "options": "Supplier",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "delivery_document_type",
+   "fieldtype": "Link",
+   "label": "Delivery Document Type",
+   "options": "DocType",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_document_no",
+   "fieldtype": "Dynamic Link",
+   "label": "Delivery Document No",
+   "options": "delivery_document_type",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_date",
+   "fieldtype": "Date",
+   "label": "Delivery Date",
+   "read_only": 1
+  },
+  {
+   "fieldname": "delivery_time",
+   "fieldtype": "Time",
+   "label": "Delivery Time",
+   "read_only": 1
+  },
+  {
+   "fieldname": "is_cancelled",
+   "fieldtype": "Select",
+   "label": "Is Cancelled",
+   "options": "\nYes\nNo",
+   "read_only": 1
+  },
+  {
+   "fieldname": "customer",
+   "fieldtype": "Link",
+   "label": "Customer",
+   "options": "Customer",
+   "read_only": 1
+  }
+ ],
+ "istable": 1,
+ "modified": "2020-02-25 16:45:21.732599",
+ "modified_by": "Administrator",
+ "module": "Engineering",
+ "name": "Serial Transaction Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

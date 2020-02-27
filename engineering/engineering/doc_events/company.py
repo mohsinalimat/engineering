@@ -28,7 +28,7 @@ def create_internal_customer_supplier(self,method):
 			customer.gst_category = "Registered Regular"
 			customer.represents_company = self.name
 			customer.tax_id = self.tax_id
-			customer.default_price_list = self.inter_company_price_list
+			# customer.inter_company_price_list= self.default_price_list
 			customer.default_currency = self.default_currency
 			for raw in self.allowed_to_transact_with:
 				customer.append("companies",{
@@ -53,7 +53,7 @@ def create_internal_customer_supplier(self,method):
 			supplier.supplier_type = "Company"
 			supplier.gst_category = "Registered Regular"
 			supplier.represents_company = self.name
-			supplier.default_price_list = self.inter_company_price_list
+			# customer.inter_company_price_list= self.default_price_listt
 			supplier.tax_id = self.tax_id
 			supplier.default_currency = self.default_currency
 			for raw in self.allowed_to_transact_with:
