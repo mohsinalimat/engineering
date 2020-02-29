@@ -24,14 +24,31 @@ doctype_js = {
 	"Purchase Invoice": "public/js/doctype_js/purchase_invoice.js",
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
+	"Item": "public/js/doctype_js/item.js",
 }
 
 doc_events = {
 	"Account": {
 		"validate": "engineering.engineering.doc_events.account.validate",
+		"on_trash": "engineering.engineering.doc_events.account.on_trash",
+	},
+	"Cost Center": {
+		"validate": "engineering.engineering.doc_events.cost_center.validate",
+		"after_rename": "engineering.engineering.doc_events.cost_center.after_rename",
+		"on_trash": "engineering.engineering.doc_events.cost_center.on_trash",
+	},
+	"Warehouse": {
+		"validate": "engineering.engineering.doc_events.warehouse.validate",
+		"after_rename": "engineering.engineering.doc_events.warehouse.after_rename",
+		"on_trash": "engineering.engineering.doc_events.warehouse.on_trash",
 	},
 	"Sales Order": {
 		"before_naming": "engineering.api.before_naming",
+	},
+	"Delivery Note": {
+		"before_naming": "engineering.api.before_naming",
+		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
+		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
 	},
 	"Purchase Order": {
 		"on_submit": "engineering.engineering.doc_events.purchase_order.on_submit",
@@ -44,12 +61,6 @@ doc_events = {
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
 		"before_naming": "engineering.api.before_naming",
-	},
-	"Delivery Note": {
-		"before_naming": "engineering.api.before_naming",
-		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
-		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
-		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
 	},
 	"Sales Invoice": {
 		"before_naming": "engineering.api.before_naming",
@@ -69,14 +80,6 @@ doc_events = {
 	},
 	"Company": {
 		"on_update": "engineering.engineering.doc_events.company.on_update",
-	},
-	"Cost Center": {
-		"validate": "engineering.engineering.doc_events.cost_center.validate",
-		"before_rename": "engineering.engineering.doc_events.cost_center.before_rename",
-	},
-	"Warehouse": {
-		"validate": "engineering.engineering.doc_events.warehouse.validate",
-		"before_rename": "engineering.engineering.doc_events.warehouse.before_rename",
 	},
 	"Serial No": {
 		"before_save": "engineering.engineering.doc_events.serial_no.before_save"

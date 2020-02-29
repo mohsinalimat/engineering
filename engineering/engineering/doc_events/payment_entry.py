@@ -130,6 +130,9 @@ def create_payment_entry(self):
 
 # Cancel Invoice on Cancel
 def cancel_payment_entry(self):
+	# getting authority of company
+	authority = frappe.db.get_value("Company", self.company, "authority")
+	
 	if authority == "Unauthorized":
 		if not self.ref_payment:
 			for item in self.references:
