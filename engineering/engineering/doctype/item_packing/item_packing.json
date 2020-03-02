@@ -1,0 +1,124 @@
+{
+ "autoname": "naming_series:",
+ "creation": "2020-02-29 11:26:06.219363",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "naming_series",
+  "box_item",
+  "item_code",
+  "column_break_3",
+  "series_value",
+  "company",
+  "item_name",
+  "section_break_5",
+  "serial_no",
+  "column_break_9",
+  "warehouse",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "box_item",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Box Item",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Naming Series",
+   "options": "\nPACK.YY.MM.####",
+   "set_only_once": 1
+  },
+  {
+   "fieldname": "series_value",
+   "fieldtype": "Int",
+   "label": "Series Value"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Item Packing",
+   "print_hide": 1,
+   "read_only": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Small Text",
+   "label": "Serial No",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "box_item.box_of",
+   "fieldname": "item_code",
+   "fieldtype": "Link",
+   "label": "Item Code",
+   "options": "Item",
+   "reqd": 1
+  },
+  {
+   "fetch_from": "item_code.item_name",
+   "fieldname": "item_name",
+   "fieldtype": "Data",
+   "label": "Item Name",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_9",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "label": "Warehouse",
+   "options": "Warehouse"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  }
+ ],
+ "is_submittable": 1,
+ "modified": "2020-02-29 13:52:26.139442",
+ "modified_by": "Administrator",
+ "module": "Engineering",
+ "name": "Item Packing",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1,
+ "track_seen": 1
+}
