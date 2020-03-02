@@ -71,7 +71,9 @@ def make_serial_no(serial_no, args):
 	sr.flags.ignore_permissions = True
 	sr.box_serial_no = args.get('box_serial_no')
 
-	sr.insert()
+	if not frappe.db.exists("Serial No", serial_no):
+		sr.insert()
+	
 	sr.save()
 
 	return sr.name
