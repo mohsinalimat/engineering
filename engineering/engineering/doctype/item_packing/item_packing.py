@@ -53,11 +53,16 @@ class ItemPacking(Document):
 			}
 
 			make_serial_no(item, args)
+	
+	def print_package(self, commit=True):
+		self.save()
+		return self.name
+
 
 def make_serial_no(serial_no, args):
 	if frappe.db.exists("Serial No", serial_no):
 		sr = frappe.get_doc("Serial No", serial_no)
-	else
+	else:
 		sr = frappe.new_doc("Serial No")
 		sr.serial_no = serial_no
 		sr.company = args.get('company')
