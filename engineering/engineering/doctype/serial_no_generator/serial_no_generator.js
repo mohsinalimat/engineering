@@ -10,9 +10,7 @@ frappe.ui.form.on('Serial No Generator', {
 	},
 	append: function(frm){
 		frm.set_value("serial_no_series",frm.doc.series.concat("A"))
-		
 	},
-
 	
 	validate: function(frm){
 		frm.trigger("append");
