@@ -23,13 +23,6 @@ class ItemPacking(Document):
 			else:
 				frappe.throw("You can not add same serial number more than once")
 
-		qty_per_box = frappe.db.get_value("Item", self.box_item, 'qty_per_box')
-
-		if not qty_per_box:
-			frappe.throw("Please add Qty Per Box in Box Item")
-
-		if len(serial_no) > qty_per_box:
-			frappe.throw("Item in this box cannot be grater that {}".format(qty_per_box))
 		self.create_serial_no(serial_no)
 		
 		self.submit()
@@ -52,16 +45,19 @@ class ItemPacking(Document):
 				"box_serial_no": self.name
 			}
 
-			make_serial_no(item, args)
+			make_serial_no(self, item, args)
 	
 	def print_package(self, commit=True):
 		self.save()
 		return self.name
 
 
-def make_serial_no(serial_no, args):
+def make_serial_no(self, serial_no, args):
 	if frappe.db.exists("Serial No", serial_no):
 		sr = frappe.get_doc("Serial No", serial_no)
+
+		if sr.box_serial_no:
+			frappe.throw("Serial No {} is already in box {}".format(frappe.bold(serial_no), frappe.bold(sr.box_serial_no)))
 	else:
 		sr = frappe.new_doc("Serial No")
 		sr.serial_no = serial_no
@@ -69,7 +65,7 @@ def make_serial_no(serial_no, args):
 	
 	sr.item_code = args.get('item_code')
 	sr.flags.ignore_permissions = True
-	sr.box_serial_no = args.get('box_serial_no')
+	sr.box_serial_no = self.name
 
 	if not frappe.db.exists("Serial No", serial_no):
 		sr.insert()

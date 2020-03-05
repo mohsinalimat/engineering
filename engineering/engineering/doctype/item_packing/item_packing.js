@@ -1,13 +1,5 @@
 // Copyright (c) 2020, FinByz and contributors
 // For license information, please see license.txt
-cur_frm.fields_dict.box_item.get_query = function(doc) {
-	return {
-		filters: {
-			"is_box_item": 1,
-		}
-	}
-};
-
 
 frappe.ui.form.on('Item Packing', {
 	// refresh: function(frm) {

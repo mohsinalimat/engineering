@@ -80,7 +80,7 @@ def before_naming(self, method = None):
 				
 				# Checking the current series value
 				check = frappe.db.get_value('Series', name, 'current', order_by="name")
-				frappe.msgprint(str(check))
+				# frappe.msgprint(str(check))
 				# if no current value is found inserting 0 for current value for this naming series
 				if check == 0:
 					pass
