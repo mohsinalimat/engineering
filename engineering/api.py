@@ -6,6 +6,7 @@ from frappe.desk.notifications import get_filters_for
 from frappe.model.mapper import get_mapped_doc
 
 from frappe.utils import getdate
+from erpnext.accounts.utils import get_fiscal_year
 
 def check_sub_string(string, sub_string): 
 	"""Function to check if string has sub string"""
@@ -342,3 +343,10 @@ def reverse_restrict_access():
 	frappe.db.commit()
 
 	frappe.msgprint("All Permission Reversed")
+
+
+@frappe.whitelist()
+def get_serial_no_series(name, posting_date):
+	current_fiscal = get_fiscal_year(posting_date)[0]
+	
+	return str(name) + str(frappe.db.get_value("Fiscal Year", current_fiscal, 'fiscal_series'))

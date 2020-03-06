@@ -82,7 +82,8 @@ doc_events = {
 		"on_update": "engineering.engineering.doc_events.company.on_update",
 	},
 	"Serial No": {
-		"before_save": "engineering.engineering.doc_events.serial_no.before_save"
+		"before_save": "engineering.engineering.doc_events.serial_no.before_save",
+		"before_validate": "engineering.engineering.doc_events.serial_no.before_validate",
 	},
 	"Purchase Receipt": {
 		"on_cancel": "engineering.engineering.doc_events.purchase_receipt.on_cancel"

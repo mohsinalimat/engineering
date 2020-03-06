@@ -78,3 +78,24 @@ def before_save(self, method):
 def get_serial_nos(serial_no):
 	return [s.strip() for s in cstr(serial_no).strip().upper().replace(',', '\n').split('\n')
 		if s.strip()]
+
+
+def before_validate(self, method):
+	from erpnext.stock.doctype.serial_no.serial_no import SerialNo
+
+	SerialNo.validate_item = validate_item
+
+def validate_item(self):
+	"""
+		Validate whether serial no is required for this item
+	"""
+	if self.item_code:
+		item = frappe.get_cached_doc("Item", self.item_code)
+		if item.has_serial_no!=1:
+			frappe.throw(_("Item {0} is not setup for Serial Nos. Check Item master").format(self.item_code))
+
+		self.item_group = item.item_group
+		self.description = item.description
+		self.item_name = item.item_name
+		self.brand = item.brand
+		self.warranty_period = item.warranty_period

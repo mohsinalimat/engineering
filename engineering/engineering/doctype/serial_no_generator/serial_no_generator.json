@@ -8,6 +8,7 @@
   "naming_series",
   "section_break_2",
   "series",
+  "posting_date",
   "from_value",
   "column_break_5",
   "serial_no_series",
@@ -65,10 +66,17 @@
    "options": "Serial No Generator",
    "print_hide": 1,
    "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date",
+   "reqd": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-03-04 17:57:46.786250",
+ "modified": "2020-03-05 14:33:07.918462",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Serial No Generator",
