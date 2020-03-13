@@ -3,6 +3,9 @@ frappe.ui.form.on('Delivery Note', {
         if (frm.doc.__islocal){
             frm.trigger('naming_series');
         }
+        if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
+			frm.set_value("inter_company_receipt_reference", "");
+		}
     },
     validate:function(frm){
         let item = frm.doc.items;
@@ -93,4 +96,19 @@ frappe.ui.form.on('Delivery Note', {
             frm: me.frm
         });
     },
+    on_submit: function(frm){
+		if (frm.doc.docstatus == 1 && frm.doc.inter_company_receipt_reference){
+			frappe.call({
+				method: 'engineering.engineering.doc_events.delivery_note.submit_purchase_receipt',
+				args: {
+					'pr_number': frm.doc.inter_company_receipt_reference
+				},
+				callback: function(r){
+                    if (r.message) {
+					    
+                    }
+                }
+			})
+		}
+	}
 });

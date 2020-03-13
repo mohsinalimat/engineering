@@ -12,6 +12,30 @@ from frappe.utils import get_url_to_form
 from engineering.api import make_inter_company_transaction
 
 
+def on_cancel(self, method):
+	cancel_purchase_received(self)
+
+def cancel_purchase_received(self):
+	try:
+		check_inter_company_transaction = frappe.get_value("Company", self.customer, "allow_inter_company_transaction")
+	except:
+		check_inter_company_transaction = None
+	
+	if check_inter_company_transaction:
+		company = frappe.get_doc("Company", self.customer)
+		inter_company_list = [item.company for item in company.allowed_to_transact_with]
+		
+		if self.company in inter_company_list:
+				
+			pi = frappe.get_doc("Purchase Receipt", self.inter_company_receipt_reference)
+			pi.flags.ignore_permissions = True
+			try:
+				pi.cancel()
+
+				url = get_url_to_form("Purchase Receipt", pi.name)
+				frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=pr.name)), title="Purchase Receipt Cancelled", indicator="red")
+			except:
+				pass
 
 def on_submit(self, method):
 	"""Custom On Submit Fuction"""
@@ -37,7 +61,7 @@ def delete_purchase_receipt(self):
 		frappe.db.set_value("Purchase Receipt", self.inter_company_receipt_reference, 'inter_company_delivery_reference', '')
 		
 		frappe.delete_doc("Purchase Receipt", self.inter_company_receipt_reference, force = 1, ignore_permissions=True)
-		frappe.msgprint(_("Purchase Receipt {name} has been deleted!".format(frappe.bold(name=self.inter_company_receipt_reference))), title="Purchase Receipt Deleted", indicator="red")
+		frappe.msgprint(_("Purchase Receipt {name} has been deleted!".format(name=frappe.bold(self.inter_company_receipt_reference))), title="Purchase Receipt Deleted", indicator="red")
 
 def create_purchase_receipt(self):
 	check_inter_company_transaction = None
@@ -79,7 +103,7 @@ def create_purchase_receipt(self):
 			pr.db_set('supplier_delivery_note', self.name)
 
 			url = get_url_to_form("Purchase Receipt", pr.name)
-			frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully! Please submit the Purchase Recipient".format(url=url, frappe.bold(name=pr.name))), title="Purchase Receipt Created", indicator="green")
+			# frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully! Please submit the Purchase Recipient".format(url=url, name=frappe.bold(pr.name))), title="Purchase Receipt Created", indicator="green")
 
 def change_delivery_authority(name):
 	"""Function to change authorty of Delivery Note"""
@@ -114,6 +138,7 @@ def create_invoice(source_name, target_doc=None):
 		target.run_method("set_po_nos")
 		alternate_company = frappe.db.get_value("Company", source.company, "alternate_company")
 		target.expense_account = ""
+		target.update_stock = 1
 
 		if alternate_company:
 			target.company = alternate_company
@@ -163,6 +188,8 @@ def create_invoice(source_name, target_doc=None):
 		target_doc.income_account = doc.default_income_account
 		target_doc.expense_account = doc.default_expense_account
 		target_doc.cost_center = doc.cost_center
+		abbr = frappe.db.get_value("Company", target_company, 'abbr')
+		target_doc.warehouse = "Stores - {}".format(abbr)
 
 	fields = {
 		"Delivery Note": {
@@ -249,3 +276,14 @@ def get_returned_qty_map(delivery_note):
 	""", delivery_note))
 
 	return returned_qty_map
+
+@frappe.whitelist()
+def submit_purchase_receipt(pr_number):
+	pr = frappe.get_doc("Purchase Receipt", pr_number)
+	pr.flags.ignore_permissions = True
+	pr.submit()
+	frappe.db.commit()
+
+	url = get_url_to_form("Purchase Receipt", pr.name)
+	msg = "Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))
+	frappe.msgprint(_(msg), title="Purchase Receipt Created", indicator="green")

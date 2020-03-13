@@ -9,6 +9,11 @@ from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from engineering.api import make_inter_company_transaction
 
+def before_validate(self, method):
+	if self.amended_from and self.authority == "Unauthorized" and not self.ref_pi:
+		if frappe.db.exists("Purchase Invoice", {"ref_pi": self.amended_from}):
+			frappe.throw("You Can not save this Invoice!")
+
 
 def validate(self, method):
 	cal_full_amount(self)
@@ -22,7 +27,7 @@ def before_cancel(self, method):
 def on_submit(self, method):
 	create_purchase_invoice(self)
 	update_status_updater_args(self)
-	self.db_set('inter_company_invoice_reference', self.sales_invoice_ref)
+	self.db_set('inter_company_invoice_reference', self.ref_si)
 
 def on_cancel(self, method):
 	cancel_purchase_invoice(self)
@@ -42,7 +47,7 @@ def create_purchase_invoice(self):
 		def set_missing_value(source, target):
 
 			target.company = frappe.db.get_value("Company", source.company, "alternate_company")
-			target.ref_invoice = self.name
+			target.ref_pi = self.name
 			target.authority = "Unauthorized"
 
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
@@ -64,13 +69,14 @@ def create_purchase_invoice(self):
 
 				for index, item in enumerate(source.taxes):
 					target.taxes[index].charge_type = "Actual"
+					target.taxes[index].included_in_print_rate = 0
 					target.taxes[index].account_head = item.account_head.replace(
 						source_company_abbr, target_company_abbr
 					)
 
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value(
-					"Purchase Invoice", {"ref_invoice": source.amended_from}, "name"
+					"Purchase Invoice", {"ref_pi": source.amended_from}, "name"
 				)
 			
 			target.run_method('set_missing_values')
@@ -100,11 +106,12 @@ def create_purchase_invoice(self):
 			"Purchase Invoice": {
 				"doctype": "Purchase Invoice",
 				"field_map": {
-					"ref_invoice": "name",
+					"ref_pi": "name",
 				},
 				"field_no_map":{
 					"authority",
 					"company_series",
+					"update_stock"
 				}
 			},
 			"Purchase Invoice Item": {
@@ -147,7 +154,7 @@ def create_purchase_invoice(self):
 
 		return doclist
 	
-	if authority == "Authorized" and (not self.sales_invoice_ref):
+	if authority == "Authorized" and (not self.ref_si):
 		pi = get_purchase_invoice_entry(self.name)
 		
 		pi.naming_series = 'A' + pi.naming_series
@@ -164,13 +171,13 @@ def create_purchase_invoice(self):
 		
 		pi.submit()
 
-		self.db_set('ref_invoice', pi.name)
+		self.db_set('ref_pi', pi.name)
 
 def cancel_purchase_invoice(self):
-	if not self.sales_invoice_ref:
+	if not self.ref_si:
 		pi = None
-		if self.ref_invoice:
-			pi = frappe.get_doc("Purchase Invoice", {'ref_invoice':self.name})
+		if self.ref_pi:
+			pi = frappe.get_doc("Purchase Invoice", {'ref_pi':self.name})
 		
 		if pi:
 			pi.flags.ignore_permissions = True
@@ -178,12 +185,12 @@ def cancel_purchase_invoice(self):
 				pi.cancel()
 
 def delete_purchase_invoice(self):
-	if self.ref_invoice:
+	if self.ref_pi:
 		
-		frappe.db.set_value("Purchase Invoice", self.name, 'ref_invoice', '')
-		frappe.db.set_value("Purchase Invoice", self.ref_invoice, 'ref_invoice', '')
+		frappe.db.set_value("Purchase Invoice", self.name, 'ref_pi', '')
+		frappe.db.set_value("Purchase Invoice", self.ref_pi, 'ref_pi', '')
 
-		frappe.delete_doc("Purchase Invoice", self.ref_invoice, force = 1, ignore_permissions=True)
+		frappe.delete_doc("Purchase Invoice", self.ref_pi, force = 1, ignore_permissions=True)
 
 def update_status_updater_args(self):
 	self.status_updater[0]['target_parent_field'] = 'full_amount'

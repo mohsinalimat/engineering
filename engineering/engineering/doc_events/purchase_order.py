@@ -35,26 +35,21 @@ def create_sales_order(self):
 			child_field_map = {
 				"name": "purchase_order_item",
 			}
-			so = make_inter_company_transaction(self, "Purchase Order", "Sales Order", "purchase_order", field_map = field_map, child_field_map = child_field_map)
-			try:
-				so.save(ignore_permissions = True)
-				so.submit()
-				
-				frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_no', so.name)
-				frappe.db.set_value('Purchase Order', self.name, 'inter_company_order_reference', so.name)
-				frappe.db.set_value('Purchase Order', self.name, 'sales_order', so.name)
-				frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_date', so.transaction_date)
+			so = make_inter_company_transaction(self, "Purchase Order", "Sales Order", "ref_po", field_map = field_map, child_field_map = child_field_map)
+			so.save(ignore_permissions = True)
+			so.submit()
+			
+			frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_no', so.name)
+			frappe.db.set_value('Purchase Order', self.name, 'inter_company_order_reference', so.name)
+			frappe.db.set_value('Purchase Order', self.name, 'ref_so', so.name)
+			frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_date', so.transaction_date)
 
-				frappe.db.set_value("Sales Order", so.name, 'inter_company_order_reference', self.name)
-				frappe.db.set_value("Sales Order", so.name, 'purchase_order', self.name)
+			frappe.db.set_value("Sales Order", so.name, 'inter_company_order_reference', self.name)
+			frappe.db.set_value("Sales Order", so.name, 'ref_po', self.name)
 
-				url = get_url_to_form("Sales Order", so.name)
-				frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=so.name)), title="Sales Order Created", indicator="green")
-			except Exception as e:
-				frappe.db.rollback()
-				frappe.throw(e)
-			else:
-				frappe.db.commit()
+			url = get_url_to_form("Sales Order", so.name)
+			frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=so.name)), title="Sales Order Created", indicator="green")
+
 
 def cancel_sales_order(self):
 	check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
@@ -64,18 +59,16 @@ def cancel_sales_order(self):
 			company = frappe.get_doc("Company", self.company)
 			inter_company_list = [item.company for item in company.allowed_to_transact_with]
 			if self.supplier in inter_company_list:
-				if self.sales_order:
-					try:
-						so = frappe.get_doc("Sales Order", self.sales_order)
-						so.flags.ignore_permissions = True
-						so.cancel()
+				if self.ref_so:
+					so = frappe.get_doc("Sales Order", self.ref_so)
+					so.flags.ignore_permissions = True
+					so.cancel()
 
-						url = get_url_to_form("Sales Order", so.name)
-						frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=so.name)), title="Sales Order Cancelled", indicator="red")
-					except:
-						pass
+					url = get_url_to_form("Sales Order", so.name)
+					frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=so.name)), title="Sales Order Cancelled", indicator="red")
 
 def delete_sales_order(self):
+	frappe.throw(self.ref_so)
 	check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
 	
 	if check_inter_company_transaction:
@@ -84,19 +77,13 @@ def delete_sales_order(self):
 			inter_company_list = [item.company for item in company.allowed_to_transact_with]
 			
 			if self.supplier in inter_company_list:
-				try:
-					frappe.db.set_value("Purchase Order", self.name, 'inter_company_order_reference', '')
-					frappe.db.set_value("Purchase Order", self.name, 'sales_order', '')
-					frappe.db.set_value("Purchase Order", self.name, 'order_confirmation_no', '')
+				frappe.db.set_value("Purchase Order", self.name, 'inter_company_order_reference', '')
+				frappe.db.set_value("Purchase Order", self.name, 'ref_so', '')
+				frappe.db.set_value("Purchase Order", self.name, 'order_confirmation_no', '')
 
-					frappe.db.set_value("Sales Order", self.sales_order, 'inter_company_order_reference', '')
-					frappe.db.set_value("Sales Order", self.sales_order, 'purchase_order', '')
-					frappe.db.set_value("Sales Order", self.sales_order, 'po_no', '')
-					
-					frappe.delete_doc("Sales Order", self.sales_order, force = 1, ignore_permissions=True)
-					frappe.msgprint(_("Sales Order <b>{name}</b> has been deleted!".format(name=self.sales_order)), title="Sales Order Deleted", indicator="red")
-				except Exception as e:
-					frappe.db.rollback()
-					frappe.throw(e)
-				else:
-					frappe.db.commit()
+				frappe.db.set_value("Sales Order", self.ref_so, 'inter_company_order_reference', '')
+				frappe.db.set_value("Sales Order", self.ref_so, 'ref_po', '')
+				frappe.db.set_value("Sales Order", self.ref_so, 'po_no', '')
+				
+				frappe.delete_doc("Sales Order", self.ref_so, force = 1, ignore_permissions=True)
+				frappe.msgprint(_("Sales Order <b>{name}</b> has been deleted!".format(name=self.ref_so)), title="Sales Order Deleted", indicator="red")
