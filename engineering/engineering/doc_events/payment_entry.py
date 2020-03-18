@@ -51,11 +51,11 @@ def create_payment_entry(self):
 			reference_name = source_doc.reference_name
 			if source_parent.payment_type == 'Pay':
 				if source_doc.reference_doctype == 'Purchase Invoice':
-					target_doc.reference_name = frappe.db.get_value("Purchase Invoice", reference_name, 'ref_invoice')
+					target_doc.reference_name = frappe.db.get_value("Purchase Invoice", reference_name, 'ref_pi')
 
 			if source_parent.payment_type == 'Receive':
 				if source_doc.reference_doctype == 'Sales Invoice':
-					target_doc.reference_name = frappe.db.get_value("Sales Invoice", reference_name, 'ref_invoice')
+					target_doc.reference_name = frappe.db.get_value("Sales Invoice", reference_name, 'ref_si')
 
 		fields = {
 			"Payment Entry": {
@@ -101,7 +101,7 @@ def create_payment_entry(self):
 			pe.naming_series = 'A' + pe.naming_series
 			pe.series_value = self.series_value
 			pe.save(ignore_permissions= True)
-			self.db_set('ref_payment', pe.name)
+			self.db_set('ref_pe', pe.name)
 			frappe.db.commit()
 			pe.submit()
 		except Exception as e:
@@ -109,7 +109,7 @@ def create_payment_entry(self):
 			frappe.throw(e)
 	
 	if authority == "Unauthorized":
-		if not self.ref_payment:
+		if not self.ref_pe:
 			for item in self.references:
 				if item.reference_doctype == "Sales Invoice":
 					diff_value = frappe.db.get_value("Sales Invoice", item.reference_name, 'real_difference_amount')
@@ -134,7 +134,7 @@ def cancel_payment_entry(self):
 	authority = frappe.db.get_value("Company", self.company, "authority")
 	
 	if authority == "Unauthorized":
-		if not self.ref_payment:
+		if not self.ref_pe:
 			for item in self.references:
 				if item.reference_doctype == "Sales Invoice":
 					diff_value = frappe.db.get_value("Sales Invoice", item.reference_name, 'real_difference_amount')
@@ -147,8 +147,8 @@ def cancel_payment_entry(self):
 					frappe.db.set_value("Purchase Invoice", item.reference_name, 'real_difference_amount', diff_value + item.allocated_amount)
 
 
-	if self.ref_payment:
-		pe = frappe.get_doc("Payment Entry", {'ref_payment':self.name})
+	if self.ref_pe:
+		pe = frappe.get_doc("Payment Entry", {'ref_pe':self.name})
 	else:
 		pe = None
 	
@@ -162,10 +162,10 @@ def cancel_payment_entry(self):
 				frappe.throw(e)
 
 def delete_payment_entry(self):
-	ref_name = self.ref_payment
+	ref_name = self.ref_pe
 	try:
-		frappe.db.set_value("Payment Entry", self.name, 'ref_payment', '')    
-		frappe.db.set_value("Payment Entry", ref_name, 'ref_payment', '')
+		frappe.db.set_value("Payment Entry", self.name, 'ref_pe', '')    
+		frappe.db.set_value("Payment Entry", ref_name, 'ref_pe', '')
 		frappe.delete_doc("Payment Entry", ref_name, force = 1, ignore_permissions=True)
 	except Exception as e:
 		frappe.db.rollback()

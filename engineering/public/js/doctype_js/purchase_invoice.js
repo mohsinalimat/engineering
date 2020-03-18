@@ -1,7 +1,7 @@
 frappe.ui.form.on('Purchase Invoice', {
 	refresh: function(frm){
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
-			frm.set_value("ref_invoice", "");
+			frm.set_value("ref_pi", "");
 		}
 		if (cur_frm.doc.company){
 			frappe.db.get_value("Company", cur_frm.doc.company, 'company_series',(r) => {

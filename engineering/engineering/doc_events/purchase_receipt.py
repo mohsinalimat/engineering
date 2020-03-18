@@ -49,6 +49,7 @@ def make_purchase_invoice(source_name, target_doc=None):
 		doc.run_method("calculate_taxes_and_totals")
 
 		target.expense_account = ""
+		target.update_stock = 1
 
 		alternate_company = frappe.db.get_value("Company", source.company, "alternate_company")
 
@@ -215,7 +216,8 @@ def make_inter_company_transaction(doctype, source_name, target_doc=None):
 		return doclist
 
 def on_cancel(self, method):
-	cancel_delivery_note(self)
+	pass
+	# cancel_delivery_note(self)
 
 def cancel_delivery_note(self):
 	try:
@@ -223,22 +225,18 @@ def cancel_delivery_note(self):
 	except:
 		check_inter_company_transaction = None
 	
-	
 	if check_inter_company_transaction:
-		if check_inter_company_transaction == 1:
-			company = frappe.get_doc("Company", self.supplier)
-			inter_company_list = [item.company for item in company.allowed_to_transact_with]
-			
-			
-			if self.company in inter_company_list:
-				# try:
-					
-				pr = frappe.get_doc("Delivery Note", self.inter_company_delivery_reference)
-				pr.flags.ignore_permissions = True
-				pr.cancel()
+		company = frappe.get_doc("Company", self.supplier)
+		inter_company_list = [item.company for item in company.allowed_to_transact_with]
+		
+		if self.company in inter_company_list:
+				
+			dn = frappe.get_doc("Delivery Note", self.inter_company_delivery_reference)
+			dn.flags.ignore_permissions = True
+			try:
+				dn.cancel()
 
-				url = get_url_to_form("Delivery Note", pr.name)
+				url = get_url_to_form("Delivery Note", dn.name)
 				frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=pr.name)), title="Purchase Receipt Cancelled", indicator="red")
-				# except:
-				# 	frappe.throw(str(self.company))
-				# 	pass
+			except:
+				pass

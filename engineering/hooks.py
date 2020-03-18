@@ -50,6 +50,7 @@ doc_events = {
 	},
 	"Delivery Note": {
 		"before_naming": "engineering.api.before_naming",
+		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
 		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
 		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
 	},
@@ -60,6 +61,7 @@ doc_events = {
 		"on_trash": "engineering.engineering.doc_events.purchase_order.on_trash",
 	},
 	"Purchase Invoice": {
+		"before_validate": "engineering.engineering.doc_events.purchase_invoice.before_validate",
 		"on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
@@ -89,7 +91,7 @@ doc_events = {
 		"before_validate": "engineering.engineering.doc_events.serial_no.before_validate",
 	},
 	"Purchase Receipt": {
-		"on_cancel": "engineering.engineering.doc_events.purchase_receipt.on_cancel"
+		# "on_cancel": "engineering.engineering.doc_events.purchase_receipt.on_cancel"
 	},
 	"Journal Entry": {
 		"on_submit": "engineering.engineering.doc_events.journal_entry.on_submit",
