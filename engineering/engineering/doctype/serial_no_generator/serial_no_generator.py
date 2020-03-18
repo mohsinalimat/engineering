@@ -27,7 +27,7 @@ class SerialNoGenerator(Document):
 
 	def on_submit(self):
 		self.enqueue_serial_no()
-
+		frappe.db.sql("update `tabSeries` set current = {} where name = '{}'".format(self.to_value, self.serial_no_series))
 
 	def enqueue_serial_no(self): 
 		enqueue(self.generate_serial_no, queue='default',timeout=6000, job_name='serial_no_genration')

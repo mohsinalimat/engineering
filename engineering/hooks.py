@@ -28,6 +28,9 @@ doctype_js = {
 }
 
 doc_events = {
+	"Item Packing":{
+		"before_naming": "engineering.api.before_naming",
+	},
 	"Account": {
 		"validate": "engineering.engineering.doc_events.account.validate",
 		"on_trash": "engineering.engineering.doc_events.account.on_trash",
@@ -119,7 +122,23 @@ from engineering.override_default_class_method import raise_exceptions
 
 from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
 from engineering.override_default_class_method import set_actual_qty
+from erpnext.stock.doctype.serial_no.serial_no import SerialNo
+import frappe
+
+def validate_warehouse(self):
+	if not self.get("__islocal"):
+		item_code, warehouse = frappe.db.get_value("Serial No",
+			self.name, ["item_code", "warehouse"])
+		if item_code:	
+			if not self.via_stock_ledger and item_code != self.item_code:
+				frappe.throw(_("Item Code cannot be changed for Serial No."),
+					SerialNoCannotCannotChangeError)
+		if warehouse:
+			if not self.via_stock_ledger and warehouse != self.warehouse:
+				frappe.throw(_("Warehouse cannot be changed for Serial No."),
+					SerialNoCannotCannotChangeError)
 
 # override default class method
 update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
+SerialNo.validate_warehouse = validate_warehouse

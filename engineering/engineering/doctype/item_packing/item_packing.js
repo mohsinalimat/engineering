@@ -1,11 +1,55 @@
 // Copyright (c) 2020, FinByz and contributors
 // For license information, please see license.txt
+cur_frm.fields_dict.warehouse.get_query = function(doc) {
+	return {
+		filters: {
+			"company": doc.company
+		}
+	}
+};
+
+cur_frm.fields_dict.work_order.get_query = function(doc) {
+	return {
+		filters: {
+			"docstatus": 1,
+			"production_item": doc.item_code,
+			"status": "In Process"
+		}
+	}
+};
 
 frappe.ui.form.on('Item Packing', {
-	// refresh: function(frm) {
-
-	// }
+	onload: function(frm){
+		if (frm.doc.__islocal){
+			frm.trigger('naming_series');
+		}
+	},
+	naming_series: function(frm) {
+		if (frm.doc.company && !frm.doc.amended_from){
+			frappe.call({
+				method: "engineering.api.check_counter_series",
+				args: {
+					'name': frm.doc.naming_series,
+				},
+				callback: function(e) {
+					frm.set_value("series_value", e.message);
+				}
+			});
+		}
+	},
+	company: function(frm){
+		if (frm.doc.__islocal){
+			frm.trigger('naming_series');
+		}
+	}
 });
+
+
+// frappe.ui.form.on('Item Packing', {
+// 	// refresh: function(frm) {
+
+// 	// }
+// });
 
 frappe.ui.keys.on('ctrl+p', function(e) {
 	// Your Code

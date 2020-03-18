@@ -8,7 +8,7 @@ from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from frappe.contacts.doctype.address.address import get_company_address
 from frappe.utils import get_url_to_form
-
+from frappe.model.utils import get_fetch_values
 from engineering.api import make_inter_company_transaction
 
 
@@ -37,7 +37,7 @@ def delete_purchase_receipt(self):
 		frappe.db.set_value("Purchase Receipt", self.inter_company_receipt_reference, 'inter_company_delivery_reference', '')
 		
 		frappe.delete_doc("Purchase Receipt", self.inter_company_receipt_reference, force = 1, ignore_permissions=True)
-		frappe.msgprint(_("Purchase Receipt {name} has been deleted!".format(frappe.bold(name=self.inter_company_receipt_reference))), title="Purchase Receipt Deleted", indicator="red")
+		frappe.msgprint(_("Purchase Receipt {name} has been deleted!".format(name=frappe.bold(self.inter_company_receipt_reference))), title="Purchase Receipt Deleted", indicator="red")
 
 def create_purchase_receipt(self):
 	check_inter_company_transaction = None
@@ -79,7 +79,7 @@ def create_purchase_receipt(self):
 			pr.db_set('supplier_delivery_note', self.name)
 
 			url = get_url_to_form("Purchase Receipt", pr.name)
-			frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully! Please submit the Purchase Recipient".format(url=url, frappe.bold(name=pr.name))), title="Purchase Receipt Created", indicator="green")
+			frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully! Please submit the Purchase Recipient".format(url=url, name=frappe.bold(pr.name))), title="Purchase Receipt Created", indicator="green")
 
 def change_delivery_authority(name):
 	"""Function to change authorty of Delivery Note"""

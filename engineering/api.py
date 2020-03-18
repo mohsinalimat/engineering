@@ -1,6 +1,7 @@
 import frappe
 from frappe import _
 import json
+from datetime import date
 
 from frappe.desk.notifications import get_filters_for
 from frappe.model.mapper import get_mapped_doc
@@ -20,7 +21,13 @@ def naming_series_name(name, company_series = None):
 	from erpnext.accounts.utils import get_fiscal_year
 	
 	if check_sub_string(name, '.YYYY.'):
-		name = name.replace('.YYYY.', '2020')
+		name = name.replace('.YYYY.', date.today().year)
+
+	if check_sub_string(name, '.YY.'):
+		name = name.replace('.YY.', str(date.today().year)[2:])
+	
+	if check_sub_string(name, 'MM.'):
+		name = name.replace('MM', f'{date.today().month:02d}')
 	
 	# changing value of fiscal according to current fiscal year 
 	if check_sub_string(name, '.fiscal.'):
@@ -87,7 +94,7 @@ def before_naming(self, method = None):
 					pass
 				elif not check:
 					frappe.db.sql("insert into tabSeries (name, current) values ('{}', 0)".format(name))
-				
+				# frappe.msgprint(name)
 				# Updating the naming series decremented by 1 for current naming series
 				frappe.db.sql("update `tabSeries` set current = {} where name = '{}'".format(int(self.series_value) - 1, name))
 

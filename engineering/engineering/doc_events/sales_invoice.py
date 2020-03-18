@@ -246,6 +246,7 @@ def create_sales_invoice(self):
 			change_delivery_authority(i.delivery_docname)
 
 		self.db_set('ref_invoice', si.name)
+	
 
 
 def cancel_sales_invoice(self):

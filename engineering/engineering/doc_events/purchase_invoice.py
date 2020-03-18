@@ -53,17 +53,24 @@ def create_purchase_invoice(self):
 					if item.net_rate != item.rate:
 						full_amount = item.full_qty * item.full_rate
 						amount_diff = item.amount - item.net_amount
-
-						target.items[index].rate = (full_amount - amount_diff) / item.full_qty
-			
+						try:
+							target.items[index].rate = (full_amount - amount_diff) / item.full_qty
+						except:
+							pass
 			if source.credit_to:
 				target.credit_to = source.credit_to.replace(source_company_abbr, target_company_abbr)
 			
 			if source.taxes_and_charges:
-				target.taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
+				taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
+				if frappe.db.exists("Sales Taxes and Charges Template", taxes_and_charges):
+					target.taxes_and_charges = taxes_and_charges
+				else:
+					target.taxes_and_charges = ''
 
+			if source.taxes:
 				for index, item in enumerate(source.taxes):
 					target.taxes[index].charge_type = "Actual"
+					target.taxes[index].included_in_print_rate = 0
 					target.taxes[index].account_head = item.account_head.replace(
 						source_company_abbr, target_company_abbr
 					)

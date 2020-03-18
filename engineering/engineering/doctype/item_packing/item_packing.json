@@ -9,12 +9,18 @@
   "item_code",
   "column_break_3",
   "series_value",
+  "posting_date",
+  "posting_time",
   "company",
   "item_name",
   "section_break_5",
   "serial_no",
   "column_break_9",
+  "include_for_manufacturing",
   "warehouse",
+  "work_order",
+  "bom_no",
+  "company_series",
   "amended_from"
  ],
  "fields": [
@@ -54,6 +60,7 @@
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Item Code",
    "options": "Item",
    "reqd": 1
@@ -74,6 +81,7 @@
    "fieldtype": "Column Break"
   },
   {
+   "fetch_from": "work_order.fg_warehouse",
    "fieldname": "warehouse",
    "fieldtype": "Link",
    "label": "Warehouse",
@@ -86,10 +94,49 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fieldname": "work_order",
+   "fieldtype": "Link",
+   "label": "Work Order",
+   "options": "Work Order"
+  },
+  {
+   "fetch_from": "work_order.bom_no",
+   "fieldname": "bom_no",
+   "fieldtype": "Link",
+   "label": "BOM No",
+   "options": "BOM",
+   "read_only": 1
+  },
+  {
+   "default": "Today",
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "label": "Posting Date"
+  },
+  {
+   "fieldname": "posting_time",
+   "fieldtype": "Time",
+   "label": "Posting Time"
+  },
+  {
+   "default": "0",
+   "fieldname": "include_for_manufacturing",
+   "fieldtype": "Check",
+   "label": "Include For Manufacturing"
+  },
+  {
+   "fetch_from": "company.company_series",
+   "fieldname": "company_series",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "Company Series",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-03-02 14:42:43.761544",
+ "modified": "2020-03-17 15:33:07.472259",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Item Packing",

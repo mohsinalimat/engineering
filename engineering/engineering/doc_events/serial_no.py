@@ -61,20 +61,6 @@ def before_save(self, method):
 			row.is_cancelled = sle.is_cancelled
 
 
-
-
-	# frappe.msgprint(self.name)
-
-	# row.company = self.company
-	# row.purchase_document_type = self.purchase_document_type
-	# row.purchase_document_no = self.purchase_document_no
-	# row.purchase_date = self.purchase_date
-	# row.purchase_time = self.purchase_time
-	# row.purchase_rate = self.purchase_rate
-	# row.supplier = self.supplier
-	# row.supplier_name = self.supplier_name
-
-
 def get_serial_nos(serial_no):
 	return [s.strip() for s in cstr(serial_no).strip().upper().replace(',', '\n').split('\n')
 		if s.strip()]

@@ -12,13 +12,13 @@ def create_internal_customer_supplier(self,method):
 	if self.allow_inter_company_transaction:
 		if frappe.db.exists("Customer", {"represents_company": self.name}):
 			customer = frappe.get_doc("Customer",self.name)
+			customer.companies = []
 			companies =  [d.company for d in frappe.get_all('Allowed To Transact With', filters = {'parent': customer.name}, fields=['company'])]
 			for raw in self.allowed_to_transact_with:
-				if raw.company not in companies:
-					customer.append("companies",{
-						'company':raw.company
-					})
-					customer.save(ignore_permissions=True)
+				customer.append("companies",{
+					'company':raw.company
+				})
+			customer.save(ignore_permissions=True)
 		else:
 			customer = frappe.new_doc("Customer")
 			customer.customer_name = self.name
@@ -39,12 +39,12 @@ def create_internal_customer_supplier(self,method):
 		if frappe.db.exists("Supplier", {"represents_company": self.name}):
 			supplier = frappe.get_doc("Supplier",self.name)
 			companies =  [d.company for d in frappe.get_all('Allowed To Transact With', filters = {'parent': supplier.name}, fields=['company'])]
+			supplier.companies = []
 			for raw in self.allowed_to_transact_with:
-				if raw.company not in companies:
-					supplier.append("companies",{
-						'company':raw.company
-					})
-					supplier.save(ignore_permissions=True)
+				supplier.append("companies",{
+					'company':raw.company
+				})
+			supplier.save(ignore_permissions=True)
 		else:
 			supplier = frappe.new_doc("Supplier")
 			supplier.supplier_name = self.name
