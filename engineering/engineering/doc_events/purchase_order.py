@@ -39,18 +39,12 @@ def create_sales_order(self):
 			child_field_map = {
 				"name": "purchase_order_item",
 			}
-<<<<<<< HEAD
-			so = make_inter_company_transaction(self, "Purchase Order", "Sales Order", "purchase_order", field_map = field_map, child_field_map = child_field_map)
-=======
 			so = make_inter_company_transaction(self, "Purchase Order", "Sales Order", "ref_po", field_map = field_map, child_field_map = child_field_map)
->>>>>>> 56aacf5d624d04f28a986aa7f52e04dd37b244c1
 			so.save(ignore_permissions = True)
 			so.submit()
 			
 			frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_no', so.name)
 			frappe.db.set_value('Purchase Order', self.name, 'inter_company_order_reference', so.name)
-<<<<<<< HEAD
-			frappe.db.set_value('Purchase Order', self.name, 'sales_order', so.name)
 			frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_date', so.transaction_date)
 
 			frappe.db.set_value("Sales Order", so.name, 'inter_company_order_reference', self.name)
@@ -59,9 +53,7 @@ def create_sales_order(self):
 			url = get_url_to_form("Sales Order", so.name)
 			frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=so.name)), title="Sales Order Created", indicator="green")
 			
-=======
 			frappe.db.set_value('Purchase Order', self.name, 'ref_so', so.name)
-			frappe.db.set_value('Purchase Order', self.name, 'order_confirmation_date', so.transaction_date)
 
 			frappe.db.set_value("Sales Order", so.name, 'inter_company_order_reference', self.name)
 			frappe.db.set_value("Sales Order", so.name, 'ref_po', self.name)
@@ -69,10 +61,8 @@ def create_sales_order(self):
 			url = get_url_to_form("Sales Order", so.name)
 			frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=so.name)), title="Sales Order Created", indicator="green")
 
->>>>>>> 56aacf5d624d04f28a986aa7f52e04dd37b244c1
 
 def cancel_sales_order(self):
-	check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
 	
 	if check_inter_company_transaction:
 		if check_inter_company_transaction == 1:
