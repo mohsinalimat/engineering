@@ -25,6 +25,7 @@ doctype_js = {
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
 	"Item": "public/js/doctype_js/item.js",
+	"Work Order": "public/js/doctype_js/work_order.js",
 }
 
 doc_events = {

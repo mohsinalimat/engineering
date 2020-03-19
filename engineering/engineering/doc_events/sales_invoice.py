@@ -293,12 +293,7 @@ def create_sales_invoice(self):
 		# for i in self.items:
 		# 	change_delivery_authority(i.delivery_docname)
 
-<<<<<<< HEAD
-		self.db_set('ref_invoice', si.name)
-	
-=======
 		self.db_set('ref_si', si.name)
->>>>>>> 56aacf5d624d04f28a986aa7f52e04dd37b244c1
 
 def update_status_updater_args(self):
 	pass

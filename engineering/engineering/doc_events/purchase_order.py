@@ -63,7 +63,7 @@ def create_sales_order(self):
 
 
 def cancel_sales_order(self):
-	
+	check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
 	if check_inter_company_transaction:
 		if check_inter_company_transaction == 1:
 			company = frappe.get_doc("Company", self.company)
@@ -78,7 +78,6 @@ def cancel_sales_order(self):
 					frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=so.name)), title="Sales Order Cancelled", indicator="red")
 
 def delete_sales_order(self):
-	frappe.throw(self.ref_so)
 	check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
 	
 	if check_inter_company_transaction:

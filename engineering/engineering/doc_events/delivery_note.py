@@ -103,11 +103,7 @@ def create_purchase_receipt(self):
 			pr.db_set('supplier_delivery_note', self.name)
 
 			url = get_url_to_form("Purchase Receipt", pr.name)
-<<<<<<< HEAD
-			frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully! Please submit the Purchase Recipient".format(url=url, name=frappe.bold(pr.name))), title="Purchase Receipt Created", indicator="green")
-=======
 			# frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully! Please submit the Purchase Recipient".format(url=url, name=frappe.bold(pr.name))), title="Purchase Receipt Created", indicator="green")
->>>>>>> 56aacf5d624d04f28a986aa7f52e04dd37b244c1
 
 def change_delivery_authority(name):
 	"""Function to change authorty of Delivery Note"""
