@@ -121,27 +121,15 @@ override_whitelisted_methods = {
 fixtures = ['Custom Field']	
 
 from erpnext.stock.stock_ledger import update_entries_after
-from engineering.override_default_class_method import raise_exceptions
-
 from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
-from engineering.override_default_class_method import set_actual_qty
 from erpnext.stock.doctype.serial_no.serial_no import SerialNo
-import frappe
+from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 
-def validate_warehouse(self):
-	if not self.get("__islocal"):
-		item_code, warehouse = frappe.db.get_value("Serial No",
-			self.name, ["item_code", "warehouse"])
-		if item_code:	
-			if not self.via_stock_ledger and item_code != self.item_code:
-				frappe.throw(_("Item Code cannot be changed for Serial No."),
-					SerialNoCannotCannotChangeError)
-		if warehouse:
-			if not self.via_stock_ledger and warehouse != self.warehouse:
-				frappe.throw(_("Warehouse cannot be changed for Serial No."),
-					SerialNoCannotCannotChangeError)
+from engineering.override_default_class_method import raise_exceptions, set_actual_qty, validate_warehouse, get_current_tax_amount, determine_exclusive_rate
 
 # override default class method
 update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
 SerialNo.validate_warehouse = validate_warehouse
+calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
+calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate

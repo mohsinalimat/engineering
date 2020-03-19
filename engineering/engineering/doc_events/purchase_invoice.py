@@ -53,29 +53,26 @@ def create_purchase_invoice(self):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
-			for index, item in enumerate(source.items):
-				if item.net_rate:
-					if item.net_rate != item.rate:
-						full_amount = item.full_qty * item.full_rate
-						amount_diff = item.amount - item.net_amount
-						try:
-							target.items[index].rate = (full_amount - amount_diff) / item.full_qty
-						except:
-							pass
+			# for index, item in enumerate(source.items):
+			# 	if item.net_rate:
+			# 		if item.net_rate != item.rate:
+			# 			full_amount = item.full_qty * item.full_rate
+			# 			amount_diff = item.amount - item.net_amount
+			# 			try:
+			# 				target.items[index].rate = (full_amount - amount_diff) / item.full_qty
+			# 			except:
+			# 				pass
 			if source.credit_to:
 				target.credit_to = source.credit_to.replace(source_company_abbr, target_company_abbr)
 			
 			if source.taxes_and_charges:
 				taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
-				if frappe.db.exists("Sales Taxes and Charges Template", taxes_and_charges):
-					target.taxes_and_charges = taxes_and_charges
-				else:
-					target.taxes_and_charges = ''
+				target.taxes_and_charges = taxes_and_charges
 
 			if source.taxes:
 				for index, item in enumerate(source.taxes):
-					target.taxes[index].charge_type = "Actual"
-					target.taxes[index].included_in_print_rate = 0
+					target.taxes[index].charge_type = source.taxes[index].charge_type
+					target.taxes[index].included_in_print_rate = source.taxes[index].included_in_print_rate
 					target.taxes[index].account_head = item.account_head.replace(
 						source_company_abbr, target_company_abbr
 					)
@@ -86,6 +83,7 @@ def create_purchase_invoice(self):
 				)
 			
 			target.run_method('set_missing_values')
+			target.run_method('calculate_taxes_and_totals')
 		
 		def update_accounts(source_doc, target_doc, source_parent):
 			target_company = frappe.db.get_value("Company", source_parent.company, "alternate_company")
@@ -140,11 +138,13 @@ def create_purchase_invoice(self):
 					"purchase_receipt_childname": "pr_detail",
 					"po_docname": "purchase_order",
 					"po_childname": "po_detail",
+					"net_amount": "discounted_amount",
 				},
 				"field_no_map": {
 					"full_rate",
 					"full_qty",
 					"series",
+					"net_rate"
 				},
 				"postprocess": update_accounts,
 			}
@@ -174,8 +174,9 @@ def create_purchase_invoice(self):
 			pi.real_difference_amount = pi.grand_total - self.grand_total
 		
 		pi.save(ignore_permissions= True)
-		
 		pi.submit()
+		
+		# pi.submit()
 
 		self.db_set('ref_pi', pi.name)
 

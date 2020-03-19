@@ -119,3 +119,12 @@ frappe.ui.form.on('Purchase Receipt', {
 		}
 	}
 });
+
+cur_frm.fields_dict.taxes_and_charges.get_query = function(doc) {
+	return {
+		filters: {
+			"docstatus": 0 && 1,
+			"company": doc.company
+		}
+	}
+};

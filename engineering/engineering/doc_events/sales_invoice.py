@@ -256,6 +256,7 @@ def create_sales_invoice(self):
 					"so_childname": "so_detail",
 					"pr_ref": "pr_detail",
 					"po_ref": "purchase_order_item",
+					"discounted_amount": "net_amount",
 				},
 				"field_no_map": {
 					"series",

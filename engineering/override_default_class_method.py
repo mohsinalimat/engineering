@@ -50,3 +50,75 @@ def set_actual_qty(self):
 				+ '<br><br>' + _("Available quantity is {0}, you need {1}").format(frappe.bold(d.actual_qty),
 					frappe.bold(d.transfer_qty)),
 				NegativeStockError, title=_('Insufficient Stock'))
+
+def validate_warehouse(self):
+	if not self.get("__islocal"):
+		item_code, warehouse = frappe.db.get_value("Serial No",
+			self.name, ["item_code", "warehouse"])
+		if item_code:	
+			if not self.via_stock_ledger and item_code != self.item_code:
+				frappe.throw(_("Item Code cannot be changed for Serial No."),
+					SerialNoCannotCannotChangeError)
+		if warehouse:
+			if not self.via_stock_ledger and warehouse != self.warehouse:
+				frappe.throw(_("Warehouse cannot be changed for Serial No."),
+					SerialNoCannotCannotChangeError)
+
+def get_current_tax_amount(self, item, tax, item_tax_map):
+		tax_rate = self._get_tax_rate(tax, item_tax_map)
+		current_tax_amount = 0.0
+
+		if tax.charge_type == "Actual":
+			# distribute the tax amount proportionally to each item row
+			actual = flt(tax.tax_amount, tax.precision("tax_amount"))
+			current_tax_amount = item.net_amount*actual / self.doc.net_total if self.doc.net_total else 0.0
+
+		elif tax.charge_type == "On Net Total":
+			if self.doc.authority == "Unauthorized":
+				current_tax_amount = (tax_rate / 100.0) * item.discounted_amount
+			else:
+				current_tax_amount = (tax_rate / 100.0) * item.net_amount
+		elif tax.charge_type == "On Previous Row Amount":
+			current_tax_amount = (tax_rate / 100.0) * \
+				self.doc.get("taxes")[cint(tax.row_id) - 1].tax_amount_for_current_item
+		elif tax.charge_type == "On Previous Row Total":
+			current_tax_amount = (tax_rate / 100.0) * \
+				self.doc.get("taxes")[cint(tax.row_id) - 1].grand_total_for_current_item
+		elif tax.charge_type == "On Item Quantity":
+			current_tax_amount = tax_rate * item.stock_qty
+
+		self.set_item_wise_tax(item, tax, tax_rate, current_tax_amount)
+
+		return current_tax_amount
+
+def determine_exclusive_rate(self):
+	if not any((cint(tax.included_in_print_rate) for tax in self.doc.get("taxes"))):
+		return
+
+	for item in self.doc.get("items"):
+		item_tax_map = self._load_item_tax_rate(item.item_tax_rate)
+		cumulated_tax_fraction = 0
+		for i, tax in enumerate(self.doc.get("taxes")):
+			tax.tax_fraction_for_current_item = self.get_current_tax_fraction(tax, item_tax_map)
+
+			if i==0:
+				tax.grand_total_fraction_for_current_item = 1 + tax.tax_fraction_for_current_item
+			else:
+				tax.grand_total_fraction_for_current_item = \
+					self.doc.get("taxes")[i-1].grand_total_fraction_for_current_item \
+					+ tax.tax_fraction_for_current_item
+
+			cumulated_tax_fraction += tax.tax_fraction_for_current_item
+
+		if cumulated_tax_fraction and not self.discount_amount_applied and item.qty:
+			if self.doc.authority == "Unauthorized":
+				full_amount = item.qty * item.rate
+				amount_diff = (item.discounted_rate * item.real_qty) - item.discounted_amount
+				item.net_amount = (full_amount - amount_diff)
+			else:
+				item.net_amount = flt(item.amount / (1 + cumulated_tax_fraction))
+			item.net_rate = flt(item.net_amount / item.qty, item.precision("net_rate"))
+			item.discount_percentage = flt(item.discount_percentage,
+				item.precision("discount_percentage"))
+
+			self._set_in_company_currency(item, ["net_rate", "net_amount"])

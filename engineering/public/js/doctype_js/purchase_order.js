@@ -1,3 +1,12 @@
+cur_frm.fields_dict.taxes_and_charges.get_query = function(doc) {
+	return {
+		filters: {
+			"docstatus": 0 && 1,
+			"company": doc.company
+		}
+	}
+};
+
 frappe.ui.form.on('Purchase Order', {
 	refresh: function(frm){
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
