@@ -5,7 +5,7 @@ frappe.ui.form.on('Work Order', {
 		frm.trigger('create_material_request')
 
 		$(".form-inner-toolbar").find("button[data-label=Finish]").css({ "float": "right" })
-		if (frm.doc.status != 'Completed' && !frm.doc.skip_transfer && frm.doc.docstatus == 1) {
+		if (frm.doc.status != 'Completed' && !frm.doc.skip_transfer && frm.doc.docstatus == 1 && frm.doc.material_transferred_for_manufacturing < frm.doc.qty) {
 			var transfer_btn = frm.add_custom_button(__('Transfer Material'), function () {
 				erpnext.work_order.make_se(frm, 'Material Transfer for Manufacture');
 			});
@@ -28,6 +28,14 @@ frappe.ui.form.on('Work Order', {
 				frm: frm
 			});
 		});
+	},
+	update_actual_qty: function (frm) {
+		frappe.call({
+			method: "engineering.engineering.doc_events.work_order.set_actual_qty_in_wo",
+			args: {
+				'wo_number': frm.doc.name
+			}
+		})
 	}
 });
 

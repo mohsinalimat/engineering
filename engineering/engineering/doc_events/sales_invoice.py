@@ -10,6 +10,10 @@ from frappe.model.mapper import get_mapped_doc
 from engineering.api import check_counter_series, validate_inter_company_transaction, get_inter_company_details
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 
+def before_validate(self, method):
+	for item in self.items:
+		item.discounted_amount = item.discounted_rate * item.real_qty
+		item.discounted_net_amount = item.discounted_amount
 
 def validate(self, method):
 	cal_full_amount(self)
@@ -49,10 +53,12 @@ def create_purchase_invoice(self):
 		)
 	
 	if check_inter_company_transaction:
+		
 		company = frappe.get_doc("Company", self.customer)
 		inter_company_list = [item.company for item in company.allowed_to_transact_with]
 	
 		if self.company in inter_company_list:
+			frappe.msgprint("Helo")
 			pi = make_inter_company_transaction(self)
 
 			for index, item in enumerate(self.items):
@@ -189,15 +195,6 @@ def create_sales_invoice(self):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
-			for index, item in enumerate(source.items):
-				if item.net_rate:
-					if item.net_rate != item.rate:
-						full_amount = item.full_qty * item.full_rate
-						amount_diff = item.amount - item.net_amount
-						try:
-							target.items[index].rate = (full_amount - amount_diff) / item.full_qty
-						except:
-							pass
 			if source.debit_to:
 				target.debit_to = source.debit_to.replace(
 					source_company_abbr, target_company_abbr
@@ -209,8 +206,8 @@ def create_sales_invoice(self):
 				)
 
 				for index, item in enumerate(source.taxes):
-					target.taxes[index].charge_type = "Actual"
-					target.taxes[index].included_in_print_rate = 0
+					target.taxes[index].charge_type = source.taxes[index].charge_type
+					target.taxes[index].included_in_print_rate = source.taxes[index].included_in_print_rate
 					target.taxes[index].account_head = item.account_head.replace(
 						source_company_abbr, target_company_abbr
 					)
@@ -256,7 +253,7 @@ def create_sales_invoice(self):
 					"so_childname": "so_detail",
 					"pr_ref": "pr_detail",
 					"po_ref": "purchase_order_item",
-					"discounted_amount": "net_amount",
+					"net_amount": "discounted_amount",
 				},
 				"field_no_map": {
 					"series",

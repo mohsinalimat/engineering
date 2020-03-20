@@ -9,6 +9,10 @@ from frappe import _
 from frappe.utils import get_url_to_form
 from engineering.api import make_inter_company_transaction
 
+def before_validate(self, method):
+	for item in self.items:
+		item.discounted_amount = item.discounted_rate * item.real_qty
+		item.discounted_net_amount = item.discounted_amount
 
 def on_submit(self, method):
 	create_sales_order(self)

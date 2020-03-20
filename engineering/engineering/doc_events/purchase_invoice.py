@@ -9,10 +9,17 @@ from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from engineering.api import make_inter_company_transaction
 
+
 def before_validate(self, method):
+	for item in self.items:
+		item.discounted_amount = item.discounted_rate * item.real_qty
+		item.discounted_net_amount = item.discounted_amount
+	
 	if self.amended_from and self.authority == "Unauthorized" and not self.ref_pi:
 		if frappe.db.exists("Purchase Invoice", {"ref_pi": self.amended_from}):
 			frappe.throw("You Can not save this Invoice!")
+	
+
 
 
 def validate(self, method):

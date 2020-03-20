@@ -11,6 +11,10 @@ from frappe.utils import get_url_to_form
 from frappe.model.utils import get_fetch_values
 from engineering.api import make_inter_company_transaction
 
+def before_validate(self, method):
+	for item in self.items:
+		item.discounted_amount = item.discounted_rate * item.real_qty
+		item.discounted_net_amount = item.discounted_amount
 
 def on_cancel(self, method):
 	cancel_purchase_received(self)

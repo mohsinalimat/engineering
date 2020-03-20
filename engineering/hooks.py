@@ -48,14 +48,17 @@ doc_events = {
 	},
 	"Sales Order": {
 		"before_naming": "engineering.api.before_naming",
+		"before_validate": "engineering.engineering.doc_events.sales_order.before_validate",
 	},
 	"Delivery Note": {
+		"before_validate": "engineering.engineering.doc_events.delivery_note.before_validate",
 		"before_naming": "engineering.api.before_naming",
 		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
 		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
 		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
 	},
 	"Purchase Order": {
+		"before_validate": "engineering.engineering.doc_events.purchase_order.before_validate",
 		"on_submit": "engineering.engineering.doc_events.purchase_order.on_submit",
 		"before_naming": "engineering.api.before_naming",
 		"on_cancel": "engineering.engineering.doc_events.purchase_order.on_cancel",
@@ -69,6 +72,7 @@ doc_events = {
 		"before_naming": "engineering.api.before_naming",
 	},
 	"Sales Invoice": {
+		"before_validate": "engineering.engineering.doc_events.sales_invoice.before_validate",
 		"before_naming": "engineering.api.before_naming",
 		"validate": "engineering.engineering.doc_events.sales_invoice.validate",
 		"on_submit": "engineering.engineering.doc_events.sales_invoice.on_submit",
@@ -92,7 +96,7 @@ doc_events = {
 		"before_validate": "engineering.engineering.doc_events.serial_no.before_validate",
 	},
 	"Purchase Receipt": {
-		# "on_cancel": "engineering.engineering.doc_events.purchase_receipt.on_cancel"
+		"before_validate": "engineering.engineering.doc_events.purchase_receipt.before_validate",
 	},
 	"Journal Entry": {
 		"on_submit": "engineering.engineering.doc_events.journal_entry.on_submit",

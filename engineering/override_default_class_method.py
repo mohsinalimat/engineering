@@ -75,7 +75,7 @@ def get_current_tax_amount(self, item, tax, item_tax_map):
 
 		elif tax.charge_type == "On Net Total":
 			if self.doc.authority == "Unauthorized":
-				current_tax_amount = (tax_rate / 100.0) * item.discounted_amount
+				current_tax_amount = (tax_rate / 100.0) * item.discounted_net_amount
 			else:
 				current_tax_amount = (tax_rate / 100.0) * item.net_amount
 		elif tax.charge_type == "On Previous Row Amount":
@@ -109,15 +109,23 @@ def determine_exclusive_rate(self):
 					+ tax.tax_fraction_for_current_item
 
 			cumulated_tax_fraction += tax.tax_fraction_for_current_item
-
 		if cumulated_tax_fraction and not self.discount_amount_applied and item.qty:
+			# Finbyz Changes for Tax Calculation on Real Rate
 			if self.doc.authority == "Unauthorized":
-				full_amount = item.qty * item.rate
-				amount_diff = (item.discounted_rate * item.real_qty) - item.discounted_amount
-				item.net_amount = (full_amount - amount_diff)
+				amount_diff = item.amount - item.discounted_amount
+				item.discounted_net_amount = flt((item.amount - amount_diff) / (1 + cumulated_tax_fraction))
+				
+				try:
+					item.discounted_net_rate = flt(item.discounted_net_amount / item.real_qty)
+				except:
+					item.discounted_net_rate = 0
+								
+				item.net_amount = item.amount - (item.discounted_amount - item.discounted_net_amount)
+				item.net_rate = flt(item.net_amount / item.qty, item.precision("net_rate"))
+			# Finbyz Changes end here.
 			else:
 				item.net_amount = flt(item.amount / (1 + cumulated_tax_fraction))
-			item.net_rate = flt(item.net_amount / item.qty, item.precision("net_rate"))
+				item.net_rate = flt(item.net_amount / item.qty, item.precision("net_rate"))
 			item.discount_percentage = flt(item.discount_percentage,
 				item.precision("discount_percentage"))
 
