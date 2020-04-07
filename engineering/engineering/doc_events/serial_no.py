@@ -60,6 +60,12 @@ def before_save(self, method):
 			row.company = sle.company
 			row.is_cancelled = sle.is_cancelled
 
+def on_save(self, method):
+	# if not self.transaction_details:
+	# 	self.db_set("item_code", '')
+	# 	self.db_set("warehouse", '')
+	# 	self.db_set("company", '')
+	pass
 
 def get_serial_nos(serial_no):
 	return [s.strip() for s in cstr(serial_no).strip().upper().replace(',', '\n').split('\n')

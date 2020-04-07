@@ -7,6 +7,9 @@
  "field_order": [
   "naming_series",
   "item_code",
+  "item_group",
+  "dealer_points",
+  "retailer_points",
   "column_break_3",
   "series_value",
   "posting_date",
@@ -133,10 +136,32 @@
    "hidden": 1,
    "label": "Company Series",
    "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.item_group",
+   "fieldname": "item_group",
+   "fieldtype": "Link",
+   "label": "Item Group",
+   "options": "Item Group",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_group.dealer_points",
+   "fieldname": "dealer_points",
+   "fieldtype": "Int",
+   "label": "Dealer Points",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_group.retailer_points",
+   "fieldname": "retailer_points",
+   "fieldtype": "Int",
+   "label": "Retailer Points",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-03-17 15:33:07.472259",
+ "modified": "2020-03-24 12:06:47.809507",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Item Packing",

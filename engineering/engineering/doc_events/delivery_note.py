@@ -18,6 +18,7 @@ def before_validate(self, method):
 
 def on_cancel(self, method):
 	cancel_purchase_received(self)
+	update_real_delivered_qty(self, "cancel")
 
 def cancel_purchase_received(self):
 	try:
@@ -45,7 +46,25 @@ def on_submit(self, method):
 	"""Custom On Submit Fuction"""
 
 	create_purchase_receipt(self)
-	change_delivery_authority(self.name)
+	# change_delivery_authority(self.name)
+	update_real_delivered_qty(self, "submit")
+
+def update_real_delivered_qty(self, method):
+	if method == "submit":
+		for item in self.items:
+			if item.against_sales_order:
+				sales_order_item = frappe.get_doc("Sales Order Item", item.so_detail)
+				delivered_real_qty = item.real_qty + sales_order_item.delivered_real_qty
+
+				sales_order_item.db_set("delivered_real_qty", delivered_real_qty)
+
+	if method == "cancel":
+		for item in self.items:
+			if item.against_sales_order:
+				sales_order_item = frappe.get_doc("Sales Order Item", item.so_detail)
+				delivered_real_qty = sales_order_item.delivered_real_qty - item.real_qty
+
+				sales_order_item.db_set("delivered_real_qty", delivered_real_qty)
 
 def on_trash(self, method):
 	""" Custom On Trash Function """
@@ -221,6 +240,8 @@ def create_invoice(source_name, target_doc=None):
 				"rate":"full_rate",
 				"purchase_order_item": "po_ref",
 				"pr_detail": "pr_ref",
+				"serial_no": "serial_no_ref",
+				"batch_no": "batch_ref",
 			},
 			"field_no_map": [
 				"income_account",

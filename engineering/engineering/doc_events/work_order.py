@@ -33,14 +33,14 @@ def create_material_request(source_name, target_doc=None):
 def set_actual_qty_in_wo(wo_number):
 	wo = frappe.get_doc("Work Order", wo_number)
 	for d in wo.get('required_items'):
-		previous_sle = get_previous_sle({
-			"item_code": d.item_code,
-			"warehouse": d.source_warehouse or wo.source_warehouse,
-			"posting_date": datetime.now().strftime("%Y-%m-%d"),
-			"posting_time": datetime.now().strftime("%H:%M:%S.%f")
-		})
-
-		# get actual stock at source warehouse
-		d.db_set('available_qty_at_source_warehouse',previous_sle.get("qty_after_transaction") or 0)
-		#d.actual_qty = previous_sle.get("qty_after_transaction") or 0
-		return "Actual Quantity Updated"
+		data = frappe.db.sql("""
+			select sum(actual_qty) 
+				from `tabStock Ledger Entry` 
+			where 
+				item_code = '{0}' and warehouse = '{1}' 
+		""".format(d.item_code,d.source_warehouse))
+		if data:
+			for qty in data:
+				d.db_set('available_qty_at_source_warehouse',qty)
+			
+	return "Actual Quantity Updated"

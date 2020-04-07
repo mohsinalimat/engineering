@@ -94,8 +94,10 @@ doc_events = {
 	"Serial No": {
 		"before_save": "engineering.engineering.doc_events.serial_no.before_save",
 		"before_validate": "engineering.engineering.doc_events.serial_no.before_validate",
+		"on_update": "engineering.engineering.doc_events.serial_no.on_save",
 	},
 	"Purchase Receipt": {
+		"before_naming": "engineering.api.before_naming",
 		"before_validate": "engineering.engineering.doc_events.purchase_receipt.before_validate",
 	},
 	"Journal Entry": {
@@ -104,9 +106,17 @@ doc_events = {
 		"on_trash": "engineering.engineering.doc_events.journal_entry.on_trash",
 		"before_naming": "engineering.api.before_naming",
 	},
+	"Stock Entry": {
+		"on_submit": "engineering.engineering.doc_events.stock_entry.on_submit",
+		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
+	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
 	}
+}
+
+override_doctype_dashboards = {
+	"Sales Order": "engineering.engineering.dashboard.sales_order.get_data",
 }
 
 override_whitelisted_methods = {
@@ -129,11 +139,13 @@ from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
 from erpnext.stock.doctype.serial_no.serial_no import SerialNo
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 
-from engineering.override_default_class_method import raise_exceptions, set_actual_qty, validate_warehouse, get_current_tax_amount, determine_exclusive_rate
+from engineering.override_default_class_method import raise_exceptions, set_actual_qty, validate_warehouse, get_current_tax_amount, determine_exclusive_rate, calculate_taxes, search_serial_or_batch_or_barcode_number
 
+# erpnext.selling.page.point_of_sale.point_of_sale.search_serial_or_batch_or_barcode_number = search_serial_or_batch_or_barcode_number
 # override default class method
 update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
 SerialNo.validate_warehouse = validate_warehouse
 calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
 calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate
+calculate_taxes_and_totals.calculate_taxes = calculate_taxes

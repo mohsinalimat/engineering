@@ -2,12 +2,14 @@ import frappe
 from frappe import _
 import json
 from datetime import date
+import datetime
 
 from frappe.desk.notifications import get_filters_for
 from frappe.model.mapper import get_mapped_doc
 
 from frappe.utils import getdate
 from erpnext.accounts.utils import get_fiscal_year
+from erpnext.stock.get_item_details import get_price_list_rate
 
 def check_sub_string(string, sub_string): 
 	"""Function to check if string has sub string"""
@@ -16,38 +18,19 @@ def check_sub_string(string, sub_string):
 
 
 def naming_series_name(name, company_series = None):
-	"""Function to convert naming series name"""
+	current_fiscal = frappe.db.get_value('Global Defaults', None, 'current_fiscal_year')
+	fiscal = frappe.db.get_value("Fiscal Year", str(current_fiscal),'fiscal')
 
-	from erpnext.accounts.utils import get_fiscal_year
-	
-	if check_sub_string(name, '.YYYY.'):
-		name = name.replace('.YYYY.', date.today().year)
-
-	if check_sub_string(name, '.YY.'):
-		name = name.replace('.YY.', str(date.today().year)[2:])
-	
-	if check_sub_string(name, 'MM.'):
-		name = name.replace('MM', f'{date.today().month:02d}')
-	
-	# changing value of fiscal according to current fiscal year 
-	if check_sub_string(name, '.fiscal.'):
-		current_fiscal = frappe.db.get_value('Global Defaults', None, 'current_fiscal_year')
-		fiscal = frappe.db.get_value("Fiscal Year", str(current_fiscal),'fiscal')
-		name = name.replace('.fiscal.', str(fiscal))
-
-	# changing value of company series according to company
 	if company_series:
-		if check_sub_string(name, 'company_series.'):
-			name = name.replace('company_series.', str(company_series))
-		elif check_sub_string(name, '.company_series.'):
-			name = name.replace('.company_series.', str(company_series))
-
-	# removing the hash symbol from naming series
-	if check_sub_string(name, ".#"):
-		name = name.replace('#', '')
-		if name[-1] == '.':
-			name = name[:-1]
+		name = name.replace('company_series', str(company_series))
 	
+	name = name.replace('YYYY', str(date.today().year))
+	name = name.replace('YY', str(date.today().year)[2:])
+	name = name.replace('MM', f'{date.today().month:02d}')
+	name = name.replace('fiscal', str(fiscal))
+	name = name.replace('#', '')
+	name = name.replace('.', '')
+
 	return name
 
 
@@ -357,3 +340,49 @@ def get_serial_no_series(name, posting_date):
 	current_fiscal = get_fiscal_year(posting_date)[0]
 	
 	return str(name) + str(frappe.db.get_value("Fiscal Year", current_fiscal, 'fiscal_series'))
+
+@frappe.whitelist()
+def create_credit_note(company,customer_code,item_detail=None):
+	if company and customer_code:
+		doc = frappe.new_doc("Sales Invoice")
+		doc.company = company
+		doc.customer = customer_code
+		doc.naming_series = 'CR-.fiscal.company_series.-.####'
+		doc.posting_date = datetime.date.today()
+		doc.posting_time = datetime.datetime.now().strftime ("%H:%M:%S")
+		doc.is_return = 1
+		doc.created_by_api = 1
+		doc.selling_price_list = frappe.db.get_value("Customer",customer_code,'default_price_list') or frappe.db.get_single_value('Selling Settings', 'selling_price_list')
+		# item_detail =json.load(item_detail)
+		for item in item_detail.get('item_detail'):
+			item_series = frappe.db.get_value('Item',item['item_code'],'item_series')
+			if not item_series:
+				frappe.throw(_('Item Series is mandatory for item {0}').format(item['item_code']))
+			rate = frappe.db.get_value("Item Price",{'item_code':item_series,'price_list':doc.selling_price_list},'price_list_rate')
+			doc.append('items',{
+				'item_variant': item['item_code'],
+				'item_code': item_series,
+				'qty': -(item['qty']),
+				'rate': rate or 0,
+				'conversion_factor': 1
+			})
+		doc.save(ignore_permissions = True)
+		if doc.taxes_and_charges:
+			tax_doc = frappe.get_doc('Sales Taxes and Charges Template',doc.taxes_and_charges)
+			for row in tax_doc.taxes:
+				doc.append('taxes',{
+					'charge_type': row.charge_type,
+					'row_id': row.row_id,
+					'account_head': row.account_head,
+					'description': row.description,
+					'included_in_print_rate': row.included_in_print_rate,
+					'cost_center': row.cost_center,
+					'rate': row.rate,
+					'tax_amount': row.tax_amount
+				})
+		doc.run_method("set_missing_values")
+		doc.run_method('calculate_taxes_and_totals')
+		doc.save(ignore_permissions = True)
+		doc.submit()
+		return doc.name , abs(doc.rounded_total)
+	

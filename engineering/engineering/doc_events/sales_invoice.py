@@ -12,8 +12,14 @@ from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 
 def before_validate(self, method):
 	for item in self.items:
-		item.discounted_amount = item.discounted_rate * item.real_qty
-		item.discounted_net_amount = item.discounted_amount
+		if item.discounted_rate and item.real_qty:
+			item.discounted_amount = item.discounted_rate * item.real_qty
+			item.discounted_net_amount = item.discounted_amount
+	
+	if not self.ref_si:
+		for item in self.items:
+			item.full_qty = item.qty
+			item.full_rate = item.rate
 
 def validate(self, method):
 	cal_full_amount(self)
@@ -231,6 +237,7 @@ def create_sales_invoice(self):
 				"doctype": "Sales Invoice",
 				"field_map": {
 					"ref_si": "name",
+					"is_return": "is_return",
 				},
 				"field_no_map":{
 					"authority",
@@ -254,6 +261,8 @@ def create_sales_invoice(self):
 					"pr_ref": "pr_detail",
 					"po_ref": "purchase_order_item",
 					"net_amount": "discounted_amount",
+					"serial_no_ref": "serial_no",
+					"batch_ref": "batch_no",
 				},
 				"field_no_map": {
 					"series",
@@ -279,8 +288,9 @@ def create_sales_invoice(self):
 
 		si = get_sales_invoice_entry(self.name)
 		
-		si.naming_series = 'A' + si.naming_series
-		si.series_value = self.series_value
+		si.naming_series = 'A' + self.naming_series
+		si.name = 'A' + self.name
+		# si.series_value = self.series_value
 		si.save(ignore_permissions = True)
 
 		si.real_difference_amount = si.rounded_total - self.rounded_total
@@ -350,4 +360,5 @@ def delete_sales_invoice(self):
 		frappe.delete_doc("Sales Invoice", self.ref_si, force = 1, ignore_permissions=True)
 
 def update_status_updater_args(self):
-	self.status_updater[0]['target_parent_field'] = 'full_amount'
+	# self.status_updater[0]['target_parent_field'] = 'full_amount'
+	pass

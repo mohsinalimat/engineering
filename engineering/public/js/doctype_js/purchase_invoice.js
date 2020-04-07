@@ -7,6 +7,48 @@ cur_frm.fields_dict.taxes_and_charges.get_query = function(doc) {
 	}
 };
 
+erpnext.accounts.PurchaseInvoice = erpnext.accounts.PurchaseInvoice.extend({
+	scan_barcode: function(){
+		let scan_barcode_field = this.frm.fields_dict["scan_barcode"];
+
+		let doc = this.frm.doc;
+		let frm = this.frm;
+		if(this.frm.doc.scan_barcode) {
+			frappe.call({
+				method: "engineering.override_default_class_method.search_serial_or_batch_or_barcode_number",
+				args: { search_value: this.frm.doc.scan_barcode },
+				callback: function(r){
+					
+					if (r.message.item_code){
+						let data = r.message;
+						var flag = false;
+						(doc.items || []).forEach(function(item, idx) {
+							if (data.item_code == item.item_code){
+								let serial_no = item.serial_no + '\n';
+								frappe.model.set_value(item.doctype, item.name, 'serial_no', serial_no + data.serial_no);
+								flag = true
+							}
+						});
+						if (flag == false){
+							let d =frm.add_child('items');
+							frappe.model.set_value(d.doctype, d.name, 'item_code', data.item_code);
+							frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
+							frm.refresh_field('items');
+						}
+
+						scan_barcode_field.set_value('');
+					} else {
+						scan_barcode_field.set_new_description(__('Cannot find Item with this barcode'));
+					}
+				}
+			});
+		}
+	}
+});
+
+// for backward compatibility: combine new and previous states
+$.extend(cur_frm.cscript, new erpnext.accounts.PurchaseInvoice({frm: cur_frm}));
+
 frappe.ui.form.on('Purchase Invoice', {
 	refresh: function(frm){
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){

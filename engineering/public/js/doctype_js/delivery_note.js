@@ -1,4 +1,66 @@
+// cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function(doc,cdt,cdn) {
+// 	let d = locals[cdt][cdn];
+// 	if(cur_frm.doc.authority == "Authorized"){
+// 		return {
+// 			filters: {
+// 				"item_series": ['NOT IN', [null, '']],
+// 			}
+// 		}
+// 	}else{
+// 		return {
+// 			filters: {
+// 				"item_series": ['IN', [null, '']],
+// 			}
+// 		}
+// 	}
+// };
+
 erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.extend({
+	scan_barcode: function(){
+		let scan_barcode_field = this.frm.fields_dict["scan_barcode"];
+
+		let show_description = function(idx, exist = null) {
+			if (exist) {
+				scan_barcode_field.set_new_description(__('Row #{0}: Qty increased by 1', [idx]));
+			} else {
+				scan_barcode_field.set_new_description(__('Row #{0}: Item added', [idx]));
+			}
+		};
+
+		let doc = this.frm.doc;
+		let frm = this.frm;
+		if(this.frm.doc.scan_barcode) {
+			frappe.call({
+				method: "engineering.override_default_class_method.search_serial_or_batch_or_barcode_number",
+				args: { search_value: this.frm.doc.scan_barcode },
+				callback: function(r){
+					
+					if (r.message.item_code){
+						let data = r.message;
+						var flag = false;
+						(doc.items || []).forEach(function(item, idx) {
+							if (data.item_code == item.item_code){
+								let serial_no = item.serial_no + '\n';
+								frappe.model.set_value(item.doctype, item.name, 'serial_no', serial_no + data.serial_no);
+								flag = true
+							}
+						});
+						if (flag == false){
+							let d =frm.add_child('items');
+							frappe.model.set_value(d.doctype, d.name, 'item_code', data.item_code);
+							frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
+							frm.refresh_field('items');
+						}
+
+						scan_barcode_field.set_value('');
+					} else {
+						scan_barcode_field.set_new_description(__('Cannot find Item with this barcode'));
+					}
+				}
+			});
+		}
+		// return false;
+	},
 	refresh: function(doc, dt, dn) {
 		var me = this;
 		// this._super();
@@ -128,7 +190,6 @@ frappe.ui.form.on('Delivery Note', {
     },
     naming_series: function(frm) {
         if (frm.doc.company && !frm.doc.amended_from){
-            console.log(1)
             frappe.call({
                 method: "engineering.api.check_counter_series",
                 args: {

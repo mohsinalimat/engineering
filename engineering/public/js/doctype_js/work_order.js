@@ -13,7 +13,7 @@ frappe.ui.form.on('Work Order', {
 		}
 		cur_frm.custom_make_buttons = {}
 	},
-	wip_warehouse: function (frm) {
+	source_warehouse: function (frm) {
 	    frm.trigger('set_sales_warehouse')
 	},
 	set_sales_warehouse: function (frm) {
@@ -34,6 +34,11 @@ frappe.ui.form.on('Work Order', {
 			method: "engineering.engineering.doc_events.work_order.set_actual_qty_in_wo",
 			args: {
 				'wo_number': frm.doc.name
+			},
+			callback: function (r) {
+				frappe.msgprint(r.message);
+				frm.refresh_fields();
+				location.reload();
 			}
 		})
 	}
