@@ -15,11 +15,11 @@ def before_validate(self, method):
 		if item.discounted_rate and item.real_qty:
 			item.discounted_amount = item.discounted_rate * item.real_qty
 			item.discounted_net_amount = item.discounted_amount
-	
-	if not self.ref_si:
-		for item in self.items:
-			item.full_qty = item.qty
-			item.full_rate = item.rate
+	if self.authority != "Authorized":
+		if not self.ref_si:
+			for item in self.items:
+				item.full_qty = item.qty
+				item.full_rate = item.rate
 
 def validate(self, method):
 	cal_full_amount(self)

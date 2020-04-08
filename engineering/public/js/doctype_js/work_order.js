@@ -1,3 +1,5 @@
+//frappe.require("/assets/engineering/js/override_make_se.js");
+
 frappe.ui.form.on('Work Order', {
 	refresh: function(frm) {
 
@@ -55,6 +57,7 @@ frappe.ui.form.on('Work Order Item', {
 		var row = locals[cdt][cdn];
 		row.source_warehouse = frm.doc.wip_warehouse;
 		frappe.model.set_value(cdt, cdn, 'source_warehouse', frm.doc.source_warehouse)
+		frappe.model.set_value(cdt, cdn, 'allow_alternative_item', 1)
 		frm.refresh_field("required_items");
 	},
 })

@@ -172,6 +172,22 @@ def create_invoice(source_name, target_doc=None):
 		if len(target.get("items")) == 0:
 			frappe.throw(_("All these items have already been invoiced"))
 
+		target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
+		source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
+		
+
+		if source.taxes_and_charges:
+			target_taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
+			if frappe.db.exists("Sales Taxes and Charges Template", target_taxes_and_charges):
+				target.taxes_and_charges = target_taxes_and_charges
+		target.taxes = source.taxes
+		if source.taxes:
+			for index, value in enumerate(source.taxes):
+				target.taxes[index].account_head = source.taxes[index].account_head.replace(source_company_abbr, target_company_abbr)
+				if source.taxes[index].cost_center:
+					target.taxes[index].cost_center = source.taxes[index].cost_center.replace(source_company_abbr, target_company_abbr)
+
+
 		target.run_method("calculate_taxes_and_totals")
 
 		if source.company_address:

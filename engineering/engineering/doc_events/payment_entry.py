@@ -97,16 +97,12 @@ def create_payment_entry(self):
 
 	if authority == "Authorized":
 		pe = get_payment_entry(self.name)
-		try:
-			pe.naming_series = 'A' + pe.naming_series
-			pe.series_value = self.series_value
-			pe.save(ignore_permissions= True)
-			self.db_set('ref_pe', pe.name)
-			frappe.db.commit()
-			pe.submit()
-		except Exception as e:
-			frappe.db.rollback()
-			frappe.throw(e)
+		pe.naming_series = 'A' + pe.naming_series
+		pe.series_value = self.series_value
+		pe.save(ignore_permissions= True)
+		self.db_set('ref_pe', pe.name)
+		frappe.db.commit()
+		pe.submit()
 	
 	if authority == "Unauthorized":
 		if not self.ref_pe:

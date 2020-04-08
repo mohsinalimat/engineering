@@ -11,6 +11,7 @@ from frappe.utils import getdate
 from erpnext.accounts.utils import get_fiscal_year
 from erpnext.stock.get_item_details import get_price_list_rate
 
+
 def check_sub_string(string, sub_string): 
 	"""Function to check if string has sub string"""
 
@@ -385,4 +386,6 @@ def create_credit_note(company,customer_code,item_detail=None):
 		doc.save(ignore_permissions = True)
 		doc.submit()
 		return doc.name , abs(doc.rounded_total)
-	
+
+
+

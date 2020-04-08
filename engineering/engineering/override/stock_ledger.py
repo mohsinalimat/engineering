@@ -1,6 +1,7 @@
 import frappe
 from frappe import _, ValidationError
 from frappe.utils import cint, flt, formatdate, format_time
+from erpnext.stock.stock_ledger import get_previous_sle
 
 class NegativeStockError(ValidationError): pass
 

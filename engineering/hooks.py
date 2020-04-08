@@ -109,6 +109,7 @@ doc_events = {
 	"Stock Entry": {
 		"on_submit": "engineering.engineering.doc_events.stock_entry.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
+		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate"
 	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
@@ -139,12 +140,18 @@ from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
 from erpnext.stock.doctype.serial_no.serial_no import SerialNo
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 
-from engineering.override_default_class_method import raise_exceptions, set_actual_qty, validate_warehouse, get_current_tax_amount, determine_exclusive_rate, calculate_taxes, search_serial_or_batch_or_barcode_number
+from engineering.override_default_class_method import search_serial_or_batch_or_barcode_number
 
+from engineering.engineering.override.stock_ledger import raise_exceptions, set_actual_qty
+from engineering.engineering.override.serial_no import validate_warehouse
+from engineering.engineering.override.taxes_and_totals import get_current_tax_amount, determine_exclusive_rate, calculate_taxes
+
+from engineering.engineering.doc_events.stock_entry import get_items as my_get_items
 # erpnext.selling.page.point_of_sale.point_of_sale.search_serial_or_batch_or_barcode_number = search_serial_or_batch_or_barcode_number
 # override default class method
 update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
+StockEntry.get_items =  my_get_items
 SerialNo.validate_warehouse = validate_warehouse
 calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
 calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate
