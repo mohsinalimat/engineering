@@ -4,6 +4,39 @@ from frappe.utils import cstr, flt
 from erpnext.manufacturing.doctype.bom.bom import add_additional_cost
 from erpnext.stock.doctype.item.item import get_item_defaults
 from six import itervalues
+from frappe.model.mapper import get_mapped_doc
+
+
+def on_trash(self, method):
+	se_list = []
+	if self.se_ref:
+		se_list.append(self.se_ref)
+		if frappe.db.exists("Stock Entry", self.se_ref):
+			se_doc = frappe.get_doc("Stock Entry", self.se_ref)
+			
+			if se_doc.jw_ref:
+				se_list.append(se_doc.jw_ref)
+
+			if se_doc.se_ref:
+				se_list.append(se_doc.se_ref)
+	
+	if self.jw_ref:
+		se_list.append(self.jw_ref)
+		if frappe.db.exists("Stock Entry", self.jw_ref):
+			jw_doc = frappe.get_doc("Stock Entry", self.jw_ref)
+
+			if jw_doc.jw_ref:
+				se_list.append(jw_doc.jw_ref)
+
+			if jw_doc.se_ref:
+				se_list.append(jw_doc.se_ref)
+
+	se_list = list(set(se_list))
+
+	for item in se_list:
+		doc = frappe.get_doc("Stock Entry", item)
+		doc.db_set('se_ref', '')
+		doc.db_set('jw_ref', '')
 
 def on_cancel(self, method):
 	for item in self.items:
@@ -11,6 +44,23 @@ def on_cancel(self, method):
 			for serial_no in get_serial_nos(item.serial_no):
 				doc = frappe.get_doc("Serial No", serial_no)
 				doc.save()
+	#cancel_job_work_receipt_entry(self)
+	cancel_job_work(self)
+
+def cancel_job_work(self):
+	if self.jw_ref:
+		jw_doc = frappe.get_doc("Stock Entry", self.jw_ref)
+		jw_doc.flags.ignore_links = True
+
+		if jw_doc.docstatus == 1:
+			jw_doc.cancel()
+	
+	if self.se_ref:
+		se_doc = frappe.get_doc("Stock Entry", self.se_ref)
+		se_doc.flags.ignore_links = True
+
+		if se_doc.docstatus == 1:
+			se_doc.cancel()
 
 def on_submit(self, method):
 	for item in self.items:
@@ -18,27 +68,14 @@ def on_submit(self, method):
 			for serial_no in get_serial_nos(item.serial_no):
 				doc = frappe.get_doc("Serial No", serial_no)
 				doc.save()
+	create_job_work_receipt_entry(self)
 	create_stock_entry(self)
-
 def get_serial_nos(serial_no):
 	return [s.strip() for s in cstr(serial_no).strip().upper().replace(',', '\n').split('\n')
 		if s.strip()]
 
 def before_validate(self,method):
 	pass
-	#calculate_rate_for_finish_item(self)
-
-def calculate_rate_for_finish_item(self):
-	if self.purpose in ["Manufacture", "Repack"]:
-		raw_material_cost = 0
-		for d in self.get("items"):
-			if not d.t_warehouse and self.work_order \
-				and frappe.db.get_single_value("Manufacturing Settings", "material_consumption"):
-				raw_material_cost += (flt(d.qty)*flt(d.basic_rate))
-
-		if raw_material_cost:
-			d.basic_rate = flt((raw_material_cost) / flt(d.qty), d.precision("basic_rate"))
-			d.basic_amount = flt((raw_material_cost), d.precision("basic_amount"))
 	
 def get_items(self):
 	self.set('items', [])
@@ -158,8 +195,26 @@ def create_stock_entry(self):
 	def get_stock_entry(source_name, target_doc=None, ignore_permissions= True):
 		def set_missing_value(source, target):
 			target.company = frappe.db.get_value("Company", source.company, "alternate_company")
+			target.from_job_work = 1
+			if source.send_to_company:
+				target.job_work_company = frappe.db.get_value("Company", source.job_work_company, 'alternate_company')
 
-			target_run("set_missing_value")
+			if source.stock_entry_type == "Manufacture":
+				target.stock_entry_type = "Manufacturing"
+			
+			if source.stock_entry_type == "Material Transfer for Manufacture":
+				target.stock_entry_type = "Material Transfer"
+			
+			source_abbr = frappe.db.get_value("Company", source.company,'abbr')
+			target_abbr = frappe.db.get_value("Company", target.company,'abbr')
+			
+			if source.from_warehouse:
+				target.from_warehouse = source.from_warehouse.replace(source_abbr, target_abbr)
+
+			if source.to_warehouse:
+				target.to_warehouse = source.to_warehouse.replace(source_abbr, target_abbr)
+
+			target.run_method("set_missing_value")
 		
 		def update_details(source_doc, target_doc, source_parent):
 			source_company = source_parent.company
@@ -173,28 +228,40 @@ def create_stock_entry(self):
 
 			if source_doc.expense_account:
 				target_doc.expense_account = source_doc.expense_account.replace(source_abbr, target_abbr)
+			
+			if source_doc.s_warehouse:
+				target_doc.s_warehouse = source_doc.s_warehouse.replace(source_abbr, target_abbr)
+			
+			if source_doc.t_warehouse:
+				target_doc.t_warehouse = source_doc.t_warehouse.replace(source_abbr, target_abbr)
+			
+			if source_parent.stock_entry_type == "Material Receipt":
+				target_doc.basic_rate = source_doc.basic_rate
 
 		fields = {
 			"Stock Entry": {
 				"doctype": "Stock Entry",
 				"field_map": {
-
+					"name": "se_ref",
 				},
 				"field_no_map": [
 					"from_warehouse",
+					"to_warehouse"
 					"scan_barcode",
 					"reference_doctype",
 					"reference_docname",
 					"company_series",
 					"authority",
 					"remark",
-					"is_opening"
+					"is_opening",
+					"purpose",
+					"jw_ref",
 				]
 			},
 			"Stock Entry Detail": {
-				"doctype": "Stock Entry Detain",
+				"doctype": "Stock Entry Detail",
 				"field_map": {
-					"item_series": "item_code"
+					"item_series": "item_code",
 				},
 				"field_no_map": [
 					"item_series",
@@ -205,13 +272,18 @@ def create_stock_entry(self):
 					"barcode",
 					"batch_no",
 					"serial_no",
+					"basic_rate",
+					"work_order",
+					"bom_no",
+					"fg_completed_qty",
+					"use_multi_level_bom"
 				],
 				"postprocess": update_details
 			}
 		}
 	
 		doclist = get_mapped_doc(
-			"Sales Invoice",
+			"Stock Entry",
 			source_name,
 			fields,
 			target_doc,
@@ -221,10 +293,117 @@ def create_stock_entry(self):
 
 		return doclist
 	authority = authority = frappe.db.get_value("Company", self.company, "authority")
-	if authority == "Authorized":
+	if authority == "Unauthorized" and self.replicate and not self.se_ref:
 		se = get_stock_entry(self.name)
 
 		se.naming_series = "A" + self.naming_series
 
 		se.save(ignore_permissions = True)
-		se.submit()
+
+		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing"]:
+			se.get_stock_and_rate()
+		se.save(ignore_permissions = True)
+
+		self.db_set('se_ref', se.name)
+		self.se_ref = se.name
+
+	if self.se_ref and self.jw_ref:
+		if frappe.db.exists("Stock Entry", {'se_ref': self.jw_ref}):
+			doc1 = frappe.get_doc("Stock Entry", {'se_ref': self.jw_ref})
+			if not doc1.jw_ref:
+				doc1.db_set('jw_ref', self.se_ref)
+		
+			doc2 = frappe.get_doc("Stock Entry", self.se_ref)
+			if not doc2.jw_ref:
+				doc2.db_set('jw_ref', doc1.name)
+
+@frappe.whitelist()
+def submit_stock_entry(name):
+	doc = frappe.get_doc("Stock Entry", name)
+	frappe.msgprint(str(doc.name))
+	if doc.docstatus == 0:
+		doc.save(ignore_permissions = True)
+		if doc.stock_entry_type in ['Jobwork Manufacturing', 'Send Jobwork Finish', 'Material Transfer', 'Material Issue', 'Repack', "Manufacturing"]:
+			doc.get_stock_and_rate()
+			doc.calculate_rate_and_amount()
+		
+		doc.flags.ignore_permissions = True
+		doc.submit()
+
+		return doc.jw_ref
+
+@frappe.whitelist()
+def submit_job_work_entry(name):
+	doc = frappe.get_doc("Stock Entry", name)
+	frappe.msgprint(str(doc.name))
+	if doc.docstatus == 0:
+		doc.save(ignore_permissions = True)
+		if doc.stock_entry_type in ['Jobwork Manufacturing', 'Send Jobwork Finish', 'Material Transfer', 'Material Issue', 'Repack', "Manufacturing"]:
+			doc.get_stock_and_rate()
+			doc.calculate_rate_and_amount()
+		
+		doc.flags.ignore_permissions = True
+		doc.submit()
+
+		return doc.se_ref
+
+@frappe.whitelist()
+def create_job_work_receipt_entry(self):
+	if self.stock_entry_type == "Send to Jobwork" and self.purpose == "Material Transfer" and self.send_to_company and not self.jw_ref:
+
+		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
+		target_abbr = frappe.db.get_value("Company", self.job_work_company,'abbr')
+		expense_account = frappe.db.get_value('Company',self.job_work_company,'job_work_difference_account')
+		job_work_warehouse = frappe.db.get_value('Company',self.job_work_company,'job_work_warehouse')
+
+		if not expense_account or not job_work_warehouse:
+			frappe.throw(_("Please set Job work difference account and warehouse in company <b>{0}</b>").format(self.job_work_company))
+
+		se = frappe.new_doc("Stock Entry")
+		se.stock_entry_type = "Receive Jobwork Raw Material"
+		se.replicate = self.replicate
+		se.purpose = "Material Receipt"
+		se.set_posting_time = 1
+		se.jw_ref = self.name
+		se.posting_date = self.posting_date
+		se.posting_time = self.posting_time
+		se.company = self.job_work_company
+		se.to_warehouse = job_work_warehouse
+		frappe.msgprint(str(job_work_warehouse))
+		for row in self.items:
+			se.append("items",{
+				'item_code': row.item_code,
+				't_warehouse': job_work_warehouse,
+				'qty': row.qty,
+				'expense_account': expense_account,
+				'cost_center': row.cost_center.replace(source_abbr, target_abbr)
+			})
+		
+		if self.additional_costs:
+			for row in self.additional_costs:
+				se.append("additional_costs",{
+					'description': row.description,
+					'amount': row.amount
+				})
+		#se.get_stock_and_rate()
+		try:
+			se.save(ignore_permissions=True)
+			# se.submit()
+
+		except Exception as e:
+			raise e
+		
+		self.db_set('jw_ref', se.name)
+		self.jw_ref = se.name
+
+def cancel_job_work_receipt_entry(name):
+	doc =frappe.get_doc("Stock Entry", name)
+
+	se = frappe.get_doc("Stock Entry",{'reference_doctype': doc.doctype,'reference_docname':doc.name})
+	se.flags.ignore_permissions = True
+	try:
+		se.cancel()
+	except Exception as e:
+		raise e
+	se.db_set('reference_doctype','')
+	se.db_set('reference_docname','')

@@ -26,6 +26,7 @@ doctype_js = {
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
 	"Item": "public/js/doctype_js/item.js",
 	"Work Order": "public/js/doctype_js/work_order.js",
+	"Stock Entry": "public/js/doctype_js/stock_entry.js",
 }
 
 doc_events = {
@@ -104,12 +105,13 @@ doc_events = {
 		"on_submit": "engineering.engineering.doc_events.journal_entry.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.journal_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.journal_entry.on_trash",
-		"before_naming": "engineering.api.before_naming",
+		"before_naming": "engineering.api.before_naming",	
 	},
 	"Stock Entry": {
 		"on_submit": "engineering.engineering.doc_events.stock_entry.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
-		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate"
+		"on_trash": "engineering.engineering.doc_events.stock_entry.on_trash",
+		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate",
 	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
