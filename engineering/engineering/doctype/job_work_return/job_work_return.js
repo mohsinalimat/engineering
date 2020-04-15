@@ -73,7 +73,7 @@ frappe.ui.form.on('Job Work Return', {
 			});
 		}
 	},
-	on_submit: function (frm) {
+	on_submit1: function (frm) {
 		frappe.run_serially([
 			() => {
 				if (frm.doc.docstatus == 1 && frm.doc.repack_ref) {

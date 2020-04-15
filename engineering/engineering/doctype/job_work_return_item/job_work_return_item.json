@@ -23,6 +23,7 @@
   "transfer_qty",
   "batch_section",
   "batch_no",
+  "serial_no",
   "column_break_20",
   "accounting_section",
   "expense_account",
@@ -176,9 +177,14 @@
    "fieldname": "actual_qty",
    "fieldtype": "Float",
    "label": "Actual Qty (at source/target)"
+  },
+  {
+   "fieldname": "serial_no",
+   "fieldtype": "Small Text",
+   "label": "Serial No"
   }
  ],
- "modified": "2020-04-08 15:23:21.622794",
+ "modified": "2020-04-15 14:39:59.314588",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Return Item",
