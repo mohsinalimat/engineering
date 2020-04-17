@@ -235,7 +235,7 @@ def make_inter_company_transaction(self, doctype, target_doctype, link_field, ta
 				)
 
 		target.run_method("set_missing_values")
-		
+
 
 	def update_details(source_doc, target_doc, source_parent):
 		if target_doc.doctype in ["Purchase Invoice", "Purchase Receipt", "Purchase Order"]:
@@ -248,6 +248,12 @@ def make_inter_company_transaction(self, doctype, target_doctype, link_field, ta
 			target_doc.selling_price_list = source_doc.buying_price_list
 		else:
 			frappe.throw(_("Invalid Request!"))
+		
+	def update_items(source_doc, target_doc, source_parent):
+		target_company_abbr = frappe.db.get_value("Company", source_parent.supplier, "abbr")
+		source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
+		if source_parent.doctype == "Purchase Order":
+			target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 	
 	doclist = get_mapped_doc(doctype, self.name,	{
 		doctype: {
@@ -267,7 +273,7 @@ def make_inter_company_transaction(self, doctype, target_doctype, link_field, ta
 				"expense_account",
 				"cost_center",
 				"warehouse"
-			],
+			], "postprocess": update_items
 		}
 
 	}, target_doc, set_missing_values)

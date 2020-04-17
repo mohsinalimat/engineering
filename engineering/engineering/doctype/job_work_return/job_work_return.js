@@ -6,7 +6,8 @@ cur_frm.fields_dict.material_transfer.get_query = function (doc) {
 		filters: {
 			"purpose": 'Material Transfer',
 			"stock_entry_type": 'Send to Jobwork',
-			"docstatus":1
+			"docstatus": 1,
+			"company": doc.company
 		}
 	}
 };

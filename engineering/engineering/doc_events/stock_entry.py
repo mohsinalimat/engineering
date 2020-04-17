@@ -39,6 +39,7 @@ def on_trash(self, method):
 		doc.db_set('jw_ref', '')
 
 def on_cancel(self, method):
+	self.flags.ignore_links = True
 	for item in self.items:
 		if item.serial_no:
 			for serial_no in get_serial_nos(item.serial_no):
