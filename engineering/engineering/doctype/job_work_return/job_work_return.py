@@ -16,8 +16,10 @@ class JobWorkReturn(Document):
 		self.jobwork_manufacturing_entry()
 
 	def on_cancel(self):
-		pass
-		#self.cancel_repack_entry()
+		self.cancel_repack_entry()
+		self.cancel_material_issue()
+		self.repack_ref = ''
+		self.issue_ref = ''
 
 	def create_stock_entry(self):
 		pass
@@ -29,6 +31,8 @@ class JobWorkReturn(Document):
 		se.stock_entry_type = "Jobwork Manufacturing"
 		se.purpose = "Repack"
 		se.set_posting_time = 1
+		se.reference_doctype = self.doctype
+		se.reference_docname =self.name
 		se.posting_date = self.posting_date
 		se.posting_time = self.posting_time
 		se.company = self.job_work_company
@@ -68,6 +72,8 @@ class JobWorkReturn(Document):
 		mi.stock_entry_type = "Send Jobwork Finish"
 		mi.purpose = "Material Issue"
 		mi.set_posting_time = 1
+		se.reference_doctype = self.doctype
+		se.reference_docname =self.name
 		mi.company = self.company
 		mi.posting_date = self.posting_date
 		mi.posting_time = self.posting_time
@@ -103,23 +109,23 @@ class JobWorkReturn(Document):
 		except Exception as e:
 			raise e
 
-	# def cancel_repack_entry(self):
-	# 	se = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name})
-	# 	se.flags.ignore_permissions = True
-	# 	try:
-	# 		se.cancel()
-	# 	except Exception as e:
-	# 		raise e
-	# 	se.db_set('reference_doctype','')
-	# 	se.db_set('reference_docname','')
+	def cancel_repack_entry(self):
+		se = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.job_work_company})
+		se.flags.ignore_permissions = True
+		try:
+			se.cancel()
+		except Exception as e:
+			raise e
+		se.db_set('reference_doctype','')
+		se.db_set('reference_docname','')
 
 
-	# def cancel_material_issue(self):
-	# 	mi = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name})
-	# 	mi.flags.ignore_permissions = True
-	# 	try:
-	# 		mi.cancel()
-	# 	except Exception as e:
-	# 		raise e
-	# 	mi.db_set('reference_doctype','')
-	# 	mi.db_set('reference_docname','')
+	def cancel_material_issue(self):
+		mi = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.company})
+		mi.flags.ignore_permissions = True
+		try:
+			mi.cancel()
+		except Exception as e:
+			raise e
+		mi.db_set('reference_doctype','')
+		mi.db_set('reference_docname','')

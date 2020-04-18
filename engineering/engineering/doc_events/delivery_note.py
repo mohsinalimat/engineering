@@ -22,11 +22,10 @@ def on_cancel(self, method):
 
 def cancel_purchase_received(self):
 	if self.pr_ref:
-		pr = frappe.get_doc("Purchase Receipt", self.inter_company_receipt_reference)
+		pr = frappe.get_doc("Purchase Receipt", self.pr_ref)
 
 		if pr.docstatus == 1:
 			pr.flags.ignore_permissions = True
-			frappe.flags.warehouse_account_map = None
 			pr.cancel()
 
 		url = get_url_to_form("Purchase Receipt", pr.name)
@@ -197,7 +196,6 @@ def create_purchase_receipt(self):
 			pr.db_set('supplier_delivery_note', self.name)
 			pr.db_set('dn_ref', self.name)
 
-			frappe.flags.warehouse_account_map = None
 			pr.submit()
 
 			url = get_url_to_form("Purchase Receipt", pr.name)

@@ -1,7 +1,8 @@
 cur_frm.fields_dict.job_work_company.get_query = function (doc) {
 	return {
 		filters: {
-			"authority": doc.authority
+			"authority": doc.authority,
+			"name": ["!=", doc.company]
 		}
 	}
 };
@@ -14,50 +15,18 @@ cur_frm.fields_dict.finish_item.get_query = function (doc) {
 };
 
 frappe.ui.form.on('Stock Entry', {
-	on_submit2: function(frm){
-		frappe.run_serially([ 
-
-			() => {
-				if (frm.doc.docstatus == 1 && frm.doc.jw_ref) {
-					frappe.call({
-						method: 'engineering.engineering.doc_events.stock_entry.submit_stock_entry',
-						async: false,
-						args: {
-							'name': frm.doc.jw_ref
-						},
-						callback: function (r) {
-							frappe.msgprint("Submitted");
-						}
-					})
+	refresh: (frm) => {
+		console.log(frm.doc.authority);
+		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
+			if (frm.doc.se_ref && frm.doc.jw_ref){
+				if (frm.doc.stock_entry_type == "Send to Jobwork" && frm.doc.authority == "Unauthorized"){
+					frm.set_value("se_ref", null);
+					frm.set_value("jw_ref", null);
 				}
-			},
-			() => {
-				if (frm.doc.docstatus == 1 && frm.doc.se_ref) {
-					frappe.call({
-						method: 'engineering.engineering.doc_events.stock_entry.submit_stock_entry',
-						async: false,
-						args: {
-							'name': frm.doc.se_ref,
-						},
-						callback: function (r) {
-							if (r.message){
-								frappe.call({
-									method: 'engineering.engineering.doc_events.stock_entry.submit_stock_entry',
-									async: false,
-									args: {
-										'name': r.message
-									},
-									callback: function (r) {
-										
-									}
-								})
-							}
-						}
-					})
-				}
+			} else {
+				frm.set_value("se_ref", null);
+				frm.set_value("jw_ref", null);
 			}
-		])
-
-		
+		}
 	}
 });

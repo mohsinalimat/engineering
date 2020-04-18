@@ -34,18 +34,20 @@ def on_trash(self, method):
 	se_list = list(set(se_list))
 
 	for item in se_list:
-		doc = frappe.get_doc("Stock Entry", item)
-		doc.db_set('se_ref', '')
-		doc.db_set('jw_ref', '')
+		frappe.db.set_value("Stock Entry", item, 'se_ref', None)
+		frappe.db.set_value("Stock Entry", item, 'jw_ref', None)
+	
+	for item in se_list:
+		if self.name != item:
+			frappe.delete_doc("Stock Entry", item)
 
 def on_cancel(self, method):
-	self.flags.ignore_links = True
+	# self.flags.ignore_links = True
 	for item in self.items:
 		if item.serial_no:
 			for serial_no in get_serial_nos(item.serial_no):
 				doc = frappe.get_doc("Serial No", serial_no)
 				doc.save()
-	#cancel_job_work_receipt_entry(self)
 	cancel_job_work(self)
 
 def cancel_job_work(self):
@@ -64,13 +66,24 @@ def cancel_job_work(self):
 			se_doc.cancel()
 
 def on_submit(self, method):
+	create_stock_entry(self)
+	create_job_work_receipt_entry(self)
+	save_serial_no(self)
+	setting_references(self)
+
+def setting_references(self):
+	if not self.se_ref and self.jw_ref:
+		ref = frappe.db.get_value("Stock Entry", {"se_ref": self.jw_ref}, 'jw_ref')
+		self.db_set("se_ref", ref)
+		frappe.db.set_value("Stock Entry", ref, 'se_ref', self.name)
+
+def save_serial_no(self):
 	for item in self.items:
 		if item.serial_no:
 			for serial_no in get_serial_nos(item.serial_no):
 				doc = frappe.get_doc("Serial No", serial_no)
 				doc.save()
-	create_job_work_receipt_entry(self)
-	create_stock_entry(self)
+
 def get_serial_nos(serial_no):
 	return [s.strip() for s in cstr(serial_no).strip().upper().replace(',', '\n').split('\n')
 		if s.strip()]
@@ -216,6 +229,9 @@ def create_stock_entry(self):
 			if source.to_warehouse:
 				target.to_warehouse = source.to_warehouse.replace(source_abbr, target_abbr)
 
+			if self.amended_from:
+				target.amended_from = frappe.db.get_value("Stock Entry", {'se_ref': self.amended_from}, "name")
+
 			target.run_method("set_missing_value")
 		
 		def update_details(source_doc, target_doc, source_parent):
@@ -295,10 +311,8 @@ def create_stock_entry(self):
 
 		return doclist
 	authority = authority = frappe.db.get_value("Company", self.company, "authority")
-	if authority == "Unauthorized" and self.replicate and not self.se_ref:
+	if authority == "Unauthorized" and self.replicate and not self.se_ref and not self.jw_ref:
 		se = get_stock_entry(self.name)
-
-		se.naming_series = "A" + self.naming_series
 
 		se.save(ignore_permissions = True)
 
@@ -306,21 +320,11 @@ def create_stock_entry(self):
 		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing"]:
 			se.get_stock_and_rate()
 		se.save(ignore_permissions = True)
-		frappe.flags.warehouse_account_map = None
+		# frappe.flags.warehouse_account_map = None
 		se.submit()
 		# self.company = company
 		self.db_set('se_ref', se.name)
 		self.se_ref = se.name
-
-	if self.se_ref and self.jw_ref:
-		if frappe.db.exists("Stock Entry", {'se_ref': self.jw_ref}):
-			doc1 = frappe.get_doc("Stock Entry", {'se_ref': self.jw_ref})
-			if not doc1.jw_ref:
-				doc1.db_set('jw_ref', self.se_ref)
-		
-			doc2 = frappe.get_doc("Stock Entry", self.se_ref)
-			if not doc2.jw_ref:
-				doc2.db_set('jw_ref', doc1.name)
 
 @frappe.whitelist()
 def submit_stock_entry(name):
@@ -375,6 +379,9 @@ def create_job_work_receipt_entry(self):
 		se.company = self.job_work_company
 		se.to_warehouse = job_work_warehouse
 		frappe.msgprint(str(job_work_warehouse))
+
+		if self.amended_from:
+			se.amended_from = frappe.db.get_value("Stock Entry", {'jw_ref': self.amended_from}, "name")
 		for row in self.items:
 			se.append("items",{
 				'item_code': row.item_code,
@@ -393,18 +400,6 @@ def create_job_work_receipt_entry(self):
 		
 		se.save(ignore_permissions=True)
 		self.db_set('jw_ref', se.name)
+		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
-		frappe.flags.warehouse_account_map = None
 		se.submit()
-
-def cancel_job_work_receipt_entry(name):
-	doc =frappe.get_doc("Stock Entry", name)
-
-	se = frappe.get_doc("Stock Entry",{'reference_doctype': doc.doctype,'reference_docname':doc.name})
-	se.flags.ignore_permissions = True
-	try:
-		se.cancel()
-	except Exception as e:
-		raise e
-	se.db_set('reference_doctype','')
-	se.db_set('reference_docname','')
