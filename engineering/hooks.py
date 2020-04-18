@@ -135,7 +135,7 @@ override_whitelisted_methods = {
 }
 
 
-fixtures = ['Custom Field']	
+# fixtures = ['Custom Field']
 
 from erpnext.stock.stock_ledger import update_entries_after
 from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
