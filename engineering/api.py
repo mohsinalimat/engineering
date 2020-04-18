@@ -393,5 +393,12 @@ def create_credit_note(company,customer_code,item_detail=None):
 		doc.submit()
 		return doc.name , abs(doc.rounded_total)
 
+def update_discounted_amount(self):
+	for item in self.items:
+		item.discounted_amount = item.discounted_rate * item.real_qty
+		item.discounted_net_amount = item.discounted_amount
 
-
+		try:
+			item.discounted_net_rate = item.discounted_net_amount / item.real_qty
+		except:
+			item.discounted_net_rate = 0.0

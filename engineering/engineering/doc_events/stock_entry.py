@@ -193,6 +193,7 @@ def get_unconsumed_raw_materials(self):
 			})
 
 def create_stock_entry(self):
+	company = self.company
 	def get_stock_entry(source_name, target_doc=None, ignore_permissions= True):
 		def set_missing_value(source, target):
 			target.company = frappe.db.get_value("Company", source.company, "alternate_company")
@@ -301,10 +302,13 @@ def create_stock_entry(self):
 
 		se.save(ignore_permissions = True)
 
+		# self.company = se.company
 		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing"]:
 			se.get_stock_and_rate()
 		se.save(ignore_permissions = True)
-
+		frappe.flags.warehouse_account_map = None
+		se.submit()
+		# self.company = company
 		self.db_set('se_ref', se.name)
 		self.se_ref = se.name
 
@@ -386,16 +390,12 @@ def create_job_work_receipt_entry(self):
 					'description': row.description,
 					'amount': row.amount
 				})
-		#se.get_stock_and_rate()
-		try:
-			se.save(ignore_permissions=True)
-			# se.submit()
-
-		except Exception as e:
-			raise e
 		
+		se.save(ignore_permissions=True)
 		self.db_set('jw_ref', se.name)
 		self.jw_ref = se.name
+		frappe.flags.warehouse_account_map = None
+		se.submit()
 
 def cancel_job_work_receipt_entry(name):
 	doc =frappe.get_doc("Stock Entry", name)

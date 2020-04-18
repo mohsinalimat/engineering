@@ -18,6 +18,21 @@ cur_frm.fields_dict.item_code.get_query = function (doc) {
 		}
 	}
 };
+cur_frm.fields_dict.company.get_query = function (doc) {
+	return {
+		filters: {
+			"authority": doc.authority
+		}
+	}
+};
+cur_frm.fields_dict.job_work_company.get_query = function (doc) {
+	return {
+		filters: {
+			"authority": doc.authority
+		}
+	}
+};
+
 cur_frm.fields_dict.bom_no.get_query = function (doc) {
 	return {
 		filters: {
@@ -28,11 +43,18 @@ cur_frm.fields_dict.bom_no.get_query = function (doc) {
 cur_frm.fields_dict.t_warehouse.get_query = function (doc) {
 	return {
 		filters: {
-			"company": doc.company
+			"company": doc.job_work_company
 		}
 	}
 };
 cur_frm.fields_dict.s_warehouse.get_query = function (doc) {
+	return {
+		filters: {
+			"company": doc.job_work_company
+		}
+	}
+};
+cur_frm.fields_dict.jobwork_in_warehouse.get_query = function (doc) {
 	return {
 		filters: {
 			"company": doc.company
@@ -40,13 +62,28 @@ cur_frm.fields_dict.s_warehouse.get_query = function (doc) {
 	}
 };
 cur_frm.fields_dict.items.grid.get_field("t_warehouse").get_query = function (doc, cdt, cdn) {
-    var d = locals[cdt][cdn];
-    return {
-    	filters: {
-        	"company": doc.company
-    	}
-    }
+	var d = locals[cdt][cdn];
+	return {
+		filters: {
+			"company": doc.company
+		}
+	}
 };
+this.frm.cscript.onload = function (frm) { 
+	this.frm.set_query("batch_no", function (doc) {
+		if (!doc.item_code) {
+			frappe.msgprint(__("Please select Item"));
+		} else {
+			return {
+				query: "engineering.query.get_batch_no",
+				filters: {
+					'item_code': doc.item_code,
+					'warehouse': doc.jobwork_in_warehouse
+				}
+			}
+		}
+	});
+}
 frappe.ui.form.on('Job Work Return', {
 	bom_no: function (frm) {
 		frm.set_value("qty", "");
@@ -85,7 +122,7 @@ frappe.ui.form.on('Job Work Return', {
 							'name': frm.doc.repack_ref
 						},
 						callback: function (r) {
-							if (r.message){
+							if (r.message) {
 								frappe.call({
 									method: 'engineering.engineering.doc_events.stock_entry.submit_job_work_entry',
 									async: false,
@@ -110,7 +147,7 @@ frappe.ui.form.on('Job Work Return', {
 							'name': frm.doc.issue_ref,
 						},
 						callback: function (r) {
-							if (r.message){
+							if (r.message) {
 								frappe.call({
 									method: 'engineering.engineering.doc_events.stock_entry.submit_job_work_entry',
 									async: false,

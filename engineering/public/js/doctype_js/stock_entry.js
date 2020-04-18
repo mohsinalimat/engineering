@@ -14,7 +14,7 @@ cur_frm.fields_dict.finish_item.get_query = function (doc) {
 };
 
 frappe.ui.form.on('Stock Entry', {
-	on_submit: function(frm){
+	on_submit2: function(frm){
 		frappe.run_serially([ 
 
 			() => {

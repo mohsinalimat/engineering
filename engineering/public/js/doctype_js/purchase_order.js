@@ -115,7 +115,8 @@ cur_frm.fields_dict.taxes_and_charges.get_query = function(doc) {
 frappe.ui.form.on('Purchase Order', {
 	refresh: function(frm){
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
-			frm.set_value("sales_order", "");
+			frm.set_value("so_ref", null);
+			frm.set_value("inter_company_order_reference", null);
 		}
 		if (frm.doc.__islocal){
 			if (cur_frm.doc.company){

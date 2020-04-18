@@ -9,17 +9,14 @@ from frappe import _
 from frappe.utils import get_url_to_form
 from frappe.model.mapper import get_mapped_doc
 
+from engineering.api import update_discounted_amount
+
 def before_validate(self, method):
-	for item in self.items:
-		item.discounted_amount = item.discounted_rate * item.real_qty
-		item.discounted_net_amount = item.discounted_amount
+	update_discounted_amount(self)
 
 def on_submit(self, method):
 	create_sales_order(self)
-	alternate_company = frappe.db.get_value("Company", self.company, "alternate_company")
-	for row in self.items:
-		if row.real_qty == 0:
-			frappe.msgprint("Row: {} The real quantity for item {} is 0, you can not make reciept in company {} for this item".format(row.idx, row.item_name, alternate_company))
+	check_real_qty(self)
 
 def on_cancel(self, method):
 	cancel_sales_order(self)
@@ -42,7 +39,7 @@ def create_sales_order(self):
 					target.taxes_and_charges = target_taxes_and_charges
 
 			if self.amended_from:
-				name = frappe.db.get_value(target_doctype, {link_field: self.amended_from}, "name")
+				name = frappe.db.get_value("Sales Order", {'po_ref': self.amended_from}, "name")
 				target.amended_from = name
 
 			target.run_method("set_missing_values")
@@ -61,7 +58,7 @@ def create_sales_order(self):
 
 			if source_doc.account_head:
 				target_doc.account_head = source_doc.account_head.replace(source_company_abbr, target_company_abbr)
-			
+
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 
@@ -70,10 +67,9 @@ def create_sales_order(self):
 				"doctype": "Sales Order",
 				"field_map": {
 					"schedule_date": "delivery_date",
-					"name": "po_no",
 					"name": "po_ref",
 					"transaction_date": "po_date",
-					"selling_price_list": "buying_price_list",
+					"buying_price_list": "selling_price_list",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -114,10 +110,18 @@ def create_sales_order(self):
 	if check_inter_company_transaction:
 		company = frappe.get_doc("Company", self.company)
 		inter_company_list = [item.company for item in company.allowed_to_transact_with]
-		
+
 		if self.supplier in inter_company_list:
+			price_list = self.buying_price_list
+			if price_list:
+				valid_price_list = frappe.db.get_value("Price List", {"name": price_list, "buying": 1, "selling": 1})
+			else:
+				frappe.throw(_("Selected Price List should have buying and selling fields checked."))
+
+			if not valid_price_list:
+				frappe.throw(_("Selected Price List should have buying and selling fields checked."))
 			so = get_sales_order_entry(self.name)
-			
+
 			so.save(ignore_permissions = True)
 			so.submit()
 
@@ -127,41 +131,32 @@ def create_sales_order(self):
 			self.db_set('so_ref', so.name)
 
 			so.db_set('inter_company_order_reference', self.name)
+			so.db_set('po_no', self.name)
 
 			url = get_url_to_form("Sales Order", so.name)
 			frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=so.name)), title="Sales Order Created", indicator="green")
 
-def cancel_sales_order(self):
-	check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
-	if check_inter_company_transaction:
-		if check_inter_company_transaction == 1:
-			company = frappe.get_doc("Company", self.company)
-			inter_company_list = [item.company for item in company.allowed_to_transact_with]
-			if self.supplier in inter_company_list:
-				if self.ref_so:
-					so = frappe.get_doc("Sales Order", self.ref_so)
-					so.flags.ignore_permissions = True
-					so.cancel()
+def check_real_qty(self):
+	alternate_company = frappe.db.get_value("Company", self.company, "alternate_company")
+	for row in self.items:
+		if row.real_qty == 0:
+			frappe.msgprint("Row: {} The real quantity for item {} is 0, you can not make reciept in company {} for this item".format(row.idx, row.item_name, alternate_company))
 
-					url = get_url_to_form("Sales Order", so.name)
-					frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=so.name)), title="Sales Order Cancelled", indicator="red")
+def cancel_sales_order(self):
+	if self.so_ref:
+		so = frappe.get_doc("Sales Order", self.so_ref)
+		so.flags.ignore_permissions = True
+		so.cancel()
+
+		url = get_url_to_form("Sales Order", so.name)
+		frappe.msgprint(_("Sales Order <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=so.name)), title="Sales Order Cancelled", indicator="red")
 
 def delete_sales_order(self):
-	check_inter_company_transaction = frappe.get_value("Company", self.company, "allow_inter_company_transaction")
-	
-	if check_inter_company_transaction:
-		if check_inter_company_transaction == 1:
-			company = frappe.get_doc("Company", self.company)
-			inter_company_list = [item.company for item in company.allowed_to_transact_with]
-			
-			if self.supplier in inter_company_list:
-				frappe.db.set_value("Purchase Order", self.name, 'inter_company_order_reference', '')
-				frappe.db.set_value("Purchase Order", self.name, 'ref_so', '')
-				frappe.db.set_value("Purchase Order", self.name, 'order_confirmation_no', '')
+	if self.so_ref:
+		frappe.db.set_value("Purchase Order", self.name, 'inter_company_order_reference', '')
+		frappe.db.set_value("Purchase Order", self.name, 'so_ref', '')
 
-				frappe.db.set_value("Sales Order", self.ref_so, 'inter_company_order_reference', '')
-				frappe.db.set_value("Sales Order", self.ref_so, 'ref_po', '')
-				frappe.db.set_value("Sales Order", self.ref_so, 'po_no', '')
-				
-				frappe.delete_doc("Sales Order", self.ref_so, force = 1, ignore_permissions=True)
-				frappe.msgprint(_("Sales Order <b>{name}</b> has been deleted!".format(name=self.ref_so)), title="Sales Order Deleted", indicator="red")
+		frappe.db.set_value("Sales Order", self.so_ref, 'po_ref', '')
+
+		frappe.delete_doc("Sales Order", self.so_ref, force = 1, ignore_permissions=True)
+		frappe.msgprint(_("Sales Order <b>{name}</b> has been deleted!".format(name=self.so_ref)), title="Sales Order Deleted", indicator="red")
