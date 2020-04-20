@@ -4,7 +4,9 @@ frappe.ui.form.on('Work Order', {
 	refresh: function(frm) {
 
 		//cur_frm.clear_custom_buttons();
-		frm.trigger('create_material_request')
+		if (frm.doc.status == 'Not Started') {
+			frm.trigger('create_material_request')
+		}
 
 		$(".form-inner-toolbar").find("button[data-label=Finish]").css({ "float": "right" })
 		if (frm.doc.status != 'Completed' && !frm.doc.skip_transfer && frm.doc.docstatus == 1 && frm.doc.material_transferred_for_manufacturing < frm.doc.qty) {
@@ -13,6 +15,7 @@ frappe.ui.form.on('Work Order', {
 			});
 			transfer_btn.addClass('btn-primary');
 		}
+		$("button[data-label='Start']").css({'display': 'none' })
 		cur_frm.custom_make_buttons = {}
 	},
 	source_warehouse: function (frm) {

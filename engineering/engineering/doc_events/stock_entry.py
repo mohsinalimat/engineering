@@ -261,13 +261,13 @@ def create_stock_entry(self):
 				"doctype": "Stock Entry",
 				"field_map": {
 					"name": "se_ref",
+					"reference_doctype": "reference_doctype",
+					"reference_docname": "reference_docname",
 				},
 				"field_no_map": [
 					"from_warehouse",
 					"to_warehouse"
 					"scan_barcode",
-					"reference_doctype",
-					"reference_docname",
 					"company_series",
 					"authority",
 					"remark",
@@ -378,7 +378,6 @@ def create_job_work_receipt_entry(self):
 		se.posting_time = self.posting_time
 		se.company = self.job_work_company
 		se.to_warehouse = job_work_warehouse
-		frappe.msgprint(str(job_work_warehouse))
 
 		if self.amended_from:
 			se.amended_from = frappe.db.get_value("Stock Entry", {'jw_ref': self.amended_from}, "name")

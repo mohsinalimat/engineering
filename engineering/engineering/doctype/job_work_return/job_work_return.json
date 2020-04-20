@@ -19,14 +19,15 @@
   "posting_time",
   "serial_no",
   "section_break_13",
+  "jobwork_in_warehouse",
+  "column_break_16",
   "s_warehouse",
   "t_warehouse",
-  "column_break_16",
-  "jobwork_in_warehouse",
   "consumed_items_section",
   "items",
   "section_break_22",
   "additional_cost",
+  "total_additional_costs",
   "section_break_18",
   "repack_ref",
   "issue_ref",
@@ -100,7 +101,7 @@
    "reqd": 1
   },
   {
-   "fetch_from": "material_transfer.to_warehouse",
+   "fetch_from": "job_work_company.job_work_out_warehouse",
    "fetch_if_empty": 1,
    "fieldname": "s_warehouse",
    "fieldtype": "Link",
@@ -240,10 +241,16 @@
    "fieldtype": "Data",
    "hidden": 1,
    "label": "Fiscal"
+  },
+  {
+   "fieldname": "total_additional_costs",
+   "fieldtype": "Currency",
+   "label": "Total Additional Costs",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-04-18 11:10:44.987988",
+ "modified": "2020-04-20 10:23:29.039918",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Return",

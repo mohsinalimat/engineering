@@ -149,7 +149,7 @@ from engineering.engineering.override.serial_no import validate_warehouse
 from engineering.engineering.override.taxes_and_totals import get_current_tax_amount, determine_exclusive_rate, calculate_taxes
 
 from engineering.engineering.doc_events.stock_entry import get_items as my_get_items
-erpnext.selling.page.point_of_sale.point_of_sale.search_serial_or_batch_or_barcode_number = search_serial_or_batch_or_barcode_number
+# erpnext.selling.page.point_of_sale.point_of_sale.search_serial_or_batch_or_barcode_number = search_serial_or_batch_or_barcode_number
 # override default class method
 update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
