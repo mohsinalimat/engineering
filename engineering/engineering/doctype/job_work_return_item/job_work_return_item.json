@@ -14,6 +14,7 @@
   "quantity_and_rate_section",
   "qty",
   "basic_rate",
+  "valuation_rate",
   "basic_amount",
   "amount",
   "column_break_13",
@@ -116,6 +117,7 @@
    "options": "UOM"
   },
   {
+   "default": "1",
    "fieldname": "conversion_factor",
    "fieldtype": "Float",
    "label": "Conversion Factor"
@@ -182,9 +184,15 @@
    "fieldname": "serial_no",
    "fieldtype": "Small Text",
    "label": "Serial No"
+  },
+  {
+   "fieldname": "valuation_rate",
+   "fieldtype": "Currency",
+   "hidden": 1,
+   "label": "Valuation Rate"
   }
  ],
- "modified": "2020-04-15 14:39:59.314588",
+ "modified": "2020-04-20 14:24:41.659282",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Return Item",

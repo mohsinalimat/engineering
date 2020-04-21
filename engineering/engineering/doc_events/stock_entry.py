@@ -256,6 +256,16 @@ def create_stock_entry(self):
 			if source_parent.stock_entry_type == "Material Receipt":
 				target_doc.basic_rate = source_doc.basic_rate
 
+		def update_account(source_doc, target_doc, source_parent):
+			source_company = source_parent.company
+			target_company = frappe.db.get_value("Company", source_company, "alternate_company")
+
+			source_abbr = frappe.db.get_value("Company", source_company,'abbr')
+			target_abbr = frappe.db.get_value("Company", target_company,'abbr')
+
+			if source_doc.expense_account:
+				target_doc.expense_account = source_doc.expense_account.replace(source_abbr, target_abbr)
+
 		fields = {
 			"Stock Entry": {
 				"doctype": "Stock Entry",
@@ -297,6 +307,10 @@ def create_stock_entry(self):
 					"use_multi_level_bom"
 				],
 				"postprocess": update_details
+			},
+			'Landed Cost Taxes and Charges':{
+				"doctype": "Landed Cost Taxes and Charges",
+				"postprocess": update_account
 			}
 		}
 	
@@ -317,7 +331,7 @@ def create_stock_entry(self):
 		se.save(ignore_permissions = True)
 
 		# self.company = se.company
-		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing"]:
+		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing","Jobwork Manufacturing"]:
 			se.get_stock_and_rate()
 		se.save(ignore_permissions = True)
 		# frappe.flags.warehouse_account_map = None

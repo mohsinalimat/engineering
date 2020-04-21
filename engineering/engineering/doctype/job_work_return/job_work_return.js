@@ -69,6 +69,14 @@ cur_frm.fields_dict.items.grid.get_field("t_warehouse").get_query = function (do
 		}
 	}
 };
+cur_frm.fields_dict.additional_cost.grid.get_field("expense_account").get_query = function (doc, cdt, cdn) {
+	var d = locals[cdt][cdn];
+	return {
+		filters: {
+			"company": doc.company
+		}
+	}
+};
 this.frm.cscript.onload = function (frm) { 
 	this.frm.set_query("batch_no", function (doc) {
 		if (!doc.item_code) {
@@ -85,6 +93,47 @@ this.frm.cscript.onload = function (frm) {
 	});
 }
 frappe.ui.form.on('Job Work Return', {
+	validate: function (frm, cdt, cdn) {
+		frm.trigger('set_basic_rate')
+		frm.trigger('set_default_account')
+		
+		// $.each(me.frm.doc.items || [], function (i, d) {
+		
+		// 	if (d.item_code) {
+		// 		var args = {
+		// 			'item_code': d.item_code,
+		// 			'warehouse': cstr(d.s_warehouse) || cstr(d.t_warehouse),
+		// 			'transfer_qty': d.transfer_qty,
+		// 			'serial_no': d.serial_no,
+		// 			'bom_no': d.bom_no,
+		// 			'expense_account': d.expense_account,
+		// 			'cost_center': d.cost_center,
+		// 			'company': frm.doc.company,
+		// 			'qty': d.qty,
+		// 			'voucher_type': frm.doc.doctype,
+		// 			'voucher_no': d.name,
+		// 			'allow_zero_valuation': 1,
+		// 		};
+
+		// 		return frappe.call({
+		// 			doc: frm.doc,
+		// 			method: "get_item_details",
+		// 			args: args,
+		// 			callback: function (r) {
+		// 				if (r.message) {
+		// 					console.log(r.message)
+		// 					$.each(r.message, function (k, v) {
+		// 						frappe.model.set_value(d.doctype,d.name,k,v)
+		// 						d[k] = v;
+		// 					});
+		// 					frm.events.calculate_amount(frm);
+		// 					refresh_field("items");
+		// 				}
+		// 			}
+		// 		});
+		// 	}
+		// });
+	},
 	bom_no: function (frm) {
 		frm.set_value("qty", "");
 		frm.doc.items = [];
@@ -109,61 +158,8 @@ frappe.ui.form.on('Job Work Return', {
 				});
 				frm.refresh_field('items');
 			});
+			
 		}
-	},
-	on_submit1: function (frm) {
-		frappe.run_serially([
-			() => {
-				if (frm.doc.docstatus == 1 && frm.doc.repack_ref) {
-					frappe.call({
-						method: 'engineering.engineering.doc_events.stock_entry.submit_job_work_entry',
-						async: false,
-						args: {
-							'name': frm.doc.repack_ref
-						},
-						callback: function (r) {
-							if (r.message) {
-								frappe.call({
-									method: 'engineering.engineering.doc_events.stock_entry.submit_job_work_entry',
-									async: false,
-									args: {
-										'name': r.message
-									},
-									callback: function (r) {
-										frappe.msgprint("Submitted");
-									}
-								});
-							}
-						}
-					});
-				}
-			},
-			() => {
-				if (frm.doc.docstatus == 1 && frm.doc.issue_ref) {
-					frappe.call({
-						method: 'engineering.engineering.doc_events.stock_entry.submit_job_work_entry',
-						async: false,
-						args: {
-							'name': frm.doc.issue_ref,
-						},
-						callback: function (r) {
-							if (r.message) {
-								frappe.call({
-									method: 'engineering.engineering.doc_events.stock_entry.submit_job_work_entry',
-									async: false,
-									args: {
-										'name': r.message
-									},
-									callback: function (r) {
-										frappe.msgprint("Submitted");
-									}
-								});
-							}
-						}
-					})
-				}
-			}
-		])
 	},
 	calculate_basic_amount: function (frm, item) {
 		item.basic_amount = flt(flt(item.transfer_qty) * flt(item.basic_rate),
@@ -237,9 +233,35 @@ frappe.ui.form.on('Job Work Return', {
 			});
 		}
 	},
+	set_default_account: function (frm) {
+		frappe.db.get_value("Company", frm.doc.company, 'cost_center', function (r) {
+			if (r.cost_center) { 
+				$.each(me.frm.doc.items || [], function (i, d) {
+					frappe.model.set_value(d.doctype, d.name, 'cost_center', r.cost_center)
+				});
+			}
+		})
+		if (frm.doc.company && erpnext.is_perpetual_inventory_enabled(frm.doc.company)) {
+			return frm.call({
+				method: "erpnext.accounts.utils.get_company_default",
+				args: {
+					"fieldname": "stock_adjustment_account",
+					"company": frm.doc.company
+				},
+				callback: function (r) {
+					if (!r.exc) {
+						$.each(me.frm.doc.items || [], function (i, d) {
+							frappe.model.set_value(d.doctype, d.name,'expense_account',r.message)
+						});
+					}
+				}
+			});
+		}
+	},
 
 });
 frappe.ui.form.on('Job Work Return Item', {
+	
 	uom: function (doc, cdt, cdn) {
 		var d = locals[cdt][cdn];
 		if (d.uom && d.item_code) {
