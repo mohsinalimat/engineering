@@ -9,12 +9,14 @@ from frappe.utils import cstr, cint, flt, comma_or, getdate, nowdate, formatdate
 from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
 from erpnext.setup.doctype.brand.brand import get_brand_defaults
 from erpnext.stock.get_item_details import get_bin_details, get_default_cost_center
-from erpnext.stock.doctype.stock_entry.stock_entry import get_uom_details
+from erpnext.stock.doctype.stock_entry.stock_entry import get_uom_details,get_warehouse_details
 from erpnext.stock.doctype.batch.batch import get_batch_no
 
 class JobWorkReturn(Document):
 	def validate(self):
-		pass
+		for row in self.items:
+			row.amount = flt(row.qty) * flt(row.basic_rate)
+			row.basic_amount = flt(row.qty) * flt(row.basic_rate)
 
 	def on_submit(self):
 #		self.create_stock_entry()
@@ -25,7 +27,7 @@ class JobWorkReturn(Document):
 		self.cancel_repack_entry()
 		self.cancel_material_issue()
 		self.db_set('repack_ref', '')
-		self.db_Set('issue_ref', '')
+		self.db_set('issue_ref', '')
 		
 
 	def create_stock_entry(self):
@@ -43,7 +45,8 @@ class JobWorkReturn(Document):
 		se.posting_date = self.posting_date
 		se.posting_time = self.posting_time
 		se.company = self.job_work_company
-		
+		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
+		target_abbr = frappe.db.get_value('Company',self.job_work_company,'abbr')
 		for row in self.items:
 			se.append("items",{
 				'item_code': row.item_code,
@@ -61,12 +64,14 @@ class JobWorkReturn(Document):
 		})
 		for row in self.additional_cost:
 			se.append("additional_costs",{
+				'expense_account': row.expense_account.replace(source_abbr,target_abbr),
 				'description': row.description,
 				'amount': row.amount
 			})
 		try:
 			se.save(ignore_permissions=True)
-			
+			se.get_stock_and_rate()
+			se.save(ignore_permissions=True)
 			se.submit()
 			self.db_set('repack_ref',se.name)
 			self.repack_ref = se.name
@@ -102,6 +107,7 @@ class JobWorkReturn(Document):
 		
 		for row in self.additional_cost:
 			mi.append("additional_costs",{
+				'expense_account': row.expense_account,
 				'description': row.description,
 				'amount': row.amount
 			})

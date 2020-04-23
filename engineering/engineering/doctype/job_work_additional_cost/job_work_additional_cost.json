@@ -26,14 +26,14 @@
   },
   {
    "fieldname": "amount",
-   "fieldtype": "Data",
+   "fieldtype": "Currency",
    "in_list_view": 1,
    "label": "Amount",
    "reqd": 1
   }
  ],
  "istable": 1,
- "modified": "2020-04-08 14:30:31.750729",
+ "modified": "2020-04-20 17:56:05.795080",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Additional Cost",
