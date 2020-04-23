@@ -18,70 +18,70 @@ def check_sub_string(string, sub_string):
 	return not string.find(sub_string) == -1
 
 
-def naming_series_name(name, company_series = None):
-	current_fiscal = frappe.db.get_value('Global Defaults', None, 'current_fiscal_year')
-	fiscal = frappe.db.get_value("Fiscal Year", str(current_fiscal),'fiscal')
-
+def naming_series_name(name, fiscal, company_series=None):
 	if company_series:
 		name = name.replace('company_series', str(company_series))
 	
-	name = name.replace('YYYY', str(date.today().year))
-	name = name.replace('YY', str(date.today().year)[2:])
-	name = name.replace('MM', f'{date.today().month:02d}')
+	name = name.replace('YYYY', str(datetime.date.today().year))
+	name = name.replace('YY', str(datetime.date.today().year)[2:])
+	name = name.replace('MM', f'{datetime.date.today().month:02d}')
+	name = name.replace('DD', f'{datetime.date.today().day:02d}')
 	name = name.replace('fiscal', str(fiscal))
 	name = name.replace('#', '')
 	name = name.replace('.', '')
-
+	
 	return name
 
 
 # all whitelist functions bellow
+@frappe.whitelist()
+def get_fiscal(date):
+	fy = get_fiscal_year(date)[0]
+	fiscal = frappe.db.get_value("Fiscal Year", fy, 'fiscal')
+
+	return fiscal if fiscal else fy.split("-")[0][2:] + fy.split("-")[1][2:]
 
 @frappe.whitelist()
-def check_counter_series(name, company_series = None):
-	"""Function to get series value for naming series"""
-
-	# renaming the name for naming series
-	name = naming_series_name(name, company_series)
-
-	# Checking the current series value
+def check_counter_series(name, company_series = None, date = None):
+	
+	if not date:
+		date = datetime.date.today()
+	
+	
+	fiscal = get_fiscal(date)
+	
+	name = naming_series_name(name, fiscal, company_series)
+	
 	check = frappe.db.get_value('Series', name, 'current', order_by="name")
 	
-	# returning the incremented value of check for series value
 	if check == 0:
 		return 1
 	elif check == None:
-		# if no current value is found for naming series inserting that naming series with current value 0
-		frappe.db.sql("insert into tabSeries (name, current) values ('{}', 0)".format(name))
+		frappe.db.sql(f"insert into tabSeries (name, current) values ('{name}', 0)")
 		return 1
 	else:
 		return int(frappe.db.get_value('Series', name, 'current', order_by="name")) + 1
 
 @frappe.whitelist()
-def before_naming(self, method = None):
-	"""Function for naming the name of naming series"""
-
-	# if from is not ammended and series_value is greater than zero then 
+def before_naming(self, method):
 	if not self.amended_from:
-		if self.series_value:
-			
+		
+		date = self.get("transaction_date") or self.get("posting_date") or getdate()
+		fiscal = get_fiscal(date)
+		self.fiscal = fiscal
+
+		if self.get('series_value'):
 			if self.series_value > 0:
+				name = naming_series_name(self.naming_series, fiscal,self.company_series)
 				
-				# renaming the name for naming series
-				name = naming_series_name(self.naming_series, self.company_series)
-				
-				# Checking the current series value
 				check = frappe.db.get_value('Series', name, 'current', order_by="name")
-				# frappe.msgprint(str(check))
-				# if no current value is found inserting 0 for current value for this naming series
 				if check == 0:
 					pass
 				elif not check:
-					frappe.db.sql("insert into tabSeries (name, current) values ('{}', 0)".format(name))
-				# frappe.msgprint(name)
-				# Updating the naming series decremented by 1 for current naming series
-				frappe.db.sql("update `tabSeries` set current = {} where name = '{}'".format(int(self.series_value) - 1, name))
-
+					frappe.db.sql(f"insert into tabSeries (name, current) values ('{name}', 0)")
+				
+				frappe.db.sql(f"update `tabSeries` set current = {int(self.series_value) - 1} where name = '{name}'")
+		
 @frappe.whitelist()
 def docs_before_naming(self, method = None):
 	from erpnext.accounts.utils import get_fiscal_year
@@ -395,7 +395,7 @@ def create_credit_note(company,customer_code,item_detail=None):
 
 def update_discounted_amount(self):
 	for item in self.items:
-		item.discounted_amount = item.discounted_rate * item.real_qty
+		item.discounted_amount = (item.discounted_rate or 0.0) * (item.real_qty or 0.0)
 		item.discounted_net_amount = item.discounted_amount
 
 		try:

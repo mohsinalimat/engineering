@@ -15,8 +15,8 @@ def before_validate(self, method):
 		item.discounted_amount = item.discounted_rate * item.real_qty
 		item.discounted_net_amount = item.discounted_amount
 	
-	if self.amended_from and self.authority == "Unauthorized" and not self.ref_pi:
-		if frappe.db.exists("Purchase Invoice", {"ref_pi": self.amended_from}):
+	if self.amended_from and self.authority == "Unauthorized" and not self.pi_ref:
+		if frappe.db.exists("Purchase Invoice", {"pi_ref": self.amended_from}):
 			frappe.throw("You Can not save this Invoice!")
 	
 
@@ -34,7 +34,7 @@ def before_cancel(self, method):
 def on_submit(self, method):
 	create_purchase_invoice(self)
 	update_status_updater_args(self)
-	self.db_set('inter_company_invoice_reference', self.ref_si)
+	self.db_set('inter_company_invoice_reference', self.si_ref)
 
 def on_cancel(self, method):
 	cancel_purchase_invoice(self)
@@ -54,7 +54,7 @@ def create_purchase_invoice(self):
 		def set_missing_value(source, target):
 
 			target.company = frappe.db.get_value("Company", source.company, "alternate_company")
-			target.ref_pi = self.name
+			target.pi_ref = self.name
 			target.authority = "Unauthorized"
 
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
@@ -86,7 +86,7 @@ def create_purchase_invoice(self):
 
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value(
-					"Purchase Invoice", {"ref_pi": source.amended_from}, "name"
+					"Purchase Invoice", {"pi_ref": source.amended_from}, "name"
 				)
 			
 			target.run_method('set_missing_values')
@@ -117,7 +117,7 @@ def create_purchase_invoice(self):
 			"Purchase Invoice": {
 				"doctype": "Purchase Invoice",
 				"field_map": {
-					"ref_pi": "name",
+					"pi_ref": "name",
 				},
 				"field_no_map":{
 					"authority",
@@ -167,7 +167,7 @@ def create_purchase_invoice(self):
 
 		return doclist
 	
-	if authority == "Authorized" and (not self.ref_si):
+	if authority == "Authorized" and (not self.si_ref):
 		pi = get_purchase_invoice_entry(self.name)
 		
 		pi.naming_series = 'A' + pi.naming_series
@@ -185,13 +185,13 @@ def create_purchase_invoice(self):
 		
 		# pi.submit()
 
-		self.db_set('ref_pi', pi.name)
+		self.db_set('pi_ref', pi.name)
 
 def cancel_purchase_invoice(self):
-	if not self.ref_si:
+	if not self.si_ref:
 		pi = None
-		if self.ref_pi:
-			pi = frappe.get_doc("Purchase Invoice", {'ref_pi':self.name})
+		if self.pi_ref:
+			pi = frappe.get_doc("Purchase Invoice", {'pi_ref':self.name})
 		
 		if pi:
 			pi.flags.ignore_permissions = True
@@ -199,12 +199,12 @@ def cancel_purchase_invoice(self):
 				pi.cancel()
 
 def delete_purchase_invoice(self):
-	if self.ref_pi:
+	if self.pi_ref:
 		
-		frappe.db.set_value("Purchase Invoice", self.name, 'ref_pi', '')
-		frappe.db.set_value("Purchase Invoice", self.ref_pi, 'ref_pi', '')
+		frappe.db.set_value("Purchase Invoice", self.name, 'pi_ref', '')
+		frappe.db.set_value("Purchase Invoice", self.pi_ref, 'pi_ref', '')
 
-		frappe.delete_doc("Purchase Invoice", self.ref_pi, force = 1, ignore_permissions=True)
+		frappe.delete_doc("Purchase Invoice", self.pi_ref, force = 1, ignore_permissions=True)
 
 def update_status_updater_args(self):
 	self.status_updater[0]['target_parent_field'] = 'full_amount'

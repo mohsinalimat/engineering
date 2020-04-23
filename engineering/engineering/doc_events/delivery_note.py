@@ -31,8 +31,133 @@ def cancel_purchase_received(self):
 		url = get_url_to_form("Purchase Receipt", pr.name)
 		frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=self.pr_ref)), title="Purchase Receipt Cancelled", indicator="red")
 
+def before_submit(self, method):	
+	pass
+
+def create_delivery_note(self):
+	def get_delivery_note_entry(source_name, target_doc=None, ignore_permissions= True):
+		def set_missing_value(source, target):
+			target.company = source.customer
+			target.customer = source.final_customer
+
+			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
+			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
+
+			if source.taxes_and_charges:
+				target_taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
+				if frappe.db.exists("Sales Taxes and Charges Template", target_taxes_and_charges):
+					target.taxes_and_charges = target_taxes_and_charges
+			
+			target.selling_price_list = "Inter Company Transaction"
+			target.set_posting_time = 1
+
+			if self.amended_from:
+				target.amended_from = frappe.db.get_value("Sales Order", {'so_ref': self.amended_from}, "name")
+
+			target.run_method("set_missing_values")
+			target.run_method("calculate_taxes_and_charges")
+
+		def update_items(source_doc, target_doc, source_parent):
+			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
+			target_company_abbr = frappe.db.get_value("Company", source_parent.customer, "abbr")
+			# frappe.throw(str(source_company_abbr))
+
+			if source_doc.sales_order_item:
+				target_doc.against_sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
+				target_doc.sales_order_item = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'name')
+
+			if source_doc.warehouse:
+				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
+			
+			if source_doc.cost_center:
+				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
+
+		def update_taxes(source_doc, target_doc, source_parent):
+			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
+			target_company_abbr = frappe.db.get_value("Company", source_parent.customer, "abbr")
+
+			if source_doc.account_head:
+				target_doc.account_head = source_doc.account_head.replace(source_company_abbr, target_company_abbr)
+
+			if source_doc.cost_center:
+				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
+
+		fields = {
+			"Delivery Note": {
+				"doctype": "Delivery Note",
+				"field_map": {
+					"name": "supplier_delivery_note",
+					"name": "so_ref",
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
+				},
+				"field_no_map": [
+					"taxes_and_charges",
+					"series_value",
+					"customer_name",
+					"through_company",
+					"shipping_address",
+					"shipping_address_name",
+					"customer_gstin",
+					"contact_person",
+					"address_display",
+					"billing_gstin",
+					"customer_address",
+					"company_address_display",
+					"company_address",
+					"final_customer"
+				]
+			},
+			"Delivery Note Item": {
+				"doctype": "Delivery Note Item",
+				"field_map": {
+					"purchase_order_item": "purchase_order_item",
+					"serial_no": "serial_no",
+					"batch_no": "batch_no",
+					"sales_order_item": "so_detail",
+				},
+				"field_no_map": [
+					"warehouse",
+					"cost_center",
+					"expense_account",
+					"income_account",
+					# "real_qty",
+					# "discounted_rate",
+				],
+				"postprocess": update_items,
+			},
+			"Sales Taxes and Charges": {
+				"doctype": "Sales Taxes and Charges",
+				"postprocess": update_taxes,
+			}
+		}
+
+		doc = get_mapped_doc(
+			"Delivery Note",
+			source_name,
+			fields,
+			target_doc,
+			set_missing_value,
+			ignore_permissions=ignore_permissions
+		)
+
+		return doc
+		
+	if self.final_customer:
+		dn = get_delivery_note_entry(self.name)
+		dn.save(ignore_permissions = True)
+		dn.submit()
+
+		self.db_set("dn_ref", dn.name)
+		dn.db_set("through_company", self.company)
+		for idx, item in enumerate(self.items):
+			item.db_set('delivery_note_item', dn.items[idx].name)
+			item.db_set('pr_detail', dn.items[idx].pr_detail)
+
+
 def on_submit(self, method):
 	create_purchase_receipt(self)
+	create_delivery_note(self)
 	update_real_delivered_qty(self, "submit")
 
 def update_real_delivered_qty(self, method):
@@ -51,6 +176,7 @@ def update_real_delivered_qty(self, method):
 				delivered_real_qty = sales_order_item.delivered_real_qty - item.real_qty
 
 				sales_order_item.db_set("delivered_real_qty", delivered_real_qty)
+	# pass
 
 def on_trash(self, method):
 	""" Custom On Trash Function """
@@ -89,6 +215,8 @@ def create_purchase_receipt(self):
 			if self.amended_from:
 				name = frappe.db.get_value("Purchase Receipt", {'dn_ref': self.amended_from}, "name")
 				target.amended_from = name
+			
+			target.set_posting_time = 1
 
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
@@ -115,7 +243,9 @@ def create_purchase_receipt(self):
 				"doctype": "Purchase Receipt",
 				"field_map": {
 					"name": "supplier_delivery_note",
-					"selling_price_list": "buying_price_list"
+					"selling_price_list": "buying_price_list",
+					"posting_date": "posting_date",
+					"posting_time": "posting_time",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -228,6 +358,8 @@ def create_invoice(source_name, target_doc=None):
 
 		if alternate_customer:
 			target.customer = alternate_customer
+
+		target.alternate_company = source.company
 
 		if len(target.get("items")) == 0:
 			frappe.throw(_("All these items have already been invoiced"))

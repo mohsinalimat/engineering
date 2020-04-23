@@ -11,6 +11,11 @@ app_color = "grey"
 app_email = "info@finbyz.tech"
 app_license = "MIT"
 
+
+from erpnext.setup.doctype.naming_series.naming_series import NamingSeries
+from engineering.override_default_class_method import get_transactions
+NamingSeries.get_transactions = get_transactions
+
 # include js, css files in header of desk.html
 app_include_css = "/assets/css/restrict_button.css"
 app_include_js = "/assets/js/restrict_access.js"
@@ -50,12 +55,15 @@ doc_events = {
 	"Sales Order": {
 		"before_naming": "engineering.api.before_naming",
 		"before_validate": "engineering.engineering.doc_events.sales_order.before_validate",
+		"on_submit": "engineering.engineering.doc_events.sales_order.on_submit",
+		"on_cancel": "engineering.engineering.doc_events.sales_order.on_cancel",
 	},
 	"Delivery Note": {
 		"before_validate": "engineering.engineering.doc_events.delivery_note.before_validate",
 		"before_naming": "engineering.api.before_naming",
 		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
 		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
+		"before_submit": "engineering.engineering.doc_events.delivery_note.before_submit",
 		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
 	},
 	"Purchase Order": {
@@ -155,6 +163,6 @@ update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
 StockEntry.get_items =  my_get_items
 SerialNo.validate_warehouse = validate_warehouse
-calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
-calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate
-calculate_taxes_and_totals.calculate_taxes = calculate_taxes
+# calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
+# calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate
+# calculate_taxes_and_totals.calculate_taxes = calculate_taxes
