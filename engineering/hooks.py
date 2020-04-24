@@ -57,6 +57,7 @@ doc_events = {
 		"before_validate": "engineering.engineering.doc_events.sales_order.before_validate",
 		"on_submit": "engineering.engineering.doc_events.sales_order.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.sales_order.on_cancel",
+		"on_trash": "engineering.engineering.doc_events.sales_order.on_trash",
 	},
 	"Delivery Note": {
 		"before_validate": "engineering.engineering.doc_events.delivery_note.before_validate",

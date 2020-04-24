@@ -12,6 +12,8 @@ from engineering.api import update_discounted_amount
 
 def before_validate(self, method):
 	update_discounted_amount(self)
+	if self.through_company == self.company:
+		self.through_company == None
 
 def on_submit(self, method):
 	# create_sales_order(self)
@@ -19,6 +21,53 @@ def on_submit(self, method):
 
 def on_cancel(self, method):
 	cancel_sales_order(self)
+
+def on_trash(self, method):
+	delete_sales_purchase_order(self)
+
+def delete_sales_purchase_order(self):
+	so_ref = [self.so_ref, self.name]
+	po_ref = [
+		self.po_ref,
+		frappe.db.get_value("Sales Order", self.so_ref, 'po_ref')
+	]
+
+	for so in so_ref:
+		if so:
+			frappe.db.set_value("Sales Order", so, 'po_ref', '')
+			frappe.db.set_value("Sales Order", so, 'so_ref', '')
+			frappe.db.set_value("Sales Order", so, 'inter_company_order_reference', '')
+	
+	for po in po_ref:
+		if po:
+			frappe.db.set_value("Purchase Order", po, 'so_ref', '')
+			frappe.db.set_value("Purchase Order", po, 'inter_company_order_reference', '')
+	
+	for so in so_ref:
+		if so and so != self.name:
+			if frappe.db.exists("Sales Order", so):
+				frappe.delete_doc("Sales Order", so)
+	
+	for po in po_ref:
+		if po:
+			if frappe.db.exists("Purchase Order", po):
+				frappe.delete_doc("Purchase Order", po)
+
+	if self.so_ref:
+		frappe.db.set_value("Sales Order", self.so_ref, 'so_ref', None)
+
+		if frappe.db.exists("Sales Order", self.so_ref):
+			frappe.delete_doc("Sales Order", self.so_ref)
+	
+	if self.po_ref:
+		frappe.db.set_value("Purchase Order", self.po_ref, "so_ref", None)
+		frappe.db.set_value("Purchase Order", self.po_ref, "inter_company_order_reference", None)
+
+		frappe.db.set_value("Sales Order", self.name, "po_ref", None)
+		frappe.db.set_value("Sales Order", self.name, "inter_company_order_reference", None)
+
+		if frappe.db.exists("Purchase Order", self.po_ref):
+			frappe.delete_doc("Purchase Order", self.po_ref)
 
 def create_sales_order(self):
 	def get_sales_order_entry(source_name, target_doc=None, ignore_permissions= True):
@@ -88,6 +137,7 @@ def create_sales_order(self):
 					"income_account",
 					"real_qty",
 					"discounted_rate",
+					"through_company"
 				],
 				"postprocess": update_items,
 			},
@@ -132,7 +182,9 @@ def create_purchase_order(self):
 					target.taxes_and_charges = target_taxes_and_charges
 
 			if self.amended_from:
-				target.amended_from = frappe.db.get_value("Sales Order", {'so_ref': self.amended_from}, "name")
+				so_ref = frappe.db.get_value("Sales Order", source.amended_from, 'so_ref')
+				target.amended_from = frappe.db.get_value("Purchase Order", {'so_ref': so_ref}, "name")
+				# frappe.throw(str(target.amended_from))
 			
 			target.buying_price_list = "Inter Company Transaction"
 
@@ -176,7 +228,8 @@ def create_purchase_order(self):
 					"billing_gstin",
 					"customer_address",
 					"company_address_display",
-					"company_address"
+					"company_address",
+					"through_company"
 				]
 			},
 			"Sales Order Item": {
@@ -213,6 +266,9 @@ def create_purchase_order(self):
 
 		return doc
 		
+	if self.through_company == self.company:
+		self.db_set('through_company', None)
+	
 	if self.through_company:
 		po = get_purchase_order_entry(self.name)
 		po.save(ignore_permissions = True)
@@ -234,6 +290,12 @@ def create_purchase_order(self):
 def cancel_sales_order(self):
 	if self.so_ref:
 		doc = frappe.get_doc("Sales Order", self.so_ref)
-		doc.flags.ignore_permissions = True
+		# doc.flags.ignore_permissions = True
 		if doc.docstatus == 1:
 			doc.cancel()
+	
+	if self.po_ref:
+		po = frappe.get_doc("Purchase Order", self.po_ref)
+		# po.flags.ignore_permissions = True
+		if po.docstatus == 1:
+			po.cancel()

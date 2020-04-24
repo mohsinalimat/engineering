@@ -53,15 +53,11 @@ def on_cancel(self, method):
 def cancel_job_work(self):
 	if self.jw_ref:
 		jw_doc = frappe.get_doc("Stock Entry", self.jw_ref)
-		jw_doc.flags.ignore_links = True
-
 		if jw_doc.docstatus == 1:
 			jw_doc.cancel()
 	
 	if self.se_ref:
 		se_doc = frappe.get_doc("Stock Entry", self.se_ref)
-		se_doc.flags.ignore_links = True
-
 		if se_doc.docstatus == 1:
 			se_doc.cancel()
 
@@ -399,6 +395,7 @@ def create_job_work_receipt_entry(self):
 			se.append("items",{
 				'item_code': row.item_code,
 				't_warehouse': job_work_warehouse,
+				'batch_no': row.batch_no,
 				'qty': row.qty,
 				'expense_account': expense_account,
 				'cost_center': row.cost_center.replace(source_abbr, target_abbr)

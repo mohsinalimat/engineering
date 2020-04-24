@@ -38,13 +38,74 @@ def on_submit(self, method):
 	self.db_set('inter_company_invoice_reference', self.pi_ref)
 
 def on_cancel(self, method):
-	cancel_purchase_invoice(self)
-	cancel_sales_invoice(self)
-	update_status_updater_args(self)
+	# cancel_purchase_invoice(self)
+	# cancel_sales_invoice(self)
+	# update_status_updater_args(self)
+	cancel_all(self)
+
+def cancel_all(self):
+	if self.si_ref:
+		doc = frappe.get_doc("Sales Invoice", self.si_ref)
+		if doc.docstatus == 1:
+			doc.cancel()
+	
+	if self.pi_ref:
+		doc = frappe.get_doc("Purchase Invoice", self.pi_ref)
+		if doc.docstatus == 1:
+			doc.cancel()
+	
+	if self.branch_invoice_ref:
+		doc = frappe.get_doc("Sales Invoice", self.branch_invoice_ref)
+		if doc.docstatus == 1:
+			doc.cancel()
 
 def on_trash(self, method):
-	delete_sales_invoice(self)
-	delete_purchase_invoice(self)
+	# delete_sales_invoice(self)
+	# delete_purchase_invoice(self)
+	delete_all(self)
+
+def delete_all(self):
+	si_ref = [self.si_ref, self.branch_invoice_ref]
+	pi_ref = [self.pi_ref]
+
+	if self.si_ref:
+		doc = frappe.get_doc("Sales Invoice", self.si_ref)
+
+		si_ref.append(doc.si_ref)
+		si_ref.append(doc.branch_invoice_ref)
+		pi_ref.append(doc.pi_ref)
+	
+	if self.branch_invoice_ref:
+		doc = frappe.get_doc("Sales Invoice", self.branch_invoice_ref)
+
+		si_ref.append(doc.si_ref)
+		si_ref.append(doc.branch_invoice_ref)
+		pi_ref.append(doc.pi_ref)
+	frappe.db.set_value("Sales Invoice", self.name, 'pi_ref', None)
+	frappe.db.set_value("Sales Invoice",  self.name, 'si_ref', None)
+	frappe.db.set_value("Sales Invoice",  self.name, 'inter_company_invoice_reference', None)
+	for si in si_ref:
+		if si:
+			frappe.db.set_value("Sales Invoice", si, 'pi_ref', None)
+			frappe.db.set_value("Sales Invoice", si, 'si_ref', None)
+			frappe.db.set_value("Sales Invoice", si, 'inter_company_invoice_reference', None)
+			frappe.db.set_value("Sales Invoice", si, 'branch_invoice_ref', None)
+		
+	for pi in pi_ref:
+		if pi:
+			frappe.db.set_value("Purchase Invoice", pi, 'pi_ref', None)
+			frappe.db.set_value("Purchase Invoice", pi, 'si_ref', None)
+			frappe.db.set_value("Purchase Invoice", pi, 'inter_company_invoice_reference', None)
+	
+	for si in si_ref:
+		if si and si != self.name:
+			if frappe.db.exists("Sales Invoice", si):
+				frappe.delete_doc("Sales Invoice", si)
+	
+	for pi in pi_ref:
+		if pi:
+			if frappe.db.exists("Purchase Invoice", pi):
+				frappe.delete_doc("Purchase Invoice", pi)
 
 # main functions start here
 def cal_full_amount(self):
@@ -118,7 +179,7 @@ def make_inter_company_transaction(self, target_doc=None):
 
 	def set_missing_values(source, target):
 		if self.amended_from:
-			name = frappe.db.get_value(target_doctype, {link_field: self.amended_from}, "name")
+			name = frappe.db.get_value("Purchase Invoice", {'si_ref': self.amended_from}, "name")
 			target.amended_from = name
 		
 		target.company = source.customer
@@ -206,7 +267,7 @@ def create_branch_company_sales_invoice(self):
 					target.taxes_and_charges = target_taxes_and_charges
 
 			if self.amended_from:
-				target.amended_from = frappe.db.get_value("Sales Order", {'so_ref': self.amended_from}, "name")
+				target.amended_from = frappe.db.get_value("Sales Invoice", {"branch_invoice_ref": source.amended_from}, "name")
 			
 			if source.debit_to:
 				target.debit_to = source.debit_to.replace(
@@ -232,6 +293,13 @@ def create_branch_company_sales_invoice(self):
 			if source_doc.income_account:
 				target_doc.income_account = source_doc.income_account.replace(source_company_abbr, target_company_abbr)
 
+			if source_doc.delivery_note_item:
+				target_doc.delivery_note = frappe.db.get_value("Delivery Note Item", source_doc.delivery_note_item, 'parent')
+				target_doc.dn_detail = source_doc.delivery_note_item
+			
+			if source_doc.sales_order_item:
+				target_doc.sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
+				target_doc.so_detail = source_doc.sales_order_item
 
 		def update_taxes(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
@@ -248,7 +316,7 @@ def create_branch_company_sales_invoice(self):
 			"Sales Invoice": {
 				"doctype": "Sales Invoice",
 				"field_map": {
-					
+					"name": "branch_invoice_ref"
 				},
 				"field_no_map":{
 					"authority",
@@ -268,7 +336,12 @@ def create_branch_company_sales_invoice(self):
 					"customer_address",
 					"company_address_display",
 					"company_address",
-					"final_customer"
+					"final_customer",
+					"si_ref",
+					"inter_company_invoice_reference",
+					"pi_ref",
+					"branch",
+					"alternate_company"
 				},
 			},
 			"Sales Invoice Item": {
@@ -305,7 +378,7 @@ def create_branch_company_sales_invoice(self):
 
 		si = get_sales_invoice_entry(self.name)
 		
-		si.naming_series = 'A' + self.naming_series
+		# si.naming_series = 'A' + self.naming_series
 		# si.name = 'A' + self.name
 		# si.series_value = self.series_value
 		si.save(ignore_permissions = True)
@@ -314,7 +387,7 @@ def create_branch_company_sales_invoice(self):
 		
 		si.save(ignore_permissions = True)
 		si.submit()
-
+		self.db_set("branch_invoice_ref", si.name)
 		# for i in self.items:
 		# 	change_delivery_authority(i.delivery_docname)
 
@@ -376,7 +449,10 @@ def create_sales_invoice(self):
 				"field_no_map":{
 					"authority",
 					"company_series",
-					"update_stock"
+					"update_stock",
+					"branch_invoice_ref",
+					"branch",
+					"alternate_company"
 				},
 			},
 			"Sales Invoice Item": {
@@ -424,7 +500,7 @@ def create_sales_invoice(self):
 		
 		si.naming_series = 'A' + self.naming_series
 		# si.name = 'A' + self.name
-		# si.series_value = self.series_value
+		si.series_value = self.series_value
 		si.save(ignore_permissions = True)
 
 		si.real_difference_amount = si.rounded_total - self.rounded_total
@@ -435,6 +511,7 @@ def create_sales_invoice(self):
 		# for i in self.items:
 		# 	change_delivery_authority(i.delivery_docname)
 
+		self.db_set('branch_invoice_ref', frappe.db.get_value("Sales Invoice", si.name, 'branch_invoice_ref'))
 		self.db_set('si_ref', si.name)
 
 def update_status_updater_args(self):

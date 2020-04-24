@@ -17,8 +17,22 @@ def before_validate(self, method):
 	update_discounted_amount(self)
 
 def on_cancel(self, method):
-	cancel_purchase_received(self)
+	# cancel_purchase_received(self)
+	cancel_all(self)
 	update_real_delivered_qty(self, "cancel")
+
+def cancel_all(self):
+	if self.dn_ref:
+		doc = frappe.get_doc("Delivery Note", self.dn_ref)
+
+		if doc.docstatus == 1:
+			doc.cancel()
+	
+	if self.pr_ref:
+		doc = frappe.get_doc("Purchase Receipt", self.pr_ref)
+
+		if doc.docstatus == 1:
+			doc.cancel()
 
 def cancel_purchase_received(self):
 	if self.pr_ref:
@@ -52,7 +66,7 @@ def create_delivery_note(self):
 			target.set_posting_time = 1
 
 			if self.amended_from:
-				target.amended_from = frappe.db.get_value("Sales Order", {'so_ref': self.amended_from}, "name")
+				target.amended_from = frappe.db.get_value("Delivery Note", {'dn_ref': self.amended_from}, "name")
 
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
@@ -64,8 +78,8 @@ def create_delivery_note(self):
 
 			if source_doc.sales_order_item:
 				target_doc.against_sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
-				target_doc.sales_order_item = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'name')
-
+				target_doc.sales_order_item = source_doc.so_detail
+			# frappe.throw(target_doc.against_sales_order)
 			if source_doc.warehouse:
 				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 			
@@ -115,6 +129,9 @@ def create_delivery_note(self):
 					"serial_no": "serial_no",
 					"batch_no": "batch_no",
 					"sales_order_item": "so_detail",
+					"so_detail": "sales_invoice_item",
+					"sales_invoice_item": "so_detail",
+					"name": "delivery_note_item"
 				},
 				"field_no_map": [
 					"warehouse",
@@ -181,7 +198,39 @@ def update_real_delivered_qty(self, method):
 def on_trash(self, method):
 	""" Custom On Trash Function """
 
-	delete_purchase_receipt(self)
+	# delete_purchase_receipt(self)
+	delete_all(self)
+
+def delete_all(self):
+	dn_ref = [self.dn_ref]
+	pr_ref = [self.pr_ref]
+
+	if self.dn_ref:
+		doc = frappe.get_doc("Delivery Note", self.dn_ref)
+
+		dn_ref.append(doc.dn_ref)
+		pr_ref.append(doc.pr_ref)
+	
+	for dn in dn_ref:
+		if dn:
+			frappe.db.set_value("Delivery Note", dn, 'dn_ref', None)
+			frappe.db.set_value("Delivery Note", dn, 'pr_ref', None)
+			frappe.db.set_value("Delivery Note", dn, 'inter_company_receipt_reference', None)
+	
+	for pr in pr_ref:
+		if pr:
+			frappe.db.set_value("Purchase Receipt", pr, 'dn_ref', None)
+			frappe.db.set_value("Purchase Receipt", pr, 'inter_company_delivery_reference', None)
+
+	for dn in dn_ref:
+		if dn and dn != self.name:
+			if frappe.db.exists("Delivery Note", dn):
+				frappe.delete_doc("Delivery Note", dn)
+	
+	for pr in pr_ref:
+		if pr:
+			if frappe.db.exists("Purchase Receipt", pr):
+				frappe.delete_doc("Purchase Receipt", pr)
 
 def delete_purchase_receipt(self):
 	check_inter_company_transaction = None
@@ -355,6 +404,9 @@ def create_invoice(source_name, target_doc=None):
 
 		if alternate_company:
 			target.company = alternate_company
+		
+		if frappe.db.exists("Branch", source.company):
+			target.branch = source.company
 
 		if alternate_customer:
 			target.customer = alternate_customer

@@ -222,7 +222,7 @@ def make_inter_company_transaction(doctype, source_name, target_doc=None):
 		return doclist
 
 def on_cancel(self, method):
-	self.flags.ignore_link = True
+	# self.flags.ignore_link = True
 	pass
 	# cancel_delivery_note(self)
 
