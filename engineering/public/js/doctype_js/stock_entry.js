@@ -13,6 +13,14 @@ cur_frm.fields_dict.finish_item.get_query = function (doc) {
 		}
 	}
 };
+this.frm.cscript.onload = function (frm) {
+	this.frm.set_query("item_code", "items", function (doc) {
+		return {
+			query: "erpnext.controllers.queries.item_query",
+			filters: { 'is_stock_item': 1, 'authority': doc.authority }
+		}
+	});
+}
 
 frappe.ui.form.on('Stock Entry', {
 	refresh: (frm) => {
