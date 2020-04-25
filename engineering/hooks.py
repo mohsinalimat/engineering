@@ -58,6 +58,7 @@ doc_events = {
 		"on_submit": "engineering.engineering.doc_events.sales_order.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.sales_order.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.sales_order.on_trash",
+		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Delivery Note": {
 		"before_validate": "engineering.engineering.doc_events.delivery_note.before_validate",
@@ -66,6 +67,7 @@ doc_events = {
 		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
 		"before_submit": "engineering.engineering.doc_events.delivery_note.before_submit",
 		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
+		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Purchase Order": {
 		"before_validate": "engineering.engineering.doc_events.purchase_order.before_validate",
@@ -73,6 +75,7 @@ doc_events = {
 		"before_naming": "engineering.api.before_naming",
 		"on_cancel": "engineering.engineering.doc_events.purchase_order.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_order.on_trash",
+		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Purchase Invoice": {
 		"before_validate": "engineering.engineering.doc_events.purchase_invoice.before_validate",
@@ -80,11 +83,15 @@ doc_events = {
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
 		"before_naming": "engineering.api.before_naming",
+		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Sales Invoice": {
 		"before_validate": "engineering.engineering.doc_events.sales_invoice.before_validate",
 		"before_naming": "engineering.api.before_naming",
-		"validate": "engineering.engineering.doc_events.sales_invoice.validate",
+		"validate": {
+			"engineering.engineering.doc_events.sales_invoice.validate",
+			"engineering.controllers.item_validation.validate_item_authority"
+		},
 		"on_submit": "engineering.engineering.doc_events.sales_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.sales_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.sales_invoice.on_trash",
@@ -109,6 +116,7 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_naming": "engineering.api.before_naming",
 		"before_validate": "engineering.engineering.doc_events.purchase_receipt.before_validate",
+		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Journal Entry": {
 		"on_submit": "engineering.engineering.doc_events.journal_entry.on_submit",
@@ -121,10 +129,11 @@ doc_events = {
 		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.stock_entry.on_trash",
 		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate",
+		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
-	}
+	},
 }
 
 override_doctype_dashboards = {

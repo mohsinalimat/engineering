@@ -55,7 +55,14 @@ erpnext.accounts.PurchaseInvoice = erpnext.accounts.PurchaseInvoice.extend({
 
 // for backward compatibility: combine new and previous states
 $.extend(cur_frm.cscript, new erpnext.accounts.PurchaseInvoice({frm: cur_frm}));
-
+this.frm.cscript.onload = function (frm) {
+	this.frm.set_query("item_code", "items", function (doc) {
+		return {
+			query: "erpnext.controllers.queries.item_query",
+			filters: { 'is_purchase_item': 1, 'authority': doc.authority }
+		}
+	});
+}
 frappe.ui.form.on('Purchase Invoice', {
 	refresh: function(frm){
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){

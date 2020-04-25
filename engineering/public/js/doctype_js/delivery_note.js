@@ -15,6 +15,7 @@
 // 	}
 // };
 
+
 erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.extend({
 	scan_barcode: function(){
 		let scan_barcode_field = this.frm.fields_dict["scan_barcode"];
@@ -170,7 +171,14 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 });
 
 $.extend(cur_frm.cscript, new erpnext.stock.DeliveryNoteController({frm: cur_frm}));
-
+this.frm.cscript.onload = function (frm) {
+	this.frm.set_query("item_code", "items", function (doc) {
+		return {
+			query: "erpnext.controllers.queries.item_query",
+			filters: { 'is_sales_item': 1, 'authority': doc.authority }
+		}
+	});
+}
 frappe.ui.form.on('Delivery Note', {
     refresh: function(frm) {
         if (frm.doc.__islocal){

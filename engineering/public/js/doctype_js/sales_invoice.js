@@ -48,6 +48,7 @@ erpnext.accounts.SalesInvoiceController = erpnext.accounts.SalesInvoiceControlle
 
 // for backward compatibility: combine new and previous states
 $.extend(cur_frm.cscript, new erpnext.accounts.SalesInvoiceController({frm: cur_frm}));
+<<<<<<< HEAD
 cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function (doc) {
 	return {
 		filters: {
@@ -56,6 +57,16 @@ cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function (doc)
 		}
 	}
 };
+=======
+this.frm.cscript.onload = function (frm) {
+	this.frm.set_query("item_code", "items", function (doc) {
+		return {
+			query: "erpnext.controllers.queries.item_query",
+			filters: { 'is_sales_item': 1, 'authority': doc.authority }
+		}
+	});
+}
+>>>>>>> dde207d12f5ee3be00c5e653906837f14d3cfa5d
 frappe.ui.form.on('Sales Invoice', {
 	refresh: function(frm){
 		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
