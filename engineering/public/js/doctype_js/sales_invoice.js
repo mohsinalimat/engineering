@@ -48,7 +48,14 @@ erpnext.accounts.SalesInvoiceController = erpnext.accounts.SalesInvoiceControlle
 
 // for backward compatibility: combine new and previous states
 $.extend(cur_frm.cscript, new erpnext.accounts.SalesInvoiceController({frm: cur_frm}));
-
+cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function (doc) {
+	return {
+		filters: {
+			"is_sales_item": 1,
+			"authority": doc.authority
+		}
+	}
+};
 frappe.ui.form.on('Sales Invoice', {
 	refresh: function(frm){
 		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
@@ -56,6 +63,7 @@ frappe.ui.form.on('Sales Invoice', {
 			frm.set_value("ref_si", "");
 			frm.set_value("ref_pi", "");
 			frm.set_value("inter_company_invoice_reference", "");
+			frm.set_value("branch_invoice_ref")
 		}
 		if (cur_frm.doc.company){
 			frappe.db.get_value("Company", cur_frm.doc.company, 'company_series',(r) => {

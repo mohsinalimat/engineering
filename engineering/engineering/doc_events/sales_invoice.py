@@ -12,9 +12,8 @@ from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 
 def before_validate(self, method):
 	for item in self.items:
-		if item.discounted_rate and item.real_qty:
-			item.discounted_amount = item.discounted_rate * item.real_qty
-			item.discounted_net_amount = item.discounted_amount
+		item.discounted_amount = item.discounted_rate or 0 * item.real_qty or  0
+		item.discounted_net_amount = item.discounted_amount
 	if self.authority != "Authorized":
 		if not self.si_ref:
 			for item in self.items:
@@ -110,7 +109,8 @@ def delete_all(self):
 # main functions start here
 def cal_full_amount(self):
 	for item in self.items:
-		item.full_amount = max((item.full_rate * item.full_qty), (item.rate * item.qty))
+		# item.full_amount = max((item.full_rate * item.full_qty), (item.rate * item.qty))
+		pass
 
 def create_purchase_invoice(self):
 	check_inter_company_transaction = None
@@ -195,9 +195,12 @@ def make_inter_company_transaction(self, target_doc=None):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 			
-			target.taxes_and_charges = source.taxes_and_charges.replace(
+			taxes_and_charges = source.taxes_and_charges.replace(
 				source_company_abbr, target_company_abbr
 			)
+
+			if frappe.db.exists("Purchase Taxes and Charges Template", taxes_and_charges):
+				target.taxes_and_charges = taxes_and_charges
 
 			target.taxes = source.taxes
 			
@@ -273,7 +276,11 @@ def create_branch_company_sales_invoice(self):
 				target.debit_to = source.debit_to.replace(
 					source_company_abbr, target_company_abbr
 				)
-
+			if source.items[0].delivery_note_item:
+				target.selling_price_list = frappe.db.get_value("Delivery Note",
+					frappe.db.get_value("Delivery Note Item", source.items[0].delivery_note_item, 'parent')
+				,'selling_price_list')
+			
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
 		
@@ -300,6 +307,11 @@ def create_branch_company_sales_invoice(self):
 			if source_doc.sales_order_item:
 				target_doc.sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
 				target_doc.so_detail = source_doc.sales_order_item
+			
+			if source_doc.delivery_note_item:
+				target_doc.rate = frappe.db.get_value("Delivery Note Item", source_doc.delivery_note_item, 'rate')
+				target_doc.discounted_rate = frappe.db.get_value("Delivery Note Item", source_doc.delivery_note_item, 'discounted_rate')
+
 
 		def update_taxes(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
@@ -311,12 +323,12 @@ def create_branch_company_sales_invoice(self):
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 		
-		
 		fields = {
 			"Sales Invoice": {
 				"doctype": "Sales Invoice",
 				"field_map": {
-					"name": "branch_invoice_ref"
+					"name": "branch_invoice_ref",
+					"ignore_pricing_rule": "ignore_pricing_rule"
 				},
 				"field_no_map":{
 					"authority",
@@ -360,6 +372,9 @@ def create_branch_company_sales_invoice(self):
 			"Sales Taxes and Charges": {
 				"doctype": "Sales Taxes and Charges",
 				"postprocess": update_taxes,
+				"field_no_map":[
+					"amount"
+				]
 			}
 		}
 
@@ -414,10 +429,13 @@ def create_sales_invoice(self):
 				)
 			
 			if source.taxes_and_charges:
-				target.taxes_and_charges = source.taxes_and_charges.replace(
+				taxes_and_charges = source.taxes_and_charges.replace(
 					source_company_abbr, target_company_abbr
 				)
+				if frappe.db.exists("Sales Taxes and Charges Template", taxes_and_charges):
+					target.taxes_and_charges = source.taxes_and_charges
 
+			if source.taxes:
 				for index, item in enumerate(source.taxes):
 					target.taxes[index].charge_type = source.taxes[index].charge_type
 					target.taxes[index].included_in_print_rate = source.taxes[index].included_in_print_rate
@@ -427,7 +445,7 @@ def create_sales_invoice(self):
 			
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value("Sales Invoice", {"si_ref": source.amended_from}, "name")
-			
+			target.ignore_pricing_rule = 1
 			target.run_method('set_missing_values')
 		
 		def update_accounts(source_doc, target_doc, source_parent):

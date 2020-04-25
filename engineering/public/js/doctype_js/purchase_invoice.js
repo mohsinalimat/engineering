@@ -6,7 +6,14 @@ cur_frm.fields_dict.taxes_and_charges.get_query = function(doc) {
 		}
 	}
 };
-
+cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function (doc) {
+	return {
+		filters: {
+			"is_purchase_item": 1,
+			"authority": doc.authority
+		}
+	}
+};
 erpnext.accounts.PurchaseInvoice = erpnext.accounts.PurchaseInvoice.extend({
 	scan_barcode: function(){
 		let scan_barcode_field = this.frm.fields_dict["scan_barcode"];

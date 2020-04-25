@@ -61,8 +61,11 @@ def create_delivery_note(self):
 				target_taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
 				if frappe.db.exists("Sales Taxes and Charges Template", target_taxes_and_charges):
 					target.taxes_and_charges = target_taxes_and_charges
-			
-			target.selling_price_list = "Inter Company Transaction"
+			if source.items[0].sales_order_item:
+				target.selling_price_list = frappe.db.get_value("Sales Order", 
+				frappe.db.get_value("Sales Order Item", source.items[0].sales_order_item, 'parent')
+				, 'selling_price_list')
+	
 			target.set_posting_time = 1
 
 			if self.amended_from:
@@ -85,6 +88,11 @@ def create_delivery_note(self):
 			
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
+			
+			if source_doc.sales_order_item:
+				target_doc.rate = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'rate')
+				target_doc.discounted_rate = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'discounted_rate')
+			# frappe.throw(str(target_doc.rate))
 
 		def update_taxes(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
@@ -103,7 +111,8 @@ def create_delivery_note(self):
 					"name": "supplier_delivery_note",
 					"name": "so_ref",
 					"posting_date": "posting_date",
-					"posting_time": "posting_time"
+					"posting_time": "posting_time",
+					"ignore_pricing_rule": "ignore_pricing_rule"
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -295,6 +304,7 @@ def create_purchase_receipt(self):
 					"selling_price_list": "buying_price_list",
 					"posting_date": "posting_date",
 					"posting_time": "posting_time",
+					"ignore_pricing_rule": "ignore_pricing_rule"
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -395,7 +405,7 @@ def create_invoice(source_name, target_doc=None):
 			alternate_customer = None
 		
 		target.is_pos = 0
-		target.ignore_pricing_rule = 1
+		# target.ignore_pricing_rule = 1
 		target.run_method("set_missing_values")
 		target.run_method("set_po_nos")
 		alternate_company = frappe.db.get_value("Company", source.company, "alternate_company")

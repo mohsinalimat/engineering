@@ -186,7 +186,22 @@ def create_purchase_order(self):
 				target.amended_from = frappe.db.get_value("Purchase Order", {'so_ref': so_ref}, "name")
 				# frappe.throw(str(target.amended_from))
 			
-			target.buying_price_list = "Inter Company Transaction"
+			company_doc = frappe.get_doc("Company", target.supplier)
+
+			for com in company_doc.allowed_to_transact_with:
+				if com.company == target.company:
+					if com.price_list:
+						target.buying_price_list = com.price_list
+					else:
+						frappe.throw("Add price list for company {}".format(target.company))
+			
+			for item in source.items:
+				if frappe.db.exists("Item Price", {'item_code': item.item_code, 'price_list': target.buying_price_list}):
+					item.rate = frappe.db.get_value("Item Price", {'item_code': item.item_code, 'price_list': target.buying_price_list}, 'price_list_rate')
+				else:
+					frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(item.item_code), frappe.bold(target.buying_price_list)))
+			
+			# frappe.throw("Hello")
 
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
@@ -197,6 +212,16 @@ def create_purchase_order(self):
 
 			if source_doc.warehouse:
 				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
+			buying_price_list = None
+			company_doc = frappe.get_doc("Company", source_parent.through_company)
+			for com in company_doc.allowed_to_transact_with:
+				if com.company == source_parent.company:
+					buying_price_list = com.price_list
+			
+			if frappe.db.exists("Item Price", {'item_code': source_doc.item_code, 'price_list': buying_price_list}):
+				target_doc.rate = frappe.db.get_value("Item Price", {'item_code': source_doc.item_code, 'price_list': buying_price_list}, 'price_list_rate')
+			else:
+				frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(item.item_code), frappe.bold(target.buying_price_list)))
 
 		def update_taxes(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
@@ -240,12 +265,16 @@ def create_purchase_order(self):
 					"batch_no": "batch_no",
 					"name": "sales_order_item",
 					"delivery_date": "delivery_date",
+					"discounted_rate": "main_rate",
+					"real_qty": "main_qty"
 				},
 				"field_no_map": [
 					"warehouse",
 					"cost_center",
 					"expense_account",
 					"income_account",
+					"rate",
+					"discounted_rate"
 				],
 				"postprocess": update_items,
 			},
@@ -273,7 +302,6 @@ def create_purchase_order(self):
 		po = get_purchase_order_entry(self.name)
 		po.save(ignore_permissions = True)
 		po.submit()
-
 		self.db_set("so_ref", po.so_ref)
 		frappe.db.set_value("Sales Order", po.so_ref, "so_ref", self.name)
 		frappe.db.set_value("Sales Order", po.so_ref, "final_customer", self.customer)

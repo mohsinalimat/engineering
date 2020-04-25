@@ -1,3 +1,11 @@
+cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function (doc) {
+	return {
+		filters: {
+			"is_purchase_item": 1,
+			"authority": doc.authority
+		}
+	}
+};
 erpnext.buying.PurchaseOrderController = erpnext.buying.PurchaseOrderController.extend({
 	calculate_taxes: function() {
 		var me = this;
