@@ -12,7 +12,7 @@ from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 
 def before_validate(self, method):
 	for item in self.items:
-		item.discounted_amount = item.discounted_rate or 0 * item.real_qty or  0
+		item.discounted_amount = (item.discounted_rate or 0) * (item.real_qty or 0)
 		item.discounted_net_amount = item.discounted_amount
 	if self.authority != "Authorized":
 		if not self.si_ref:

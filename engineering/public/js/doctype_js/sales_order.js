@@ -357,14 +357,6 @@ erpnext.selling.SalesOrderController = erpnext.selling.SalesOrderController.exte
 })
 $.extend(cur_frm.cscript, new erpnext.selling.SalesOrderController({ frm: cur_frm }));
 
-cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function (doc) {
-	return {
-		filters: {
-			"authority": doc.authority
-		}
-	}
-};
-
 erpnext.selling.SalesOrderController = erpnext.selling.SalesOrderController.extend({
 	calculate_item_values: function () {
 		var me = this;
@@ -389,24 +381,21 @@ erpnext.selling.SalesOrderController = erpnext.selling.SalesOrderController.exte
 	},
 })
 $.extend(cur_frm.cscript, new erpnext.selling.SalesOrderController({ frm: cur_frm }));
-<<<<<<< HEAD
-
-this.frm.cscript.onload = function (frm) {
-	this.frm.set_query("item_code", "items", function (doc) {
-			return {
-				query: "erpnext.controllers.queries.item_query",
-				filters: { 'is_sales_item': 1, 'authority': doc.authority}
-			}
-=======
 this.frm.cscript.onload = function (frm) {
 	this.frm.set_query("item_code", "items", function (doc) {
 		return {
 			query: "erpnext.controllers.queries.item_query",
 			filters: { 'is_sales_item': 1, 'authority': doc.authority }
 		}
->>>>>>> dde207d12f5ee3be00c5e653906837f14d3cfa5d
 	});
 }
+cur_frm.fields_dict.taxes_and_charges.get_query = function (doc) {
+	return {
+		filters: {
+			"company": doc.company
+		}
+	}
+};
 frappe.ui.form.on('Sales Order', {
 	refresh: function(frm) {
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){

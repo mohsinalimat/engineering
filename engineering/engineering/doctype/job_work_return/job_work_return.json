@@ -80,7 +80,8 @@
    "fieldtype": "Column Break"
   },
   {
-   "fetch_from": "material_transfer.company",
+   "fetch_from": "material_transfer.job_work_company",
+   "fetch_if_empty": 1,
    "fieldname": "company",
    "fieldtype": "Link",
    "label": "Company",
@@ -251,7 +252,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-04-20 17:34:15.458309",
+ "modified": "2020-04-25 17:18:25.910639",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Return",

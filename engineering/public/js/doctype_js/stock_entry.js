@@ -6,10 +6,38 @@ cur_frm.fields_dict.job_work_company.get_query = function (doc) {
 		}
 	}
 };
+cur_frm.fields_dict.from_warehouse.get_query = function (doc) {
+	return {
+		filters: {
+			"company": doc.company
+		}
+	}
+};
+cur_frm.fields_dict.to_warehouse.get_query = function (doc) {
+	return {
+		filters: {
+			"company": doc.company
+		}
+	}
+};
 cur_frm.fields_dict.finish_item.get_query = function (doc) {
 	return {
 		filters: {
 			"is_stock_item": 1
+		}
+	}
+};
+cur_frm.fields_dict.items.grid.get_field("s_warehouse").get_query = function (doc) {
+	return {
+		filters: {
+			"company": doc.company,
+		}
+	}
+};
+cur_frm.fields_dict.items.grid.get_field("t_warehouse").get_query = function (doc) {
+	return {
+		filters: {
+			"company": doc.company,
 		}
 	}
 };

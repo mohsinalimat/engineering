@@ -265,8 +265,6 @@ def create_purchase_order(self):
 					"batch_no": "batch_no",
 					"name": "sales_order_item",
 					"delivery_date": "delivery_date",
-					"discounted_rate": "main_rate",
-					"real_qty": "main_qty"
 				},
 				"field_no_map": [
 					"warehouse",

@@ -404,6 +404,7 @@ def create_job_work_receipt_entry(self):
 		if self.additional_costs:
 			for row in self.additional_costs:
 				se.append("additional_costs",{
+					'expense_account': row.expense_account.replace(source_abbr, target_abbr),
 					'description': row.description,
 					'amount': row.amount
 				})

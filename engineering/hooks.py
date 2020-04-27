@@ -32,6 +32,7 @@ doctype_js = {
 	"Item": "public/js/doctype_js/item.js",
 	"Work Order": "public/js/doctype_js/work_order.js",
 	"Stock Entry": "public/js/doctype_js/stock_entry.js",
+	"Company": "public/js/doctype_js/company.js",
 }
 
 doc_events = {
@@ -88,10 +89,10 @@ doc_events = {
 	"Sales Invoice": {
 		"before_validate": "engineering.engineering.doc_events.sales_invoice.before_validate",
 		"before_naming": "engineering.api.before_naming",
-		"validate": {
+		"validate": [
 			"engineering.engineering.doc_events.sales_invoice.validate",
 			"engineering.controllers.item_validation.validate_item_authority"
-		},
+		],
 		"on_submit": "engineering.engineering.doc_events.sales_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.sales_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.sales_invoice.on_trash",

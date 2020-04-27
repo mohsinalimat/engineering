@@ -443,6 +443,7 @@ def create_invoice(source_name, target_doc=None):
 
 
 		target.run_method("calculate_taxes_and_totals")
+		target.debit_to = frappe.db.get_value("Company", target.company, "default_receivable_account")
 
 		if source.company_address:
 			target.update({'company_address': source.company_address})
@@ -522,6 +523,7 @@ def create_invoice(source_name, target_doc=None):
 				"discounted_rate",
 				"purchase_order_item",
 				"pr_detail",
+				"batch_no"
 			],
 			"postprocess": update_acoounts,
 			"filter": lambda d: get_pending_qty(d) <= 0 if not doc.get("is_return") else get_pending_qty(d) > 0
