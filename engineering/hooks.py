@@ -102,6 +102,7 @@ doc_events = {
 		"on_submit": "engineering.engineering.doc_events.payment_entry.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.payment_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.payment_entry.on_trash",
+		"validate": "engineering.engineering.doc_events.payment_entry.validate"
 	},
 	"Customer": {
 		"onload": "engineering.engineering.doc_events.customer.onload",
@@ -131,6 +132,9 @@ doc_events = {
 		"on_trash": "engineering.engineering.doc_events.stock_entry.on_trash",
 		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate",
 		"validate": "engineering.controllers.item_validation.validate_item_authority"
+	},
+	"Fiscal Year": {
+		'before_save': 'engineering.engineering.doc_events.fiscal_year.before_save'
 	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",

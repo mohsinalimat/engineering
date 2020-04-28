@@ -234,7 +234,8 @@ def make_inter_company_transaction(self, target_doc=None):
 			"field_no_map": [
 				"taxes_and_charges",
 				"series_value",
-				"update_stock"
+				"update_stock",
+				"real_difference_amount"
 			],
 		},
 		"Sales Invoice Item": {
@@ -353,7 +354,8 @@ def create_branch_company_sales_invoice(self):
 					"inter_company_invoice_reference",
 					"pi_ref",
 					"branch",
-					"alternate_company"
+					"alternate_company",
+					"real_difference_amount"
 				},
 			},
 			"Sales Invoice Item": {
@@ -397,16 +399,16 @@ def create_branch_company_sales_invoice(self):
 		# si.name = 'A' + self.name
 		# si.series_value = self.series_value
 		si.save(ignore_permissions = True)
-
-		si.real_difference_amount = si.rounded_total - self.rounded_total
-		
-		si.save(ignore_permissions = True)
 		si.submit()
 		self.db_set("branch_invoice_ref", si.name)
 		# for i in self.items:
 		# 	change_delivery_authority(i.delivery_docname)
 
 		# self.db_set('si_ref', si.name)
+	
+	if self.authority == "Unauthorized" and not self.si_ref:
+		frappe.db.set_value('Sales Invoice', self.name, 'real_difference_amount', self.rounded_total)
+	
 
 def create_sales_invoice(self):
 	authority = frappe.db.get_value("Company", self.company, "authority")
