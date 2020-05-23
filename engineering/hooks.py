@@ -83,12 +83,15 @@ doc_events = {
 		"on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
-		"before_naming": "engineering.api.before_naming",
+		"before_naming": ["engineering.engineering.doc_events.purchase_invoice.before_naming", "engineering.api.before_naming"],
 		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Sales Invoice": {
 		"before_validate": "engineering.engineering.doc_events.sales_invoice.before_validate",
-		"before_naming": "engineering.api.before_naming",
+		"before_naming": [
+			"engineering.engineering.doc_events.sales_invoice.before_naming",
+			"engineering.api.before_naming",
+		],
 		"validate": [
 			"engineering.engineering.doc_events.sales_invoice.validate",
 			"engineering.controllers.item_validation.validate_item_authority"
@@ -169,9 +172,14 @@ from engineering.override_default_class_method import search_serial_or_batch_or_
 
 from engineering.engineering.override.stock_ledger import raise_exceptions, set_actual_qty
 from engineering.engineering.override.serial_no import validate_warehouse
+from engineering.engineering.override.opening_invoice_creation_tool import get_invoice_dict, make_invoices
 from engineering.engineering.override.taxes_and_totals import get_current_tax_amount, determine_exclusive_rate, calculate_taxes
 
 from engineering.engineering.doc_events.stock_entry import get_items as my_get_items
+from erpnext.accounts.doctype.opening_invoice_creation_tool.opening_invoice_creation_tool import OpeningInvoiceCreationTool
+
+OpeningInvoiceCreationTool.get_invoice_dict = get_invoice_dict
+OpeningInvoiceCreationTool.make_invoices = make_invoices
 # erpnext.selling.page.point_of_sale.point_of_sale.search_serial_or_batch_or_barcode_number = search_serial_or_batch_or_barcode_number
 # override default class method
 update_entries_after.raise_exceptions = raise_exceptions

@@ -20,8 +20,16 @@ def before_validate(self, method):
 				item.full_qty = item.qty
 				item.full_rate = item.rate
 
+def before_naming(self, method):
+	if self.is_opening == "Yes":
+		if not self.get('name'):
+			self.naming_series = 'O' + self.naming_series
+
 def validate(self, method):
 	cal_full_amount(self)
+	if self.authority == "Authorized":
+		if not self.alternate_company:
+			self.alternate_company = self.branch
 
 def before_save(self, method):
 	update_status_updater_args(self)
@@ -159,8 +167,8 @@ def create_purchase_invoice(self):
 			pi.save()
 			if self.update_stock:
 				pi.db_set('update_stock', 1)
-			else:
-				pi.submit()
+			
+			pi.submit()
 			
 			if self.si_ref:
 				si_ref = frappe.db.get_value("Sales Invoice", self.name, 'si_ref')
@@ -170,6 +178,9 @@ def create_purchase_invoice(self):
 				frappe.db.set_value("Purchase Invoice", pi_ref, 'si_ref', si_ref)
 
 			self.db_set('pi_ref', pi.name)
+
+			# url = get_url_to_form("Purchase Invoice", pi.name)
+			# frappe.msgprint(_("Purchase Invoice <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pi.name))), title="Purchase Invoice Created", indicator="green")
 
 def make_inter_company_transaction(self, target_doc=None):
 	source_doc  = frappe.get_doc("Sales Invoice", self.name)
@@ -418,7 +429,7 @@ def create_sales_invoice(self):
 			if frappe.db.exists("Company", source.customer):
 				target.customer = source.alternate_company
 			
-			target.company = source.alternate_company
+			target.company = source.alternate_company or source.branch
 			target.si_ref = self.name
 			target.authority = "Unauthorized"
 
@@ -518,7 +529,12 @@ def create_sales_invoice(self):
 
 		si = get_sales_invoice_entry(self.name)
 		
-		si.naming_series = 'A' + self.naming_series
+		si.naming_series = 'A' + si.naming_series
+		if si.items[0].delivery_docname:
+			doc = frappe.get_doc("Delivery Note", si.items[0].delivery_docname)
+			si.taxes_and_charges = doc.taxes_and_charges
+			si.taxes = doc.taxes
+
 		# si.name = 'A' + self.name
 		si.series_value = self.series_value
 		si.save(ignore_permissions = True)
@@ -542,8 +558,8 @@ def update_status_updater_args(self):
 def submit_purchase_invoice(pi_number):
 	pi = frappe.get_doc("Purchase Invoice", pi_number)
 	pi.flags.ignore_permissions = True
-	pi.submit()
-	frappe.db.commit()
+	# pi.submit()
+	# frappe.db.commit()
 
 def cancel_sales_invoice(self):
 	si = None

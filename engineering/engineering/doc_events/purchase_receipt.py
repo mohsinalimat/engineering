@@ -61,6 +61,25 @@ def make_purchase_invoice(source_name, target_doc=None):
 
 		if alternate_company:
 			target.company = alternate_company
+		
+		target.alternate_company = source.company
+		target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
+		source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
+
+		if source.taxes_and_charges:
+			target_taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
+			if frappe.db.exists("Sales Taxes and Charges Template", target_taxes_and_charges):
+				target.taxes_and_charges = target_taxes_and_charges
+		target.taxes = source.taxes
+		if source.taxes:
+			for index, value in enumerate(source.taxes):
+				target.taxes[index].account_head = source.taxes[index].account_head.replace(source_company_abbr, target_company_abbr)
+				if source.taxes[index].cost_center:
+					target.taxes[index].cost_center = source.taxes[index].cost_center.replace(source_company_abbr, target_company_abbr)
+
+
+		target.run_method("calculate_taxes_and_totals")
+		target.credit_to = frappe.db.get_value("Company", target.company, "default_payable_account")
 
 	def update_item(source_doc, target_doc, source_parent):
 		target_company = frappe.db.get_value("Company", source_parent.company, "alternate_company")
@@ -70,6 +89,9 @@ def make_purchase_invoice(source_name, target_doc=None):
 		source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 
 		doc = frappe.get_doc("Company", target_company)
+
+		target_doc.item_code = source_doc.item_series
+		target_doc.item_varient = source_doc.item_code
 		
 		target_doc.income_account = doc.default_income_account
 		target_doc.expense_account = doc.default_expense_account

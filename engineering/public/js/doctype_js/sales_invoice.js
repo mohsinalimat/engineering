@@ -52,7 +52,11 @@ this.frm.cscript.onload = function (frm) {
 	this.frm.set_query("item_code", "items", function (doc) {
 		return {
 			query: "erpnext.controllers.queries.item_query",
-			filters: { 'is_sales_item': 1, 'authority': doc.authority }
+			filters: [
+
+				['is_sales_item', '=', 1],
+				['authority', 'in', ['', doc.authority]]
+			]
 		}
 	});
 }
@@ -82,10 +86,9 @@ frappe.ui.form.on('Sales Invoice', {
 	refresh: function(frm){
 		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
-			frm.set_value("ref_si", "");
-			frm.set_value("ref_pi", "");
+			frm.set_value("si_ref", "");
+			frm.set_value("pi_ref", "");
 			frm.set_value("inter_company_invoice_reference", "");
-			frm.set_value("branch_invoice_ref")
 		}
 		if (cur_frm.doc.company){
 			frappe.db.get_value("Company", cur_frm.doc.company, 'company_series',(r) => {
@@ -124,19 +127,6 @@ frappe.ui.form.on('Sales Invoice', {
 	company_series: function(frm){
 		if (frm.doc.__islocal){
 			frm.trigger('naming_series');
-		}
-	},
-	on_submit: function(frm){
-		if (frm.doc.docstatus == 1 && frm.doc.inter_company_invoice_reference){
-			frappe.call({
-				method: 'engineering.engineering.doc_events.sales_invoice.submit_purchase_invoice',
-				args: {
-					'pi_number': frm.doc.inter_company_invoice_reference
-				},
-				callback: function(r){
-					frappe.msgprint("Submitted")
-				}
-			})
 		}
 	}
 });

@@ -74,6 +74,7 @@ def create_sales_order(self):
 				"field_no_map": [
 					"taxes_and_charges",
 					"series_value",
+					"set_warehouse"
 				]
 			},
 			"Purchase Order Item": {

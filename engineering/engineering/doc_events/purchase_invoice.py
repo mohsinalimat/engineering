@@ -12,15 +12,20 @@ from engineering.api import make_inter_company_transaction
 
 def before_validate(self, method):
 	for item in self.items:
-		item.discounted_amount = item.discounted_rate * item.real_qty
+		item.discounted_amount = (item.discounted_rate or 0.0) * (item.real_qty or 0.0)
 		item.discounted_net_amount = item.discounted_amount
 	
 	if self.amended_from and self.authority == "Unauthorized" and not self.pi_ref:
 		if frappe.db.exists("Purchase Invoice", {"pi_ref": self.amended_from}):
 			frappe.throw("You Can not save this Invoice!")
-	
 
+	if not self.alternate_company and self.branch and self.authority == "Authorized":
+		self.alternate_company = self.branch
 
+def before_naming(self, method):
+	if self.is_opening == "Yes":
+		if not self.get('name'):
+			self.naming_series = 'O' + self.naming_series
 
 def validate(self, method):
 	cal_full_amount(self)
@@ -53,7 +58,7 @@ def create_purchase_invoice(self):
 	def get_purchase_invoice_entry(source_name, target_doc=None, ignore_permissions= True):
 		def set_missing_value(source, target):
 
-			target.company = frappe.db.get_value("Company", source.company, "alternate_company")
+			target.company = self.alternate_company or self.branch
 			target.pi_ref = self.name
 			target.authority = "Unauthorized"
 
@@ -74,7 +79,8 @@ def create_purchase_invoice(self):
 			
 			if source.taxes_and_charges:
 				taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
-				target.taxes_and_charges = taxes_and_charges
+				if frappe.db.exists("Purchase Taxes and Charges", taxes_and_charges):
+					target.taxes_and_charges = taxes_and_charges
 
 			if source.taxes:
 				for index, item in enumerate(source.taxes):
@@ -93,7 +99,7 @@ def create_purchase_invoice(self):
 			target.run_method('calculate_taxes_and_totals')
 		
 		def update_accounts(source_doc, target_doc, source_parent):
-			target_company = frappe.db.get_value("Company", source_parent.company, "alternate_company")
+			target_company = self.alternate_company or self.branch
 			target_company_abbr = frappe.db.get_value("Company", target_company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 
@@ -172,6 +178,10 @@ def create_purchase_invoice(self):
 		
 		pi.naming_series = 'A' + pi.naming_series
 		pi.series_value = self.series_value
+		if si.items[0].purchase_receipt_docname:
+			doc = frappe.get_doc("Purchase Receipt", pi.items[0].purchase_receipt_docname)
+			pi.taxes_and_charges = doc.taxes_and_charges
+			pi.taxes = doc.taxes
 
 		pi.save(ignore_permissions= True)
 

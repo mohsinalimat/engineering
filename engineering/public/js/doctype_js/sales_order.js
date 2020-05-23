@@ -385,7 +385,11 @@ this.frm.cscript.onload = function (frm) {
 	this.frm.set_query("item_code", "items", function (doc) {
 		return {
 			query: "erpnext.controllers.queries.item_query",
-			filters: { 'is_sales_item': 1, 'authority': doc.authority }
+			filters: [
+
+				['is_sales_item', '=', 1],
+				['authority', 'in', ['', doc.authority]]
+			]
 		}
 	});
 }
@@ -399,9 +403,9 @@ cur_frm.fields_dict.taxes_and_charges.get_query = function (doc) {
 frappe.ui.form.on('Sales Order', {
 	refresh: function(frm) {
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
-			frm.set_value("ref_so", "");
+			frm.set_value("so_ref", "");
 			frm.set_value("inter_company_order_reference", "");
-			frm.set_value("ref_po")
+			frm.set_value("po_ref")
 		}
 	},
 	onload: function (frm) {

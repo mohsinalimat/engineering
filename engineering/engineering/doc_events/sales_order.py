@@ -217,11 +217,13 @@ def create_purchase_order(self):
 			for com in company_doc.allowed_to_transact_with:
 				if com.company == source_parent.company:
 					buying_price_list = com.price_list
+			if not buying_price_list:
+				frappe.throw(f"Set Buying price list for company in inter company {source_parent.through_company}.")
 			
 			if frappe.db.exists("Item Price", {'item_code': source_doc.item_code, 'price_list': buying_price_list}):
 				target_doc.rate = frappe.db.get_value("Item Price", {'item_code': source_doc.item_code, 'price_list': buying_price_list}, 'price_list_rate')
 			else:
-				frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(item.item_code), frappe.bold(target.buying_price_list)))
+				frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(source_doc.item_code), frappe.bold(buying_price_list)))
 
 		def update_taxes(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
@@ -254,7 +256,8 @@ def create_purchase_order(self):
 					"customer_address",
 					"company_address_display",
 					"company_address",
-					"through_company"
+					"through_company",
+					"set_warehouse"
 				]
 			},
 			"Sales Order Item": {
