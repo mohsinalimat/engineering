@@ -32,6 +32,7 @@ def create_payment_entry_pay(self):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
+			target.set_posting_time = 1
 
 			target.payment_type = "Pay"
 			target.party_type = "Supplier"
@@ -61,7 +62,8 @@ def create_payment_entry_pay(self):
 				"doctype": "Payment Entry",
 				"field_map": {
 					"name": "branch_receive_pe_ref",
-					"posting_date": "posting_date"
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
 				},
 				"field_no_map": {
 					"party_balance",
@@ -121,6 +123,8 @@ def create_payment_entry_receive(self):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
+			target.set_posting_time = 1
+
 			# target.paid_to = source.paid_from.replace(source_company_abbr, target_company_abbr)
 			# target.paid_from = source.paid_to.replace(source_company_abbr, target_company_abbr).replace("Creditors", "Debtors")
 
@@ -151,7 +155,9 @@ def create_payment_entry_receive(self):
 			"Payment Entry": {
 				"doctype": "Payment Entry",
 				"field_map": {
-					"name": "branch_pay_pe_ref"
+					"name": "branch_pay_pe_ref",
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
 				},
 				"field_no_map": {
 					"party_balance",
@@ -208,6 +214,8 @@ def create_payment_enty_branch(self):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
+			target.set_posting_time = 1
+
 			target.payment_type = "Pay"
 			target.party_type = "Supplier"
 			target.party = source.through_company
@@ -234,7 +242,10 @@ def create_payment_enty_branch(self):
 		fields = {
 			"Payment Entry": {
 				"doctype": "Payment Entry",
-				"field_map": {},
+				"field_map": {
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
+				},
 				"field_no_map": {
 					"party_balance",
 					"paid_to_account_balance",
@@ -471,6 +482,7 @@ def create_payment_entry(self):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
+			target.set_posting_time = 1
 
 			if target.payment_type == "Pay":
 				if target.mode_of_payment:
@@ -521,7 +533,9 @@ def create_payment_entry(self):
 			"Payment Entry": {
 				"doctype": "Payment Entry",
 				"field_map": {
-					"name": "pe_ref"
+					"name": "pe_ref",
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
 				},
 				"field_no_map": {
 					"party_balance",

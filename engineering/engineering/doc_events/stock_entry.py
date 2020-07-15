@@ -207,6 +207,7 @@ def create_stock_entry(self):
 		def set_missing_value(source, target):
 			target.company = frappe.db.get_value("Company", source.company, "alternate_company")
 			target.from_job_work = 1
+			target.set_posting_time = 1
 			if source.send_to_company:
 				target.job_work_company = frappe.db.get_value("Company", source.job_work_company, 'alternate_company')
 
@@ -269,6 +270,8 @@ def create_stock_entry(self):
 					"name": "se_ref",
 					"reference_doctype": "reference_doctype",
 					"reference_docname": "reference_docname",
+					"posting_date": "posting_date",
+					"poting_time": "posting_time"
 				},
 				"field_no_map": [
 					"from_warehouse",

@@ -85,7 +85,7 @@ frappe.ui.form.on('Purchase Invoice', {
 		frm.page.get_inner_group_button(__("Get items from")).find("button").addClass("hide");
 	},
 	naming_series: function(frm) {
-		if (frm.doc.company && !frm.doc.amended_from){
+		if (frm.doc.company && !frm.doc.amended_from && frm.doc.__islocal){
 			frappe.call({
 				method: "engineering.api.check_counter_series",
 				args: {

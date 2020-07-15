@@ -273,6 +273,8 @@ def create_branch_company_sales_invoice(self):
 			target.company = source.through_company
 			target.customer = source.company
 
+			target.set_posting_time = 1
+
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
@@ -340,7 +342,9 @@ def create_branch_company_sales_invoice(self):
 				"doctype": "Sales Invoice",
 				"field_map": {
 					"name": "branch_invoice_ref",
-					"ignore_pricing_rule": "ignore_pricing_rule"
+					"ignore_pricing_rule": "ignore_pricing_rule",
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
 				},
 				"field_no_map":{
 					"authority",
@@ -433,6 +437,8 @@ def create_sales_invoice(self):
 			target.si_ref = self.name
 			target.authority = "Unauthorized"
 
+			target.set_posting_time = 1
+
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
@@ -476,6 +482,8 @@ def create_sales_invoice(self):
 				"field_map": {
 					"si_ref": "name",
 					"is_return": "is_return",
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
 				},
 				"field_no_map":{
 					"authority",

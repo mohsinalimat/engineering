@@ -62,6 +62,8 @@ def create_purchase_invoice(self):
 			target.pi_ref = self.name
 			target.authority = "Unauthorized"
 
+			target.set_posting_time = 1
+
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
@@ -105,9 +107,10 @@ def create_purchase_invoice(self):
 
 			doc = frappe.get_doc("Company", target_company)
 
-			target_doc.income_account = doc.default_income_account
-			target_doc.expense_account = doc.default_expense_account
-			target_doc.cost_center = doc.cost_center
+			if source_doc.expense_account:
+				target_doc.expense_account = source_doc.expense_account.replace(source_company_abbr, target_company_abbr)
+			if source_doc.cost_center:
+				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 			
 			if source_doc.warehouse:
 				target_doc.warehouse = source_doc.warehouse.replace(
@@ -124,6 +127,8 @@ def create_purchase_invoice(self):
 				"doctype": "Purchase Invoice",
 				"field_map": {
 					"pi_ref": "name",
+					"posting_date": "posting_date",
+					"posting_time": "posting_time"
 				},
 				"field_no_map":{
 					"authority",
@@ -178,7 +183,7 @@ def create_purchase_invoice(self):
 		
 		pi.naming_series = 'A' + pi.naming_series
 		pi.series_value = self.series_value
-		if si.items[0].purchase_receipt_docname:
+		if pi.items[0].purchase_receipt_docname:
 			doc = frappe.get_doc("Purchase Receipt", pi.items[0].purchase_receipt_docname)
 			pi.taxes_and_charges = doc.taxes_and_charges
 			pi.taxes = doc.taxes

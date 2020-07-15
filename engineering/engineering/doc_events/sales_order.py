@@ -210,6 +210,13 @@ def create_purchase_order(self):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			target_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 
+			if source_doc.income_account:
+				target_doc.income_account = source_doc.income_account.replace(source_company_abbr, target_company_abbr)
+			if source_doc.expense_account:
+				target_doc.expense_account = source_doc.expense_account.replace(source_company_abbr, target_company_abbr)
+			if source_doc.cost_center:
+				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
+
 			if source_doc.warehouse:
 				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 			buying_price_list = None
