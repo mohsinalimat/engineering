@@ -121,11 +121,11 @@ def make_invoices(self):
 				item.cost_center = item.cost_center.replace(source_abbr, target_abbr)
 				if doc.doctype == 'Sales Invoice':
 					item.income_account = item.income_account.replace(source_abbr, target_abbr)
-				elif doc.party_type == 'Purchase Invoice':
+				elif doc.doctype == 'Purchase Invoice':
 					item.expense_account = item.expense_account.replace(source_abbr, target_abbr)
 			if doc.doctype == 'Sales Invoice':
 				doc.debit_to = doc.debit_to.replace(source_abbr, target_abbr)
-			elif doc.party_type == 'Purchase Invoice':
+			elif doc.doctype == 'Purchase Invoice':
 				doc.credit_to = doc.credit_to.replace(source_abbr, target_abbr)
 			
 			doc.submit()

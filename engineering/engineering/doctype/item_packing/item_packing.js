@@ -41,6 +41,40 @@ frappe.ui.form.on('Item Packing', {
 		if (frm.doc.__islocal){
 			frm.trigger('naming_series');
 		}
+	},
+	add_serial_no: function(frm){
+		if (frm.doc.add_serial_no){
+			if (frm.doc.serial_no){
+				var ks = frm.doc.serial_no.split(/\r?\n/);
+				ks.push(frm.doc.add_serial_no)
+				var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort();
+				if (unique.length <= frm.doc.qty_per_box){
+					frm.set_value("serial_no", unique.join('\n'))
+				} else {
+					frm.set_value("add_serial_no", null)
+					frappe.throw("Serial No Per Box Can not be greater than " + frm.doc.qty_per_box + '.')
+				}
+			} else {
+				frm.set_value("serial_no", frm.doc.add_serial_no)
+			}
+			frm.set_value("add_serial_no", null)
+		}
+	},
+	remove_serial_no: function(frm){
+		if (frm.doc.remove_serial_no){
+			if (frm.doc.serial_no){
+				var ks = frm.doc.serial_no.split(/\r?\n/);
+				for(var i = ks.length - 1; i >= 0; i--) {
+					if(ks[i] === frm.doc.remove_serial_no) {
+						ks.splice(i, 1);
+						break;
+					}
+				}
+				var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort();
+				frm.set_value("serial_no", unique.join('\n'));
+			}
+			frm.set_value("remove_serial_no", null)
+		}
 	}
 });
 

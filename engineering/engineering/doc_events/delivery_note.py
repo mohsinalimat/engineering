@@ -16,10 +16,17 @@ from engineering.api import update_discounted_amount
 def before_validate(self, method):
 	update_discounted_amount(self)
 
+def on_submit(self, method):
+	create_purchase_receipt(self)
+	create_delivery_note(self)
+	update_real_delivered_qty(self, "submit")
+
 def on_cancel(self, method):
-	# cancel_purchase_received(self)
 	cancel_all(self)
 	update_real_delivered_qty(self, "cancel")
+
+def on_trash(self, method):
+	delete_all(self)
 
 def cancel_all(self):
 	if self.dn_ref:
@@ -44,9 +51,6 @@ def cancel_purchase_received(self):
 
 		url = get_url_to_form("Purchase Receipt", pr.name)
 		frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=self.pr_ref)), title="Purchase Receipt Cancelled", indicator="red")
-
-def before_submit(self, method):	
-	pass
 
 def create_delivery_note(self):
 	def get_delivery_note_entry(source_name, target_doc=None, ignore_permissions= True):
@@ -77,12 +81,11 @@ def create_delivery_note(self):
 		def update_items(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			target_company_abbr = frappe.db.get_value("Company", source_parent.customer, "abbr")
-			# frappe.throw(str(source_company_abbr))
 
 			if source_doc.sales_order_item:
 				target_doc.against_sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
 				target_doc.sales_order_item = source_doc.so_detail
-			# frappe.throw(target_doc.against_sales_order)
+
 			if source_doc.warehouse:
 				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 			
@@ -92,7 +95,6 @@ def create_delivery_note(self):
 			if source_doc.sales_order_item:
 				target_doc.rate = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'rate')
 				target_doc.discounted_rate = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'discounted_rate')
-			# frappe.throw(str(target_doc.rate))
 
 		def update_taxes(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
@@ -147,8 +149,6 @@ def create_delivery_note(self):
 					"cost_center",
 					"expense_account",
 					"income_account",
-					# "real_qty",
-					# "discounted_rate",
 				],
 				"postprocess": update_items,
 			},
@@ -181,11 +181,6 @@ def create_delivery_note(self):
 			item.db_set('pr_detail', dn.items[idx].pr_detail)
 
 
-def on_submit(self, method):
-	create_purchase_receipt(self)
-	create_delivery_note(self)
-	update_real_delivered_qty(self, "submit")
-
 def update_real_delivered_qty(self, method):
 	if method == "submit":
 		for item in self.items:
@@ -202,13 +197,6 @@ def update_real_delivered_qty(self, method):
 				delivered_real_qty = sales_order_item.delivered_real_qty - item.real_qty
 
 				sales_order_item.db_set("delivered_real_qty", delivered_real_qty)
-	# pass
-
-def on_trash(self, method):
-	""" Custom On Trash Function """
-
-	# delete_purchase_receipt(self)
-	delete_all(self)
 
 def delete_all(self):
 	dn_ref = [self.dn_ref]
@@ -390,6 +378,47 @@ def create_purchase_receipt(self):
 			url = get_url_to_form("Purchase Receipt", pr.name)
 			frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))), title="Purchase Receipt Created", indicator="green")
 
+
+def get_invoiced_qty_map(delivery_note):
+	"""returns a map: {dn_detail: invoiced_qty}"""
+
+	invoiced_qty_map = {}
+
+	for dn_detail, qty in frappe.db.sql("""select dn_detail, qty from `tabSales Invoice Item`
+		where delivery_note=%s and docstatus=1""", delivery_note):
+			if not invoiced_qty_map.get(dn_detail):
+				invoiced_qty_map[dn_detail] = 0
+			invoiced_qty_map[dn_detail] += qty
+
+	return invoiced_qty_map
+
+def get_returned_qty_map(delivery_note):
+	"""returns a map: {so_detail: returned_qty}"""
+
+	returned_qty_map = frappe._dict(frappe.db.sql("""select dn_item.item_code, sum(abs(dn_item.qty)) as qty
+		from `tabDelivery Note Item` dn_item, `tabDelivery Note` dn
+		where dn.name = dn_item.parent
+			and dn.docstatus = 1
+			and dn.is_return = 1
+			and dn.return_against = %s
+		group by dn_item.item_code
+	""", delivery_note))
+
+	return returned_qty_map
+
+# All Whitelisted Method
+
+@frappe.whitelist()
+def submit_purchase_receipt(pr_number):
+	pr = frappe.get_doc("Purchase Receipt", pr_number)
+	pr.flags.ignore_permissions = True
+	pr.submit()
+	frappe.db.commit()
+
+	url = get_url_to_form("Purchase Receipt", pr.name)
+	msg = "Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))
+	frappe.msgprint(_(msg), title="Purchase Receipt Created", indicator="green")
+
 @frappe.whitelist()
 def create_invoice(source_name, target_doc=None):
 	doc = frappe.get_doc('Delivery Note', source_name)
@@ -546,41 +575,3 @@ def create_invoice(source_name, target_doc=None):
 	)
 
 	return doc
-
-def get_invoiced_qty_map(delivery_note):
-	"""returns a map: {dn_detail: invoiced_qty}"""
-
-	invoiced_qty_map = {}
-
-	for dn_detail, qty in frappe.db.sql("""select dn_detail, qty from `tabSales Invoice Item`
-		where delivery_note=%s and docstatus=1""", delivery_note):
-			if not invoiced_qty_map.get(dn_detail):
-				invoiced_qty_map[dn_detail] = 0
-			invoiced_qty_map[dn_detail] += qty
-
-	return invoiced_qty_map
-
-def get_returned_qty_map(delivery_note):
-	"""returns a map: {so_detail: returned_qty}"""
-
-	returned_qty_map = frappe._dict(frappe.db.sql("""select dn_item.item_code, sum(abs(dn_item.qty)) as qty
-		from `tabDelivery Note Item` dn_item, `tabDelivery Note` dn
-		where dn.name = dn_item.parent
-			and dn.docstatus = 1
-			and dn.is_return = 1
-			and dn.return_against = %s
-		group by dn_item.item_code
-	""", delivery_note))
-
-	return returned_qty_map
-
-@frappe.whitelist()
-def submit_purchase_receipt(pr_number):
-	pr = frappe.get_doc("Purchase Receipt", pr_number)
-	pr.flags.ignore_permissions = True
-	pr.submit()
-	frappe.db.commit()
-
-	url = get_url_to_form("Purchase Receipt", pr.name)
-	msg = "Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))
-	frappe.msgprint(_(msg), title="Purchase Receipt Created", indicator="green")

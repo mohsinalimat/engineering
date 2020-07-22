@@ -42,7 +42,6 @@ def on_trash(self, method):
 			frappe.delete_doc("Stock Entry", item)
 
 def on_cancel(self, method):
-	# self.flags.ignore_links = True
 	for item in self.items:
 		if item.serial_no:
 			for serial_no in get_serial_nos(item.serial_no):
@@ -329,13 +328,10 @@ def create_stock_entry(self):
 
 		se.save(ignore_permissions = True)
 
-		# self.company = se.company
 		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing","Jobwork Manufacturing"]:
 			se.get_stock_and_rate()
 		se.save(ignore_permissions = True)
-		# frappe.flags.warehouse_account_map = None
 		se.submit()
-		# self.company = company
 		self.db_set('se_ref', se.name)
 		self.se_ref = se.name
 

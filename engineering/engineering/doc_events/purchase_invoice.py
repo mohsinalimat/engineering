@@ -31,19 +31,17 @@ def validate(self, method):
 	cal_full_amount(self)
 
 def before_save(self, method):
-	update_status_updater_args(self)
+	pass
 
 def before_cancel(self, method):
-	update_status_updater_args(self)
+	pass
 
 def on_submit(self, method):
 	create_purchase_invoice(self)
-	update_status_updater_args(self)
 	self.db_set('inter_company_invoice_reference', self.si_ref)
 
 def on_cancel(self, method):
 	cancel_purchase_invoice(self)
-	update_status_updater_args(self)
 
 def on_trash(self, method):
 	delete_purchase_invoice(self)
@@ -67,15 +65,6 @@ def create_purchase_invoice(self):
 			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
 
-			# for index, item in enumerate(source.items):
-			# 	if item.net_rate:
-			# 		if item.net_rate != item.rate:
-			# 			full_amount = item.full_qty * item.full_rate
-			# 			amount_diff = item.amount - item.net_amount
-			# 			try:
-			# 				target.items[index].rate = (full_amount - amount_diff) / item.full_qty
-			# 			except:
-			# 				pass
 			if source.credit_to:
 				target.credit_to = source.credit_to.replace(source_company_abbr, target_company_abbr)
 			
@@ -198,8 +187,6 @@ def create_purchase_invoice(self):
 		pi.save(ignore_permissions= True)
 		pi.submit()
 		
-		# pi.submit()
-
 		self.db_set('pi_ref', pi.name)
 
 def cancel_purchase_invoice(self):
@@ -220,6 +207,3 @@ def delete_purchase_invoice(self):
 		frappe.db.set_value("Purchase Invoice", self.pi_ref, 'pi_ref', '')
 
 		frappe.delete_doc("Purchase Invoice", self.pi_ref, force = 1, ignore_permissions=True)
-
-def update_status_updater_args(self):
-	self.status_updater[0]['target_parent_field'] = 'full_amount'

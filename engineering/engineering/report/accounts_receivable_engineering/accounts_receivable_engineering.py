@@ -77,9 +77,7 @@ class ReceivablePayableReport(object):
 				row.bank_outstanding = row.outstanding
 
 				if row.reference_doc:
-					
 					row_data = self.data_map[row.reference_doc][row.party]
-				
 					row.invoiced = row_data.invoiced
 					row.paid = row_data.paid
 					row.outstanding = row_data.outstanding
@@ -669,7 +667,8 @@ class ReceivablePayableReport(object):
 		self.gl_entries = frappe.db.sql("""
 			select
 				gle.name, gle.posting_date, gle.account, gle.party_type, gle.party, gle.voucher_type, gle.voucher_no,
-				gle.against_voucher_type, gle.against_voucher, gle.account_currency, IFNULL(pe.reference_no, gle.remarks) as remarks, gle.company, {0}
+				gle.against_voucher_type, gle.against_voucher, gle.account_currency, IFNULL(pe.reference_no, gle.remarks) as remarks, gle.company, 
+				IFNULL(si.si_ref, IFNULL(pi.pi_ref, pe.pe_ref)) as reference_doc, {0}
 			from
 				`tabGL Entry` as gle
 				LEFT JOIN `tabJournal Entry` as jv on jv.name = gle.voucher_no

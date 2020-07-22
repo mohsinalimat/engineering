@@ -13,6 +13,9 @@ from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 
 class ItemPacking(Document):
 	def on_update(self):
+		serial_no = get_serial_nos(self.serial_no)
+		self.no_of_items = len(serial_no)
+
 		self.submit()
 		
 	def on_submit(self):

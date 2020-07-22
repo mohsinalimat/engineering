@@ -7,12 +7,6 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import get_url_to_form
 from frappe.contacts.doctype.address.address import get_company_address
 
-def before_validate(self, method):
-	pass
-	# for item in self.items:
-		# item.discounted_amount = item.discounted_rate * item.real_qty
-		# item.discounted_net_amount = item.discounted_amount
-
 def get_invoiced_qty_map(purchase_receipt):
 	"""returns a map: {pr_detail: invoiced_qty}"""
 	invoiced_qty_map = {}

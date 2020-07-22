@@ -66,7 +66,6 @@ doc_events = {
 		"before_naming": "engineering.api.before_naming",
 		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
 		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
-		"before_submit": "engineering.engineering.doc_events.delivery_note.before_submit",
 		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
 		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
@@ -79,7 +78,6 @@ doc_events = {
 		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Purchase Invoice": {
-		"before_validate": "engineering.engineering.doc_events.purchase_invoice.before_validate",
 		"on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
@@ -120,7 +118,7 @@ doc_events = {
 	},
 	"Purchase Receipt": {
 		"before_naming": "engineering.api.before_naming",
-		"before_validate": "engineering.engineering.doc_events.purchase_receipt.before_validate",
+		# "before_validate": "engineering.engineering.doc_events.purchase_receipt.before_validate",
 		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Journal Entry": {
@@ -138,6 +136,9 @@ doc_events = {
 	},
 	"Fiscal Year": {
 		'before_save': 'engineering.engineering.doc_events.fiscal_year.before_save'
+	},
+	"Stock Ledger Entry": {
+		'before_submit': 'engineering.engineering.doc_events.stock_ledger_entry.before_submit'
 	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
@@ -177,6 +178,7 @@ from engineering.engineering.override.taxes_and_totals import get_current_tax_am
 
 from engineering.engineering.doc_events.stock_entry import get_items as my_get_items
 from erpnext.accounts.doctype.opening_invoice_creation_tool.opening_invoice_creation_tool import OpeningInvoiceCreationTool
+# from erpnext.stock.doctype.stock_ledger_entry.stock_ledger_entry import StockLedgerEntry
 
 OpeningInvoiceCreationTool.get_invoice_dict = get_invoice_dict
 OpeningInvoiceCreationTool.make_invoices = make_invoices

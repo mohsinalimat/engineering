@@ -12,11 +12,9 @@ from engineering.api import update_discounted_amount
 
 def before_validate(self, method):
 	update_discounted_amount(self)
-	if self.through_company == self.company:
-		self.through_company == None
+	reseting_thorugh_company(self)
 
 def on_submit(self, method):
-	# create_sales_order(self)
 	create_purchase_order(self)
 
 def on_cancel(self, method):
@@ -25,149 +23,15 @@ def on_cancel(self, method):
 def on_trash(self, method):
 	delete_sales_purchase_order(self)
 
-def delete_sales_purchase_order(self):
-	so_ref = [self.so_ref, self.name]
-	po_ref = [
-		self.po_ref,
-		frappe.db.get_value("Sales Order", self.so_ref, 'po_ref')
-	]
+def reseting_thorugh_company(self):
+	""" This function use to reset through copmany if through company is same as company """
 
-	for so in so_ref:
-		if so:
-			frappe.db.set_value("Sales Order", so, 'po_ref', '')
-			frappe.db.set_value("Sales Order", so, 'so_ref', '')
-			frappe.db.set_value("Sales Order", so, 'inter_company_order_reference', '')
-	
-	for po in po_ref:
-		if po:
-			frappe.db.set_value("Purchase Order", po, 'so_ref', '')
-			frappe.db.set_value("Purchase Order", po, 'inter_company_order_reference', '')
-	
-	for so in so_ref:
-		if so and so != self.name:
-			if frappe.db.exists("Sales Order", so):
-				frappe.delete_doc("Sales Order", so)
-	
-	for po in po_ref:
-		if po:
-			if frappe.db.exists("Purchase Order", po):
-				frappe.delete_doc("Purchase Order", po)
-
-	if self.so_ref:
-		frappe.db.set_value("Sales Order", self.so_ref, 'so_ref', None)
-
-		if frappe.db.exists("Sales Order", self.so_ref):
-			frappe.delete_doc("Sales Order", self.so_ref)
-	
-	if self.po_ref:
-		frappe.db.set_value("Purchase Order", self.po_ref, "so_ref", None)
-		frappe.db.set_value("Purchase Order", self.po_ref, "inter_company_order_reference", None)
-
-		frappe.db.set_value("Sales Order", self.name, "po_ref", None)
-		frappe.db.set_value("Sales Order", self.name, "inter_company_order_reference", None)
-
-		if frappe.db.exists("Purchase Order", self.po_ref):
-			frappe.delete_doc("Purchase Order", self.po_ref)
-
-def create_sales_order(self):
-	def get_sales_order_entry(source_name, target_doc=None, ignore_permissions= True):
-		def set_missing_value(source, target):
-			target.company = source.through_company
-			target.customer = source.company
-
-			target_company_abbr = frappe.db.get_value("Company", target.company, "abbr")
-			source_company_abbr = frappe.db.get_value("Company", source.company, "abbr")
-
-			if source.taxes_and_charges:
-				target_taxes_and_charges = source.taxes_and_charges.replace(source_company_abbr, target_company_abbr)
-				if frappe.db.exists("Sales Taxes and Charges Template", target_taxes_and_charges):
-					target.taxes_and_charges = target_taxes_and_charges
-
-			if self.amended_from:
-				target.amended_from = frappe.db.get_value("Sales Order", {'so_ref': self.amended_from}, "name")
-
-			target.run_method("set_missing_values")
-			target.run_method("calculate_taxes_and_charges")
-
-		def update_items(source_doc, target_doc, source_parent):
-			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
-			target_company_abbr = frappe.db.get_value("Company", source_parent.through_company, "abbr")
-
-			if source_doc.warehouse:
-				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
-
-		def update_taxes(source_doc, target_doc, source_parent):
-			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
-			target_company_abbr = frappe.db.get_value("Company", source_parent.through_company, "abbr")
-
-			if source_doc.account_head:
-				target_doc.account_head = source_doc.account_head.replace(source_company_abbr, target_company_abbr)
-
-			if source_doc.cost_center:
-				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
-
-		fields = {
-			"Sales Order": {
-				"doctype": "Sales Order",
-				"field_map": {
-					"name": "supplier_delivery_note",
-					"selling_price_list": "buying_price_list",
-					"name": "so_ref"
-				},
-				"field_no_map": [
-					"taxes_and_charges",
-					"series_value",
-					"customer_name",
-					"through_company"
-				]
-			},
-			"Sales Order Item": {
-				"doctype": "Sales Order Item",
-				"field_map": {
-					"purchase_order_item": "purchase_order_item",
-					"serial_no": "serial_no",
-					"batch_no": "batch_no",
-					"name": "sales_order_item",
-					"delivery_date": "delivery_date",
-				},
-				"field_no_map": [
-					"warehouse",
-					"cost_center",
-					"expense_account",
-					"income_account",
-					"real_qty",
-					"discounted_rate",
-					"through_company"
-				],
-				"postprocess": update_items,
-			},
-			"Sales Taxes and Charges": {
-				"doctype": "Sales Taxes and Charges",
-				"postprocess": update_taxes,
-			}
-		}
-
-		doc = get_mapped_doc(
-			"Sales Order",
-			source_name,
-			fields,
-			target_doc,
-			set_missing_value,
-			ignore_permissions=ignore_permissions
-		)
-
-		return doc
-		
-	if self.through_company:
-		se = get_sales_order_entry(self.name)
-		se.save(ignore_permissions = True)
-		se.submit()
-
-		self.db_set("so_ref", se.name)
-		for idx, item in enumerate(self.items):
-			item.db_set('sales_order_item', se.items[idx].name)
+	if self.through_company == self.company:
+		self.through_company == None
 
 def create_purchase_order(self):
+	""" This function is use to create purchase order on submit of sales order in inter company invoice """
+
 	def get_purchase_order_entry(source_name, target_doc=None, ignore_permissions= True):
 		def set_missing_value(source, target):
 			target.company = source.company
@@ -184,7 +48,6 @@ def create_purchase_order(self):
 			if self.amended_from:
 				so_ref = frappe.db.get_value("Sales Order", source.amended_from, 'so_ref')
 				target.amended_from = frappe.db.get_value("Purchase Order", {'so_ref': so_ref}, "name")
-				# frappe.throw(str(target.amended_from))
 			
 			company_doc = frappe.get_doc("Company", target.supplier)
 
@@ -199,9 +62,8 @@ def create_purchase_order(self):
 				if frappe.db.exists("Item Price", {'item_code': item.item_code, 'price_list': target.buying_price_list}):
 					item.rate = frappe.db.get_value("Item Price", {'item_code': item.item_code, 'price_list': target.buying_price_list}, 'price_list_rate')
 				else:
-					frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(item.item_code), frappe.bold(target.buying_price_list)))
-			
-			# frappe.throw("Hello")
+					# frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(item.item_code), frappe.bold(target.buying_price_list)))
+					item.rate = 0
 
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
@@ -210,11 +72,11 @@ def create_purchase_order(self):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			target_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 
-			if source_doc.income_account:
+			if source_doc.get('income_account'):
 				target_doc.income_account = source_doc.income_account.replace(source_company_abbr, target_company_abbr)
-			if source_doc.expense_account:
+			if source_doc.get('expense_account'):
 				target_doc.expense_account = source_doc.expense_account.replace(source_company_abbr, target_company_abbr)
-			if source_doc.cost_center:
+			if source_doc.get('cost_center'):
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 
 			if source_doc.warehouse:
@@ -326,12 +188,56 @@ def create_purchase_order(self):
 def cancel_sales_order(self):
 	if self.so_ref:
 		doc = frappe.get_doc("Sales Order", self.so_ref)
-		# doc.flags.ignore_permissions = True
+		doc.flags.ignore_permissions = True
 		if doc.docstatus == 1:
 			doc.cancel()
 	
 	if self.po_ref:
 		po = frappe.get_doc("Purchase Order", self.po_ref)
-		# po.flags.ignore_permissions = True
+		po.flags.ignore_permissions = True
 		if po.docstatus == 1:
 			po.cancel()
+
+def delete_sales_purchase_order(self):
+	so_ref = [self.so_ref, self.name]
+	po_ref = [
+		self.po_ref,
+		frappe.db.get_value("Sales Order", self.so_ref, 'po_ref')
+	]
+
+	for so in so_ref:
+		if so:
+			frappe.db.set_value("Sales Order", so, 'po_ref', '')
+			frappe.db.set_value("Sales Order", so, 'so_ref', '')
+			frappe.db.set_value("Sales Order", so, 'inter_company_order_reference', '')
+	
+	for po in po_ref:
+		if po:
+			frappe.db.set_value("Purchase Order", po, 'so_ref', '')
+			frappe.db.set_value("Purchase Order", po, 'inter_company_order_reference', '')
+	
+	for so in so_ref:
+		if so and so != self.name:
+			if frappe.db.exists("Sales Order", so):
+				frappe.delete_doc("Sales Order", so)
+	
+	for po in po_ref:
+		if po:
+			if frappe.db.exists("Purchase Order", po):
+				frappe.delete_doc("Purchase Order", po)
+
+	if self.so_ref:
+		frappe.db.set_value("Sales Order", self.so_ref, 'so_ref', None)
+
+		if frappe.db.exists("Sales Order", self.so_ref):
+			frappe.delete_doc("Sales Order", self.so_ref)
+	
+	if self.po_ref:
+		frappe.db.set_value("Purchase Order", self.po_ref, "so_ref", None)
+		frappe.db.set_value("Purchase Order", self.po_ref, "inter_company_order_reference", None)
+
+		frappe.db.set_value("Sales Order", self.name, "po_ref", None)
+		frappe.db.set_value("Sales Order", self.name, "inter_company_order_reference", None)
+
+		if frappe.db.exists("Purchase Order", self.po_ref):
+			frappe.delete_doc("Purchase Order", self.po_ref)

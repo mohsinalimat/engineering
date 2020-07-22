@@ -10,6 +10,9 @@
   "item_group",
   "dealer_points",
   "retailer_points",
+  "qty_per_box",
+  "no_of_items",
+  "tested_by",
   "column_break_3",
   "series_value",
   "posting_date",
@@ -17,7 +20,9 @@
   "company",
   "item_name",
   "section_break_5",
+  "add_serial_no",
   "serial_no",
+  "remove_serial_no",
   "column_break_9",
   "include_for_manufacturing",
   "warehouse",
@@ -158,16 +163,48 @@
    "fieldtype": "Int",
    "label": "Retailer Points",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "no_of_items",
+   "fieldtype": "Int",
+   "label": "No of Items",
+   "read_only": 1
+  },
+  {
+   "fieldname": "add_serial_no",
+   "fieldtype": "Data",
+   "label": "Add Serial No"
+  },
+  {
+   "fieldname": "remove_serial_no",
+   "fieldtype": "Data",
+   "label": "Remove Serial No"
+  },
+  {
+   "default": "0",
+   "fetch_from": "qty_per_box",
+   "fieldname": "qty_per_box",
+   "fieldtype": "Float",
+   "label": "Qty Per Box",
+   "read_only": 1
+  },
+  {
+   "fieldname": "tested_by",
+   "fieldtype": "Link",
+   "label": "Tested By",
+   "options": "Employee"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-03-24 12:06:47.809507",
+ "modified": "2020-07-20 18:16:16.611473",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Item Packing",
  "owner": "Administrator",
  "permissions": [
   {
+   "cancel": 1,
    "create": 1,
    "delete": 1,
    "email": 1,
@@ -177,6 +214,7 @@
    "report": 1,
    "role": "System Manager",
    "share": 1,
+   "submit": 1,
    "write": 1
   }
  ],
