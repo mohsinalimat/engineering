@@ -37,6 +37,12 @@ def execute(filters=None):
 			"fieldtype": "Float",
 			"width": 150
 		},
+		{
+			"fieldname": "view_sle",
+			"label": "View Details",
+			"fieldtype": "Data",
+			"width": 100
+		},
 	]
 	data = get_data(filters)
 	return columns, data
@@ -47,10 +53,10 @@ def get_data(filters):
 	if not item_group:
 		return None
 	
-	item_group = filter_item_group(item_group)
+	item_group = filter_item_group(filters, item_group)
 
-	out = prepare_data(item_group)
-	data = get_final_out(out)
+	out = prepare_data(filters, item_group)
+	data = get_final_out(filters, out)
 
 	return data
 
@@ -73,7 +79,7 @@ def get_group_map(out):
 	
 	return item_group_map
 
-def get_final_out (out):
+def get_final_out (filters, out):
 	data = []
 	item_group_map = get_group_map(out)
 	#frappe.msgprint(str(item_group_map))
@@ -85,6 +91,19 @@ def get_final_out (out):
 		if row.balance_qty > 0:
 			row.valuation = flt(row.balance_value)/flt(row.balance_qty)
 			data.append(row)
+		
+		if row.is_group:
+			row.view_sle = f"""
+				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
+					type='button' company='{filters.company}' item-group='{row.item_group}'
+					onClick='route_to_sle(this.getAttribute("company"),this.getAttribute("item-group"))'>View</button>"""
+
+		if not row.is_group:
+			row.view_sle = f"""
+				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
+					type='button' company='{filters.company}' item-name='{row.item_code}'
+					onClick='route_to_sle_item(this.getAttribute("company"),this.getAttribute("item-name"))'>View</button>"""
+
 	return data
 		
 
@@ -98,7 +117,7 @@ def get_item_group(filters):
 
 	item = frappe.db.sql(f"""
 		select 
-			name, item_name, item_group as parent_item_group, 0 as is_group
+			name, item_code, item_name, item_group as parent_item_group, 0 as is_group
 		from
 			`tabItem`
 		where
@@ -127,7 +146,7 @@ def get_item_map(filters):
 		
 	return item_map
 
-def filter_item_group(item_group, depth=10):
+def filter_item_group(filters,item_group, depth=10):
 	parent_children_map = {}
 	item_group_by_name = {}
 	
@@ -162,12 +181,13 @@ def sort_item_group(item_group, is_root=False, key="name"):
 
 	item_group.sort(key = functools.cmp_to_key(compare_item_groups))
 
-def prepare_data(item_group):
+def prepare_data(filters,item_group):
 	data = []
 
 	for d in item_group:
 		# add to output
 		row = frappe._dict({
+			"item_code": _(d.item_code or ''),
 			"item_group": _(d.item_name or d.name),
 			"parent_item_group": _(d.parent_item_group),
 			"indent": flt(d.indent),

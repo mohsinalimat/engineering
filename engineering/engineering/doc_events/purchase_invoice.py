@@ -85,6 +85,12 @@ def create_purchase_invoice(self):
 				target.amended_from = frappe.db.get_value(
 					"Purchase Invoice", {"pi_ref": source.amended_from}, "name"
 				)
+
+			if source.write_off_account:
+				target.write_off_account = source.write_off_account.replace(source_company_abbr, target_company_abbr)
+			
+			if source.write_off_cost_center:
+				target.write_off_cost_center = source.write_off_cost_center.replace(source_company_abbr, target_company_abbr)
 			
 			target.run_method('set_missing_values')
 			target.run_method('calculate_taxes_and_totals')
@@ -117,7 +123,9 @@ def create_purchase_invoice(self):
 				"field_map": {
 					"pi_ref": "name",
 					"posting_date": "posting_date",
-					"posting_time": "posting_time"
+					"posting_time": "posting_time",
+					"write_off_amount": "write_off_amount",
+					"base_write_off_amount": "base_write_off_amount",
 				},
 				"field_no_map":{
 					"authority",

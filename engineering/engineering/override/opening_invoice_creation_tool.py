@@ -115,7 +115,7 @@ def make_invoices(self):
 			for item in args['items']:
 				item['rate'] = flt(row.full_amount) / flt(item['qty'])
 			doc = frappe.get_doc(args).insert()
-			doc.company = frappe.db.get_value("Company", doc.company, 'alternate_company')
+			doc.company = alternate_company
 			for item in doc.items:
 				item.rate = flt(row.full_amount) / flt(item.qty)
 				item.cost_center = item.cost_center.replace(source_abbr, target_abbr)

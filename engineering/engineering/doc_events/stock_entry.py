@@ -6,6 +6,10 @@ from erpnext.stock.doctype.item.item import get_item_defaults
 from six import itervalues
 from frappe.model.mapper import get_mapped_doc
 
+def validate(self, method):
+	if self.purpose in ['Repack','Manufacture','Material Issue']:
+		self.get_stock_and_rate()
+	validate_additional_cost(self)
 
 def on_trash(self, method):
 	se_list = []
@@ -212,6 +216,7 @@ def create_stock_entry(self):
 
 			if source.stock_entry_type == "Manufacture":
 				target.stock_entry_type = "Manufacturing"
+				target.work_order = source.work_order
 			
 			if source.stock_entry_type == "Material Transfer for Manufacture":
 				target.stock_entry_type = "Material Transfer"
@@ -270,7 +275,8 @@ def create_stock_entry(self):
 					"reference_doctype": "reference_doctype",
 					"reference_docname": "reference_docname",
 					"posting_date": "posting_date",
-					"poting_time": "posting_time"
+					"poting_time": "posting_time",
+					"work_order":"work_order",
 				},
 				"field_no_map": [
 					"from_warehouse",
@@ -299,7 +305,6 @@ def create_stock_entry(self):
 					"batch_no",
 					"serial_no",
 					"basic_rate",
-					"work_order",
 					"bom_no",
 					"fg_completed_qty",
 					"use_multi_level_bom"
@@ -328,7 +333,7 @@ def create_stock_entry(self):
 
 		se.save(ignore_permissions = True)
 
-		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing","Jobwork Manufacturing"]:
+		if se.stock_entry_type in ['Material Transfer', 'Material Issue', 'Repack', "Manufacturing","Jobwork Manufacturing","Manufacture"]:
 			se.get_stock_and_rate()
 		se.save(ignore_permissions = True)
 		se.submit()
@@ -413,3 +418,8 @@ def create_job_work_receipt_entry(self):
 		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
 		se.submit()
+
+def validate_additional_cost(self):
+	if self.purpose in ['Material Transfer','Material Transfer for Manufacture','Repack','Manufacture'] and self._action == "submit":
+		if round(self.value_difference/100,0) != round(self.total_additional_costs/100,0):
+			frappe.throw("ValuationError: Value difference between incoming and outgoing amount is higher than additional cost")

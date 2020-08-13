@@ -144,6 +144,12 @@ def create_branch_company_sales_invoice(self):
 					frappe.db.get_value("Delivery Note Item", source.items[0].delivery_note_item, 'parent')
 				,'selling_price_list')
 			
+			if source.write_off_account:
+				target.write_off_account = source.write_off_account.replace(source_company_abbr, target_company_abbr)
+			
+			if source.write_off_cost_center:
+				target.write_off_cost_center = source.write_off_cost_center.replace(source_company_abbr, target_company_abbr)
+			
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
 		
@@ -193,7 +199,10 @@ def create_branch_company_sales_invoice(self):
 					"name": "branch_invoice_ref",
 					"ignore_pricing_rule": "ignore_pricing_rule",
 					"posting_date": "posting_date",
-					"posting_time": "posting_time"
+					"posting_time": "posting_time",
+					"write_off_amount": "write_off_amount",
+					"base_write_off_amount": "base_write_off_amount",
+					"write_off_outstanding_amount_automatically": "write_off_outstanding_amount_automatically",
 				},
 				"field_no_map":{
 					"authority",
@@ -301,6 +310,12 @@ def create_sales_invoice(self):
 						source_company_abbr, target_company_abbr
 					)
 			
+			if source.write_off_account:
+				target.write_off_account = source.write_off_account.replace(source_company_abbr, target_company_abbr)
+			
+			if source.write_off_cost_center:
+				target.write_off_cost_center = source.write_off_cost_center.replace(source_company_abbr, target_company_abbr)
+			
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value("Sales Invoice", {"si_ref": source.amended_from}, "name")
 			target.ignore_pricing_rule = 1
@@ -322,7 +337,10 @@ def create_sales_invoice(self):
 					"si_ref": "name",
 					"is_return": "is_return",
 					"posting_date": "posting_date",
-					"posting_time": "posting_time"
+					"posting_time": "posting_time",
+					"write_off_amount": "write_off_amount",
+					"base_write_off_amount": "base_write_off_amount",
+					"write_off_outstanding_amount_automatically": "write_off_outstanding_amount_automatically",
 				},
 				"field_no_map":{
 					"authority",

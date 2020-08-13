@@ -33,6 +33,7 @@ doctype_js = {
 	"Work Order": "public/js/doctype_js/work_order.js",
 	"Stock Entry": "public/js/doctype_js/stock_entry.js",
 	"Company": "public/js/doctype_js/company.js",
+	"Batch": "public/js/doctype_js/batch.js",
 }
 
 doc_events = {
@@ -101,6 +102,7 @@ doc_events = {
 	"Payment Entry": {
 		"before_naming": "engineering.api.before_naming",
 		"on_submit": "engineering.engineering.doc_events.payment_entry.on_submit",
+		"on_update_after_submit": "engineering.engineering.doc_events.payment_entry.on_update_after_submit",
 		"on_cancel": "engineering.engineering.doc_events.payment_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.payment_entry.on_trash",
 		"validate": "engineering.engineering.doc_events.payment_entry.validate"
@@ -132,7 +134,11 @@ doc_events = {
 		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.stock_entry.on_trash",
 		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate",
-		"validate": "engineering.controllers.item_validation.validate_item_authority"
+		"validate": [
+			"engineering.controllers.item_validation.validate_item_authority",
+			"engineering.engineering.doc_events.stock_entry.validate"
+
+		]
 	},
 	"Fiscal Year": {
 		'before_save': 'engineering.engineering.doc_events.fiscal_year.before_save'

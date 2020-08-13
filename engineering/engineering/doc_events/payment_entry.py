@@ -24,6 +24,50 @@ def on_submit(self, method):
 	create_payment_entry_pay(self)
 	create_payment_entry_receive(self)
 
+def on_update_after_submit(self, method):
+	update_payment_entries(self)
+
+def update_payment_entries(self):
+	authority = frappe.db.get_value("Company", self.company, 'authority')
+	
+	if authority == "Unauthorized" and not self.pe_ref:
+		for item in self.references:
+			if item.reference_doctype == "Sales Invoice":
+				pay_amount_left = real_difference_amount = frappe.db.get_value("Sales Invoice", item.reference_name, 'real_difference_amount')
+				allocated_amount = frappe.get_value("Payment Entry References", {'voucher_no': item.voucher_no, 'docstatus': 1}, "sum(allocated_amount)")
+				diff_value = pay_amount_left - allocated_amount
+				if diff_value > real_difference_amount:
+					frappe.throw("Allocated Amount Cannot be Greater Than Difference Amount {}".format(diff_value))
+				else:
+					frappe.db.set_value("Sales Invoice", item.reference_name, 'pay_amount_left', diff_value)
+			
+			if item.reference_doctype == "Purchase Invoice":
+				pay_amount_left = real_difference_amount = frappe.db.get_value("Purchase Invoice", item.reference_name, 'real_difference_amount')
+				allocated_amount = frappe.get_value("Payment Entry References", {'voucher_no': item.voucher_no, 'docstatus': 1}, "sum(allocated_amount)")
+				diff_value = pay_amount_left - allocated_amount
+				
+				if diff_value > real_difference_amount:
+					frappe.throw("Allocated Amount Cannot be Greater Than Difference Amount {}".format(diff_value))
+				else:
+					frappe.db.set_value("Purchase Invoice", item.reference_name, 'pay_amount_left', diff_value)
+
+	if self.pe_ref and not self.get('dont_replicate'):
+		payment_doc = frappe.get_doc("Payment Entry", self.pe_ref)
+		payment_doc.dont_replicate = 1
+		payment_doc_reference_list = [x.reference_name for x in payment_doc.references]
+
+		for idx, row in enumerate(self.references):
+			if row.reference_doctype != "Journal Entry" and self.paid_from_account_currency == 'INR' and self.paid_from_account_currency == 'INR':
+				ref_field = "pi_ref" if row.reference_doctype == 'Purchase Invoice' else 'si_ref'
+				row.against_voucher = frappe.db.get_value(row.reference_doctype, row.reference_name, ref_field)
+				row.voucher_detail_no = None
+				row.difference_amount = 0
+				row.difference_account = None
+				if row.against_voucher not in payment_doc_reference_list:
+					row.against_voucher_type = row.reference_doctype
+					row.grand_total = row.total_amount
+					update_reference_in_payment_entry(row, payment_doc)
+
 def create_payment_entry_pay(self):
 	def get_payment_entry_pay(source_name, target_doc=None, ignore_permissions= True):
 		def set_missing_values(source, target):

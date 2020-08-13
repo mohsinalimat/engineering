@@ -15,6 +15,21 @@ cur_frm.fields_dict.items.grid.get_field("item_code").get_query = function (doc)
 	}
 };
 erpnext.accounts.PurchaseInvoice = erpnext.accounts.PurchaseInvoice.extend({
+	show_stock_ledger: function () {
+        var me = this;
+        if (this.frm.doc.docstatus === 1) {
+            cur_frm.add_custom_button(__("Stock Ledger Engineering"), function () {
+                frappe.route_options = {
+                    voucher_no: me.frm.doc.name,
+                    from_date: me.frm.doc.posting_date,
+                    to_date: me.frm.doc.posting_date,
+                    company: me.frm.doc.company
+                };
+                frappe.set_route("query-report", "Stock Ledger Engineering");
+            }, __("View"));
+        }
+
+    },
 	scan_barcode: function(){
 		let scan_barcode_field = this.frm.fields_dict["scan_barcode"];
 
@@ -50,11 +65,13 @@ erpnext.accounts.PurchaseInvoice = erpnext.accounts.PurchaseInvoice.extend({
 				}
 			});
 		}
-	}
+	},
+	
 });
+$.extend(cur_frm.cscript, new erpnext.accounts.PurchaseInvoice({frm: cur_frm}));
 
 // for backward compatibility: combine new and previous states
-$.extend(cur_frm.cscript, new erpnext.accounts.PurchaseInvoice({frm: cur_frm}));
+
 this.frm.cscript.onload = function (frm) {
 	this.frm.set_query("item_code", "items", function (doc) {
 		return {

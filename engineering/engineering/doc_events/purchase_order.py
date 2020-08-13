@@ -41,6 +41,9 @@ def create_sales_order(self):
 			if self.amended_from:
 				name = frappe.db.get_value("Sales Order", {'po_ref': self.amended_from}, "name")
 				target.amended_from = name
+			
+			target.transaction_date = source.transaction_date
+			target.set_posting_time = 1
 
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")

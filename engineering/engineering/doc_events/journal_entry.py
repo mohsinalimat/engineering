@@ -47,8 +47,11 @@ def create_journal_entry(self):
 			target_company_abbr = frappe.db.get_value("Company", target_company, "abbr")
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			
-			target_doc.account = source_doc.account.replace(source_company_abbr, target_company_abbr)
-			target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
+			if source_doc.account:
+				target_doc.account = source_doc.account.replace(source_company_abbr, target_company_abbr)
+			
+			if source_doc.cost_center:
+				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 
 
 		fields = {
@@ -87,7 +90,7 @@ def create_journal_entry(self):
 	# getting authority of company
 	authority = frappe.db.get_value("Company", self.company, "authority")
 
-	if authority == "Authorized":
+	if authority == "Authorized" and self.replicate:
 		jv = get_journal_entry(self.name)
 		try:
 			jv.naming_series = 'A' + jv.naming_series

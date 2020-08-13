@@ -4,6 +4,7 @@ from frappe import _, ValidationError
 from frappe.utils import flt, cint
 from erpnext.stock.doctype.serial_no.serial_no import get_item_details, validate_serial_no, update_serial_nos, get_serial_nos, validate_material_transfer_entry, has_duplicate_serial_no
 class SerialNoRequiredError(ValidationError): pass
+class SerialNoQtyError(ValidationError): pass
 
 def process_serial_no(sle):
 	item_det = get_item_details(sle.item_code)
