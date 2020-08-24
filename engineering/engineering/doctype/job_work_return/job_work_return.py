@@ -68,15 +68,12 @@ class JobWorkReturn(Document):
 				'description': row.description,
 				'amount': row.amount
 			})
-		try:
-			se.save(ignore_permissions=True)
-			se.get_stock_and_rate()
-			se.save(ignore_permissions=True)
-			se.submit()
-			self.db_set('repack_ref',se.name)
-			self.repack_ref = se.name
-		except Exception as e:
-			raise e
+		se.save(ignore_permissions=True)
+		se.get_stock_and_rate()
+		se.save(ignore_permissions=True)
+		se.submit()
+		self.db_set('repack_ref',se.name)
+		self.repack_ref = se.name
 
 	def send_jobwork_finish_entry(self):
 		# create material issue
@@ -85,13 +82,12 @@ class JobWorkReturn(Document):
 		mi.purpose = "Material Issue"
 		mi.set_posting_time = 1
 		mi.reference_doctype = self.doctype
-		mi.reference_docname =self.name
+		mi.reference_docname = self.name
 		mi.company = self.company
 		mi.posting_date = self.posting_date
 		mi.posting_time = self.posting_time
 		mi.send_to_company = 1
 		mi.job_work_company = self.job_work_company
-		#company = frappe.db.get_value("Stock Entry",self.material_transfer,'job_work_company')
 		
 		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
 		target_abbr = frappe.db.get_value("Company", self.job_work_company,'abbr')
@@ -112,24 +108,20 @@ class JobWorkReturn(Document):
 				'amount': row.amount
 			})
 
-		try:
-			mi.save(ignore_permissions=True)
-			
-			# mi.update_stock_ledger()
-			mi.submit()
-			self.db_set('issue_ref',mi.name)
-			self.issue_ref = mi.name
-		except Exception as e:
-			raise e
+		mi.save(ignore_permissions=True)
+		
+		# mi.update_stock_ledger()
+		mi.save(ignore_permissions=True)
+		mi.submit()
+		self.db_set('issue_ref',mi.name)
+		self.issue_ref = mi.name
 
 	def cancel_repack_entry(self):
 		if frappe.db.exists("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.job_work_company}):
 			se = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.job_work_company})
 			se.flags.ignore_permissions = True
-			try:
+			if se.docstatus == 1:
 				se.cancel()
-			except Exception as e:
-				raise e
 			se.db_set('reference_doctype','')
 			se.db_set('reference_docname','')
 
@@ -138,10 +130,8 @@ class JobWorkReturn(Document):
 		if frappe.db.exists("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.company}):
 			mi = frappe.get_doc("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.company})
 			mi.flags.ignore_permissions = True
-			try:
+			if mi.docstatus == 1:
 				mi.cancel()
-			except Exception as e:
-				raise e
 			mi.db_set('reference_doctype','')
 			mi.db_set('reference_docname','')
 

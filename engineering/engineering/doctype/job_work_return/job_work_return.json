@@ -18,6 +18,7 @@
   "posting_date",
   "posting_time",
   "serial_no",
+  "add_serial_no",
   "section_break_13",
   "jobwork_in_warehouse",
   "column_break_16",
@@ -249,10 +250,15 @@
    "hidden": 1,
    "label": "Total Additional Costs",
    "read_only": 1
+  },
+  {
+   "fieldname": "add_serial_no",
+   "fieldtype": "Button",
+   "label": "Add Serial No"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-04-25 17:18:25.910639",
+ "modified": "2020-08-18 09:39:02.561603",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Return",

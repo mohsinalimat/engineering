@@ -24,18 +24,40 @@ frappe.ui.form.on('Item Packing', {
 			frm.trigger('naming_series');
 		}
 	},
-	naming_series: function(frm) {
-		if (frm.doc.company && !frm.doc.amended_from){
-			frappe.call({
-				method: "engineering.api.check_counter_series",
-				args: {
-					'name': frm.doc.naming_series,
-				},
-				callback: function(e) {
-					frm.set_value("series_value", e.message);
-				}
-			});
-		}
+	before_save: function (frm) {
+		frm.trigger('cal_wt')
+	},
+	// cal_wt: function(frm){
+	// 	frappe.db.get_value("Item", frm.doc.item_code,'weight_per_unit', function (r) {
+	// 		console.log('weight_per_unit')
+	// 		if (r.weight_per_unit){
+	// 			frappe.model.set_value(frm.doctype,frm.name, 'net_wt', flt((frm.doc.no_of_items)*(r.weight_per_unit)));
+	// 			console.log('net_wt')
+	// 			frappe.db.get_value("Item", frm.doc.packing_item,'weight_per_unit', function (d) {
+	// 				if(d.weight_per_unit){
+	// 					frappe.model.set_value(frm.doctype,frm.name, 'gross_wt', flt(((frm.doc.no_of_items)*(r.weight_per_unit))+ d.weight_per_unit));
+	// 					console.log('gross_wt')
+	// 				}
+
+	// 			})
+	// 		}
+
+	// })
+	// },
+	cal_wt: function(frm){
+		frappe.db.get_value("Item", frm.doc.item_code,'weight_per_unit', function (r) {
+			if (r.weight_per_unit){
+				frm.set_value('net_wt', flt((frm.doc.no_of_items)*(r.weight_per_unit)));
+				// console.log((frm.doc.net_wt))
+			}
+		frappe.db.get_value("Item", frm.doc.packing_item,'weight_per_unit', function (d) {
+			if (d.weight_per_unit){
+				frm.set_value('gross_wt',flt(((frm.doc.no_of_items)*(r.weight_per_unit))+ d.weight_per_unit));
+				// console.log((frm.doc.gross_wt))
+			
+			}
+				})
+			})
 	},
 	company: function(frm){
 		if (frm.doc.__islocal){
@@ -50,12 +72,14 @@ frappe.ui.form.on('Item Packing', {
 				var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort();
 				if (unique.length <= frm.doc.qty_per_box){
 					frm.set_value("serial_no", unique.join('\n'))
+					frm.set_value("no_of_items", unique.length);
 				} else {
 					frm.set_value("add_serial_no", null)
 					frappe.throw("Serial No Per Box Can not be greater than " + frm.doc.qty_per_box + '.')
 				}
 			} else {
 				frm.set_value("serial_no", frm.doc.add_serial_no)
+				frm.set_value("no_of_items", 1);
 			}
 			frm.set_value("add_serial_no", null)
 		}
@@ -71,6 +95,7 @@ frappe.ui.form.on('Item Packing', {
 					}
 				}
 				var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort();
+				frm.set_value("no_of_items", unique.length);
 				frm.set_value("serial_no", unique.join('\n'));
 			}
 			frm.set_value("remove_serial_no", null)
@@ -80,9 +105,21 @@ frappe.ui.form.on('Item Packing', {
 
 
 // frappe.ui.form.on('Item Packing', {
-// 	// refresh: function(frm) {
+// 	cal_wt: function(frm){
+// 		frappe.db.get_value("Item", frm.doc.item_code,'weight_per_unit', function (r) {
+// 			if (r.weight_per_unit){
+// 				frappe.model.set_value(frm.doctype,frm.name, 'net_wt', flt((frm.doc.no_of_items)*(r.weight_per_unit)));
+// 				frappe.db.get_value("Item", frm.doc.packing_item,'weight_per_unit', function (d) {
+// 					if(d.weight_per_unit){
+// 						frappe.model.set_value(frm.doctype,frm.name, 'gross_wt', flt(((frm.doc.no_of_items)*(r.weight_per_unit))+ d.weight_per_unit));
 
-// 	// }
+// 					}
+
+// 				})
+// 			}
+
+// 	})
+// 	},
 // });
 
 frappe.ui.keys.on('ctrl+p', function(e) {
@@ -119,7 +156,6 @@ frappe.ui.keys.on('ctrl+p', function(e) {
 							frappe.msgprint(__("Please enable pop-ups")); return;
 						}
 						cur_frm.doc.serial_no = '';
-						cur_frm.doc.series_value += 1
 						cur_frm.refresh()
 						$("[data-fieldname=add_serial_no]").focus()
 					}

@@ -43,21 +43,24 @@ cur_frm.fields_dict.bom_no.get_query = function (doc) {
 cur_frm.fields_dict.t_warehouse.get_query = function (doc) {
 	return {
 		filters: {
-			"company": doc.job_work_company
+			"company": doc.job_work_company,
+			"is_group": ["!=", 1]
 		}
 	}
 };
 cur_frm.fields_dict.s_warehouse.get_query = function (doc) {
 	return {
 		filters: {
-			"company": doc.job_work_company
+			"company": doc.job_work_company,
+			"is_group": ["!=", 1]
 		}
 	}
 };
 cur_frm.fields_dict.jobwork_in_warehouse.get_query = function (doc) {
 	return {
 		filters: {
-			"company": doc.company
+			"company": doc.company,
+			"is_group": ["!=", 1]
 		}
 	}
 };
@@ -258,7 +261,9 @@ frappe.ui.form.on('Job Work Return', {
 			});
 		}
 	},
-
+	add_serial_no: function(frm){
+		select_batch_and_serial_no(frm)
+	}
 });
 frappe.ui.form.on('Job Work Return Item', {
 	
@@ -328,3 +333,11 @@ frappe.ui.form.on('Job Work Return Item', {
 		frm.events.set_basic_rate(frm, cdt, cdn);
 	},
 })
+
+const select_batch_and_serial_no = (frm) => {
+	frappe.require("assets/engineering/js/serial_no_batch_selector.js", function() {
+		new erpnext.SerialNoBatchSelector({
+			frm: frm
+		});
+	});
+}

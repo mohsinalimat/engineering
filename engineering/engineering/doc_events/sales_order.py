@@ -92,8 +92,8 @@ def create_purchase_order(self):
 			if frappe.db.exists("Item Price", {'item_code': source_doc.item_code, 'price_list': buying_price_list}):
 				target_doc.rate = frappe.db.get_value("Item Price", {'item_code': source_doc.item_code, 'price_list': buying_price_list}, 'price_list_rate')
 			else:
-				frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(source_doc.item_code), frappe.bold(buying_price_list)))
-
+				# frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(source_doc.item_code), frappe.bold(buying_price_list)))
+				target_doc.rate = 0
 		def update_taxes(source_doc, target_doc, source_parent):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			target_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
