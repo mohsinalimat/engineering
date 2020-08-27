@@ -165,5 +165,23 @@ frappe.ui.form.on('Purchase Order', {
 		if (frm.doc.__islocal){
 			frm.trigger('naming_series');
 		}
+		frm.trigger('update_price_list');
+	},
+	supplier: function(frm){
+		frm.trigger('update_price_list');
+	},
+	update_price_list: function(frm){
+		if (frm.doc.company && frm.doc.supplier){
+			frappe.call({
+				method: 'engineering.engineering.doc_events.purchase_order.get_price_list',
+				args: {
+					"company": frm.doc.company,
+					"party": frm.doc.supplier
+				},
+				callback: function(r){
+					frm.set_value('buying_price_list', r.message)
+				}
+			})
+		}
 	}
 });

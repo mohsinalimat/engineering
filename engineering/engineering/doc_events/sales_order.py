@@ -64,6 +64,9 @@ def create_purchase_order(self):
 				else:
 					# frappe.throw("Please define item price for item {} in price list {}".format(frappe.bold(item.item_code), frappe.bold(target.buying_price_list)))
 					item.rate = 0
+			
+			target.set_posting_time = 1
+			target.transaction_date = source.transaction_date
 
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
@@ -78,7 +81,10 @@ def create_purchase_order(self):
 				target_doc.expense_account = source_doc.expense_account.replace(source_company_abbr, target_company_abbr)
 			if source_doc.get('cost_center'):
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
-
+			
+			if source_doc.get('delivery_date'):
+				target_doc.schedule_date = source_doc.delivery_date
+			
 			if source_doc.warehouse:
 				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 			buying_price_list = None
@@ -108,7 +114,7 @@ def create_purchase_order(self):
 			"Sales Order": {
 				"doctype": "Purchase Order",
 				"field_map": {
-					"delivery_date": "schedule_date",
+					"schedule_date": "delivery_date",
 					"po_date": "transaction_date",
 				},
 				"field_no_map": [
@@ -136,7 +142,7 @@ def create_purchase_order(self):
 					"serial_no": "serial_no",
 					"batch_no": "batch_no",
 					"name": "sales_order_item",
-					"delivery_date": "delivery_date",
+					"schedule_date": "delivery_date",
 				},
 				"field_no_map": [
 					"warehouse",

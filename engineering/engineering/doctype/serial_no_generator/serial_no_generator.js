@@ -10,18 +10,20 @@ frappe.ui.form.on('Serial No Generator', {
 	},
 	
 	append: function(frm){
-		frappe.call({
-			method: "engineering.api.get_serial_no_series",
-				args: {
-					'name':frm.doc.series,
-					'posting_date': frm.doc.posting_date,
-				},
-
-			callback: function(e){
-				frm.set_value("serial_no_series",e.message);
-
-			}
-		});
+		if (frm.doc.series){
+			frappe.call({
+				method: "engineering.api.get_serial_no_series",
+					args: {
+						'name':frm.doc.series,
+						'posting_date': frm.doc.posting_date,
+					},
+	
+				callback: function(e){
+					frm.set_value("serial_no_series",e.message);
+	
+				}
+			});
+		}
 	},
 	
 	validate: function(frm){

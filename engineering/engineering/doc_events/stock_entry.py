@@ -3,6 +3,8 @@ from frappe import _
 from frappe.utils import cstr, flt, cint
 from erpnext.manufacturing.doctype.bom.bom import add_additional_cost
 from erpnext.stock.doctype.item.item import get_item_defaults
+from erpnext.stock.doctype.stock_entry.stock_entry import get_used_alternative_items
+
 from six import itervalues
 from frappe.model.mapper import get_mapped_doc
 
@@ -10,6 +12,7 @@ def validate(self, method):
 	if self.purpose in ['Repack','Manufacture','Material Issue']:
 		self.get_stock_and_rate()
 	validate_additional_cost(self)
+	validate_transfer_item(self)
 
 def on_trash(self, method):
 	se_list = []
@@ -101,10 +104,8 @@ def get_items(self):
 	self.set_work_order_details()
 
 	if self.bom_no:
-
 		if self.purpose in ["Material Issue", "Material Transfer", "Manufacture", "Repack",
 				"Send to Subcontractor", "Material Transfer for Manufacture", "Material Consumption for Manufacture"]:
-
 			if self.work_order and self.purpose == "Material Transfer for Manufacture":
 				item_dict = self.get_pending_raw_materials()
 				if self.to_warehouse and self.pro_doc:
@@ -159,6 +160,70 @@ def get_items(self):
 	self.set_scrap_items()
 	self.set_actual_qty()
 	self.calculate_rate_and_amount(raise_error_if_no_rate=False,update_finished_item_rate=True) # finbyz changes in args
+
+def get_work_order_raw_materials(self, qty):
+	# item dict = { item_code: {qty, description, stock_uom} }
+	item_dict = get_work_order_items_as_dict(self.work_order, self.company, qty=qty, fetch_qty_in_stock_uom=False)
+	used_alternative_items = get_used_alternative_items(work_order = self.work_order)
+	for item in itervalues(item_dict):
+		# if source warehouse presents in BOM set from_warehouse as bom source_warehouse
+		if item["allow_alternative_item"]:
+			item["allow_alternative_item"] = frappe.db.get_value('Work Order',
+				self.work_order, "allow_alternative_item")
+
+		item.from_warehouse = self.from_warehouse or item.source_warehouse or item.default_warehouse
+		if item.item_code in used_alternative_items:
+			alternative_item_data = used_alternative_items.get(item.item_code)
+			item.item_code = alternative_item_data.item_code
+			item.item_name = alternative_item_data.item_name
+			item.stock_uom = alternative_item_data.stock_uom
+			item.uom = alternative_item_data.uom
+			item.conversion_factor = alternative_item_data.conversion_factor
+			item.description = alternative_item_data.description
+
+	return item_dict
+
+def get_work_order_items_as_dict(wo, company, qty=1, include_non_stock_items=False, fetch_qty_in_stock_uom=True):
+	item_dict = {}
+
+	# Did not use qty_consumed_per_unit in the query, as it leads to rounding loss
+	query = """select
+				wo_item.item_code,
+				wo_item.idx,
+				item.item_name,
+				sum(wo_item.required_qty/ifnull(wo.qty, 1)) * %(qty)s as qty,
+				item.allow_alternative_item,
+				item_default.default_warehouse,
+				item_default.expense_account as expense_account,
+				item_default.buying_cost_center as cost_center
+				{select_columns}
+			from
+				`tab{table}` wo_item
+				JOIN `tabWork Order` wo ON wo_item.parent = wo.name
+				JOIN `tabItem` item ON item.name = wo_item.item_code
+				LEFT JOIN `tabItem Default` item_default
+					ON item_default.parent = item.name and item_default.company = %(company)s
+			where
+				wo_item.docstatus < 2
+				and wo.name = %(wo)s
+				and item.is_stock_item in (1, {is_stock_item})
+				{where_conditions}
+				group by item_code, stock_uom
+				order by idx"""
+
+	is_stock_item = 0 if include_non_stock_items else 1
+	conversion_factor = 1
+	query = query.format(table="Work Order Item", where_conditions="", is_stock_item=is_stock_item,
+		select_columns = """, item.stock_uom, wo_item.source_warehouse,
+			wo_item.idx, wo_item.include_item_in_manufacturing,
+			wo_item.description""")
+	items = frappe.db.sql(query, {"qty": qty, "wo": wo, "company": company }, as_dict=True)
+	for item in items:
+		if item.item_code in item_dict:
+			item_dict[item.item_code]["qty"] += flt(item.qty)
+		else:
+			item_dict[item.item_code] = item	
+	return item_dict
 
 def get_unconsumed_raw_materials(self):
 	wo = frappe.get_doc("Work Order", self.work_order)
@@ -415,6 +480,14 @@ def create_job_work_receipt_entry(self):
 		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
 		se.submit()
+
+def validate_transfer_item(self):
+	if self.purpose == "Material Transfer for Manufacture" and self.work_order:
+		wo_item = [x.item_code for x in frappe.get_list("Work Order Item",{'parent':self.work_order},'item_code')]
+		for row in self.items:
+			if row.item_code not in wo_item:
+				frappe.throw(_(f"Item <b>{row.item_code}</b> not in Work Order {self.work_order}. Please add item in work order."))
+
 
 def validate_additional_cost(self):
 	if self.purpose in ['Material Transfer','Material Transfer for Manufacture','Repack','Manufacture'] and self._action == "submit":

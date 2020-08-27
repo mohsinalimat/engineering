@@ -140,6 +140,9 @@ doc_events = {
 	"Fiscal Year": {
 		'before_save': 'engineering.engineering.doc_events.fiscal_year.before_save'
 	},
+	"Work Order": {
+		'validate': 'engineering.engineering.doc_events.work_order.validate'
+	},
 	"Stock Ledger Entry": {
 		'before_submit': 'engineering.engineering.doc_events.stock_ledger_entry.before_submit'
 	},

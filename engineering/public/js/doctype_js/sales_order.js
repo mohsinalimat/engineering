@@ -405,13 +405,14 @@ frappe.ui.form.on('Sales Order', {
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
 			frm.set_value("so_ref", "");
 			frm.set_value("inter_company_order_reference", "");
-			frm.set_value("po_ref")
+			frm.set_value("po_ref");
 		}
 	},
 	onload: function (frm) {
 		if (frm.doc.__islocal) {
 			frm.trigger('naming_series');
 		}
+		frm.trigger('get_company');
 	},
 	naming_series: function (frm) {
 		if (frm.doc.company && !frm.doc.amended_from && frm.doc.__islocal) {
@@ -430,6 +431,18 @@ frappe.ui.form.on('Sales Order', {
 	company: function (frm) {
 		if (frm.doc.__islocal) {
 			frm.trigger('naming_series');
+		}
+		frm.trigger('get_company')
+	},
+	get_company: function (frm) {
+		if (frm.doc.company && frm.doc.docstatus != 1){
+			frappe.db.get_value("Company", frm.doc.company, 'through_company').then(
+				function(r){
+					if (frm.doc.through_company != r.message.through_company){
+						frm.set_value('through_company', r.message.through_company)
+					}
+				}
+			)
 		}
 	}
 });

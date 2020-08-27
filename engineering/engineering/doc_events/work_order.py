@@ -1,8 +1,15 @@
 import frappe
 from frappe import _
+from frappe.utils import flt
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.stock.stock_ledger import get_previous_sle
 from datetime import datetime
+
+
+def validate(self,method):
+	for row in self.required_items:
+		if flt(row.available_qty_at_source_warehouse) < flt(row.required_qty):
+			frappe.msgprint(_(f"Row:{row.idx} Available qty is {row.available_qty_at_source_warehouse} at warehouse {row.source_warehouse} for Item {row.item_code}"))
 
 @frappe.whitelist()
 def create_material_request(source_name, target_doc=None):
