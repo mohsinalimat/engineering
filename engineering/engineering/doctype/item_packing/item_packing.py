@@ -17,7 +17,7 @@ class ItemPacking(Document):
 		self.no_of_items = len(serial_no)
 
 		self.submit()
-		
+
 	def on_submit(self):
 		serial_no = get_serial_nos(self.serial_no)
 
@@ -34,31 +34,23 @@ class ItemPacking(Document):
 		self.create_serial_no(serial_no)
 
 		if self.include_for_manufacturing:
+			from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
 			se = frappe.new_doc("Stock Entry")
-			se.stock_entry_type = 'Manufacture'
-			se.company = self.company
-			se.purpose = 'Manufacture'
+			se.update(make_stock_entry(self.work_order,"Manufacture", qty=self.no_of_items))
 			se.set_posting_time = 1
 			se.posting_date = self.posting_date
 			se.posting_time = self.posting_time
-			se.from_bom = 1
-			se.work_order = self.work_order
-			se.bom_no = self.bom_no
-			se.fg_completed_qty = len(serial_no)
 			se.from_warehouse = frappe.db.get_value("Work Order", self.work_order, 'wip_warehouse')
 			se.to_warehouse = frappe.db.get_value("Work Order", self.work_order, 'fg_warehouse')
 			
-			se.get_items()
 			# se.save()
 			for item in se.items:
 				if item.item_code == self.item_code:
 					item.serial_no = self.serial_no
 					item.t_warehouse = se.to_warehouse
-					item.qty = len(serial_no)
+					item.qty = self.no_of_items
 			se.reference_doctype = "Item Packing"
 			se.reference_docname = self.name
-			se.save()
-			
 			se.save()
 			se.submit()
 		

@@ -14,11 +14,13 @@
   "no_of_items",
   "tested_by",
   "column_break_3",
-  "series_value",
   "posting_date",
   "posting_time",
   "company",
   "item_name",
+  "packing_item",
+  "net_wt",
+  "gross_wt",
   "section_break_5",
   "add_serial_no",
   "serial_no",
@@ -40,11 +42,6 @@
    "set_only_once": 1
   },
   {
-   "fieldname": "series_value",
-   "fieldtype": "Int",
-   "label": "Series Value"
-  },
-  {
    "fieldname": "amended_from",
    "fieldtype": "Link",
    "label": "Amended From",
@@ -60,8 +57,8 @@
   {
    "fieldname": "serial_no",
    "fieldtype": "Small Text",
-   "in_list_view": 1,
    "label": "Serial No",
+   "no_copy": 1,
    "read_only": 1,
    "reqd": 1
   },
@@ -93,6 +90,7 @@
    "fetch_from": "work_order.fg_warehouse",
    "fieldname": "warehouse",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Warehouse",
    "options": "Warehouse"
   },
@@ -100,6 +98,7 @@
    "fieldname": "company",
    "fieldtype": "Link",
    "in_list_view": 1,
+   "in_standard_filter": 1,
    "label": "Company",
    "options": "Company",
    "reqd": 1
@@ -107,6 +106,7 @@
   {
    "fieldname": "work_order",
    "fieldtype": "Link",
+   "in_standard_filter": 1,
    "label": "Work Order",
    "options": "Work Order"
   },
@@ -122,6 +122,7 @@
    "default": "Today",
    "fieldname": "posting_date",
    "fieldtype": "Date",
+   "in_list_view": 1,
    "label": "Posting Date"
   },
   {
@@ -195,10 +196,28 @@
    "fieldtype": "Link",
    "label": "Tested By",
    "options": "Employee"
+  },
+  {
+   "fieldname": "packing_item",
+   "fieldtype": "Link",
+   "label": "Packing Item",
+   "options": "Item"
+  },
+  {
+   "fieldname": "net_wt",
+   "fieldtype": "Float",
+   "label": "Net Wt",
+   "read_only": 1
+  },
+  {
+   "fieldname": "gross_wt",
+   "fieldtype": "Float",
+   "label": "Gross Wt",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-07-23 16:06:51.988820",
+ "modified": "2020-08-23 12:00:28.486632",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Item Packing",

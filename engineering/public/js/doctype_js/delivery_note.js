@@ -41,8 +41,11 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 						var flag = false;
 						(doc.items || []).forEach(function(item, idx) {
 							if (data.item_code == item.item_code){
-								let serial_no = item.serial_no + '\n';
-								frappe.model.set_value(item.doctype, item.name, 'serial_no', serial_no + data.serial_no);
+								let serial_no = item.serial_no + '\n' + data.serial_no;
+								var ks = serial_no.split(/\r?\n/);
+								var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort();
+								frappe.model.set_value(item.doctype, item.name, 'serial_no', unique.join('\n'));
+								frappe.model.set_value(item.doctype, item.name, 'qty', unique.length);
 								flag = true
 							}
 						});
@@ -50,6 +53,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 							let d =frm.add_child('items');
 							frappe.model.set_value(d.doctype, d.name, 'item_code', data.item_code);
 							frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
+							frappe.model.set_value(d.doctype, d.name, 'qty', 1);
 							frm.refresh_field('items');
 						}
 

@@ -37,9 +37,6 @@ doctype_js = {
 }
 
 doc_events = {
-	"Item Packing":{
-		"before_naming": "engineering.api.before_naming",
-	},
 	"Account": {
 		"validate": "engineering.engineering.doc_events.account.validate",
 		"on_trash": "engineering.engineering.doc_events.account.on_trash",
