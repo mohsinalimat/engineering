@@ -5,7 +5,7 @@
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
-from frappe.utils import cint
+from frappe.utils import cint, flt
 
 from engineering.api import before_naming as bn
 
@@ -15,6 +15,9 @@ class ItemPacking(Document):
 	def on_update(self):
 		serial_no = get_serial_nos(self.serial_no)
 		self.no_of_items = len(serial_no)
+		self.not_yet_manufactured = 1
+		if self.work_order:
+			self.no_of_item_work_order = get_work_order_manufactured_qty(self.work_order)
 
 		self.submit()
 
@@ -33,26 +36,26 @@ class ItemPacking(Document):
 
 		self.create_serial_no(serial_no)
 
-		if self.include_for_manufacturing:
-			from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
-			se = frappe.new_doc("Stock Entry")
-			se.update(make_stock_entry(self.work_order,"Manufacture", qty=self.no_of_items))
-			se.set_posting_time = 1
-			se.posting_date = self.posting_date
-			se.posting_time = self.posting_time
-			se.from_warehouse = frappe.db.get_value("Work Order", self.work_order, 'wip_warehouse')
-			se.to_warehouse = frappe.db.get_value("Work Order", self.work_order, 'fg_warehouse')
+		# if self.include_for_manufacturing:
+			# from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
+			# se = frappe.new_doc("Stock Entry")
+			# se.update(make_stock_entry(self.work_order,"Manufacture", qty=self.no_of_items))
+			# se.set_posting_time = 1
+			# se.posting_date = self.posting_date
+			# se.posting_time = self.posting_time
+			# se.from_warehouse = frappe.db.get_value("Work Order", self.work_order, 'wip_warehouse')
+			# se.to_warehouse = frappe.db.get_value("Work Order", self.work_order, 'fg_warehouse')
 			
+			# # se.save()
+			# for item in se.items:
+			# 	if item.item_code == self.item_code:
+			# 		item.serial_no = self.serial_no
+			# 		item.t_warehouse = se.to_warehouse
+			# 		item.qty = self.no_of_items
+			# se.reference_doctype = "Item Packing"
+			# se.reference_docname = self.name
 			# se.save()
-			for item in se.items:
-				if item.item_code == self.item_code:
-					item.serial_no = self.serial_no
-					item.t_warehouse = se.to_warehouse
-					item.qty = self.no_of_items
-			se.reference_doctype = "Item Packing"
-			se.reference_docname = self.name
-			se.save()
-			se.submit()
+			# se.submit()
 		
 		self.submit()
 	
@@ -64,11 +67,11 @@ class ItemPacking(Document):
 
 			sr.box_serial_no = ''
 			sr.save()
-		if self.include_for_manufacturing:
-			if frappe.db.exists("Stock Entry", {'reference_doctype': 'Item Packing', 'reference_docname': self.name, 'docstatus': 1}):
-				doc = frappe.get_doc("Stock Entry", {'reference_doctype': 'Item Packing', 'reference_docname': self.name, 'docstatus': 1})
-				doc.flags.ignore_permissions = True
-				doc.cancel()
+		# if self.include_for_manufacturing:
+		# 	if frappe.db.exists("Stock Entry", {'reference_doctype': 'Item Packing', 'reference_docname': self.name, 'docstatus': 1}):
+		# 		doc = frappe.get_doc("Stock Entry", {'reference_doctype': 'Item Packing', 'reference_docname': self.name, 'docstatus': 1})
+		# 		doc.flags.ignore_permissions = True
+		# 		doc.cancel()
 
 	def create_serial_no(self, serial_no):
 		for item in serial_no:
@@ -114,3 +117,56 @@ def submit_form(docname):
 	# frappe.throw(doc.name)
 	doc.save()
 	doc.submit()
+
+@frappe.whitelist()
+def make_stock_entry(work_order = None, posting_date = None, posting_time = None):
+	from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
+	filters = {'include_for_manufacturing': 1, 'not_yet_manufactured': 1, 'docstatus': 1}
+	if work_order:
+		filters['work_order'] = work_order
+	for i in frappe.get_all("Item Packing", filters, ['distinct work_order as work_order']):
+		serial_no_list = []
+		no_of_items = 0
+		name_list = []
+		for j in frappe.get_list("Item Packing", {'include_for_manufacturing': 1, 'not_yet_manufactured': 1, 'work_order': i.work_order, 'docstatus': 1}, ['name', 'serial_no', 'no_of_items']):
+			serial_no_list.append(j.serial_no)
+			no_of_items += j.no_of_items
+			name_list.append(j.name)
+		
+		
+		if no_of_items:
+			serial_no = '\n'.join(serial_no_list)
+
+			se = frappe.new_doc("Stock Entry")
+			se.update(make_stock_entry(i.work_order,"Manufacture", qty=no_of_items))
+			
+			if posting_date and posting_time:
+				se.set_posting_time = 1
+				se.posting_date = posting_date
+				se.posting_time = posting_time
+			
+			se.from_warehouse = frappe.db.get_value("Work Order", i.work_order, 'wip_warehouse')
+			se.to_warehouse = frappe.db.get_value("Work Order", i.work_order, 'fg_warehouse')
+
+			# se.save()
+			for item in se.items:
+				if item.item_code == i.item_code:
+					item.serial_no = serial_no
+					item.t_warehouse = se.to_warehouse
+					item.qty = no_of_items
+			
+			se.save()
+			se.submit()
+		
+			for j in name_list:
+				frappe.db.set_value("Item Packing", j, 'stock_entry', se.name)
+				frappe.db.set_value("Item Packing", j, 'not_yet_manufactured', 0)
+
+@frappe.whitelist()
+def get_work_order_manufactured_qty(work_order):
+	qty = flt(frappe.db.get_value("Work Order", work_order, 'produced_qty')) or 0
+
+	qty_item_packing = flt(frappe.db.get_value("Item Packing", {'not_yet_manufactured': 1, 'work_order': work_order, 'docstatus': 1}, 'sum(no_of_items)')) or 0
+	if qty + qty_item_packing > (flt(frappe.db.get_value("Work Order", work_order, 'qty')) or 0):
+		frappe.throw(f"Work Order {work_order} completed.")
+	return qty_item_packing + qty

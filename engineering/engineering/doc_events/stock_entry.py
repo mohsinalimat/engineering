@@ -70,7 +70,7 @@ def cancel_job_work(self):
 def on_submit(self, method):
 	create_stock_entry(self)
 	create_job_work_receipt_entry(self)
-	save_serial_no(self)
+	# save_serial_no(self)
 	setting_references(self)
 
 def setting_references(self):

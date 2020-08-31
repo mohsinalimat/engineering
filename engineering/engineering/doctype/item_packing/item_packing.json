@@ -12,6 +12,7 @@
   "retailer_points",
   "qty_per_box",
   "no_of_items",
+  "no_of_item_work_order",
   "tested_by",
   "column_break_3",
   "posting_date",
@@ -27,8 +28,10 @@
   "remove_serial_no",
   "column_break_9",
   "include_for_manufacturing",
+  "not_yet_manufactured",
   "warehouse",
   "work_order",
+  "stock_entry",
   "bom_no",
   "company_series",
   "amended_from"
@@ -131,7 +134,8 @@
    "label": "Posting Time"
   },
   {
-   "default": "0",
+   "allow_on_submit": 1,
+   "default": "1",
    "fieldname": "include_for_manufacturing",
    "fieldtype": "Check",
    "label": "Include For Manufacturing"
@@ -214,10 +218,31 @@
    "fieldtype": "Float",
    "label": "Gross Wt",
    "read_only": 1
+  },
+  {
+   "allow_on_submit": 1,
+   "default": "0",
+   "fieldname": "no_of_item_work_order",
+   "fieldtype": "Float",
+   "label": "No of item Work Order",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "not_yet_manufactured",
+   "fieldtype": "Check",
+   "label": "Not Yet Manufactured",
+   "read_only": 1
+  },
+  {
+   "fieldname": "stock_entry",
+   "fieldtype": "Link",
+   "label": "Stock Entry",
+   "options": "Stock Entry"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-08-23 12:00:28.486632",
+ "modified": "2020-08-31 13:04:36.554132",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Item Packing",

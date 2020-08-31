@@ -56,7 +56,7 @@ def validate_serial_no(sle, item_det):
 						"purchase_document_no", "company"], as_dict=1)
 
 					if sr and cint(sle.actual_qty) < 0 and sr.warehouse != sle.warehouse:
-						frappe.throw(_("Cannot cancel {0} {1} because Serial No {2} does not belong to the warehouse {3}")
+						frappe.throw(_("Cannot submit/cancel {0} {1} because Serial No {2} does not belong to the warehouse {3}")
 							.format(sle.voucher_type, sle.voucher_no, serial_no, sle.warehouse), SerialNoWarehouseError)
 
 					if sr.item_code:
