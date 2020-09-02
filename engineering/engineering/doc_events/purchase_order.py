@@ -166,3 +166,10 @@ def delete_sales_order(self):
 		if frappe.db.exists("Sales Order", self.so_ref):
 			frappe.delete_doc("Sales Order", self.so_ref, force = 1, ignore_permissions=True)
 			frappe.msgprint(_("Sales Order <b>{name}</b> has been deleted!".format(name=self.so_ref)), title="Sales Order Deleted", indicator="red")
+
+@frappe.whitelist()
+def get_price_list(party, company):
+	if frappe.db.get_value("Company", company, 'allow_inter_company_transaction'):
+		return frappe.db.get_value("Allowed To Transact With", {'company': party, 'parent': company, 'parenttype': 'Company'}, 'price_list') or frappe.db.get_value("Selling Settings", None, 'selling_price_list')
+	else:
+		return frappe.db.get_value("Selling Settings", None, 'selling_price_list')

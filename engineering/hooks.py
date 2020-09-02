@@ -16,6 +16,10 @@ from erpnext.setup.doctype.naming_series.naming_series import NamingSeries
 from engineering.override_default_class_method import get_transactions
 NamingSeries.get_transactions = get_transactions
 
+from engineering.engineering.doc_events.serial_no import validate_item
+from erpnext.stock.doctype.serial_no.serial_no import SerialNo
+SerialNo.validate_item = validate_item
+
 # include js, css files in header of desk.html
 app_include_css = "/assets/css/restrict_button.css"
 app_include_js = "/assets/js/restrict_access.js"
@@ -140,6 +144,9 @@ doc_events = {
 	"Fiscal Year": {
 		'before_save': 'engineering.engineering.doc_events.fiscal_year.before_save'
 	},
+	"Work Order": {
+		'validate': 'engineering.engineering.doc_events.work_order.validate'
+	},
 	"Stock Ledger Entry": {
 		'before_submit': 'engineering.engineering.doc_events.stock_ledger_entry.before_submit'
 	},
@@ -169,7 +176,7 @@ override_whitelisted_methods = {
 
 from erpnext.stock.stock_ledger import update_entries_after
 from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
-from erpnext.stock.doctype.serial_no.serial_no import SerialNo
+# from erpnext.stock.doctype.serial_no.serial_no import SerialNo
 from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
 
 from engineering.override_default_class_method import search_serial_or_batch_or_barcode_number

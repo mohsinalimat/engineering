@@ -70,7 +70,7 @@ def cancel_job_work(self):
 def on_submit(self, method):
 	create_stock_entry(self)
 	create_job_work_receipt_entry(self)
-	save_serial_no(self)
+	# save_serial_no(self)
 	setting_references(self)
 
 def setting_references(self):
@@ -483,7 +483,7 @@ def create_job_work_receipt_entry(self):
 
 def validate_transfer_item(self):
 	if self.purpose == "Material Transfer for Manufacture" and self.work_order:
-		wo_item = frappe.get_list("Work Order Item",{'parent':self.work_order},'item_code')
+		wo_item = [x.item_code for x in frappe.get_list("Work Order Item",{'parent':self.work_order},'item_code')]
 		for row in self.items:
 			if row.item_code not in wo_item:
 				frappe.throw(_(f"Item <b>{row.item_code}</b> not in Work Order {self.work_order}. Please add item in work order."))

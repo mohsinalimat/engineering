@@ -7,6 +7,9 @@ this.frm.cscript.onload = function (frm) {
 	});
 }
 frappe.ui.form.on('Work Order', {
+	setup: function(frm){
+		frm.set_indicator_formatter('item_code', function(doc) { return (doc.available_qty_at_source_warehouse>=doc.required_qty) ? "green" : "orange"; });
+	},
 	refresh: function(frm) {
 
 		//cur_frm.clear_custom_buttons();

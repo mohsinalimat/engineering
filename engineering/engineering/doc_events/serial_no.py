@@ -74,9 +74,7 @@ def get_serial_nos(serial_no):
 
 
 def before_validate(self, method):
-	from erpnext.stock.doctype.serial_no.serial_no import SerialNo
-
-	SerialNo.validate_item = validate_item
+	pass
 
 def validate_item(self):
 	"""
