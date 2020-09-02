@@ -126,7 +126,6 @@ def get_items(self):
 				self.get_unconsumed_raw_materials()
 			
 			elif self.work_order and (self.purpose == "Manufacture" or self.purpose == "Material Consumption for Manufacture"):
-				frappe.msgprint("called inside")
 				if not self.fg_completed_qty:
 					frappe.throw(_("Manufacturing Quantity is mandatory"))
 				
