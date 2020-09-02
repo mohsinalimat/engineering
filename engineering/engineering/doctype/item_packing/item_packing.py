@@ -151,9 +151,9 @@ def make_stock_entry(work_order = None, posting_date = None, posting_time = None
 			# se.save()
 			for item in se.items:
 				if item.item_code == i.item_code:
-					item.serial_no = serial_no
 					item.t_warehouse = se.to_warehouse
 					item.qty = no_of_items
+					item.serial_no = serial_no
 			
 			se.save()
 			se.submit()
