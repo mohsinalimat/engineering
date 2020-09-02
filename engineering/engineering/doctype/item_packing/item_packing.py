@@ -144,13 +144,13 @@ def make_stock_entry(work_order = None, posting_date = None, posting_time = None
 				se.set_posting_time = 1
 				se.posting_date = posting_date
 				se.posting_time = posting_time
+				se.from_item_packing = 1
 			
 			se.from_warehouse = frappe.db.get_value("Work Order", i.work_order, 'wip_warehouse')
 			se.to_warehouse = frappe.db.get_value("Work Order", i.work_order, 'fg_warehouse')
-
-			# se.save()
+			# se.save()	
 			for item in se.items:
-				if item.item_code == i.item_code:
+				if item.item_code == frappe.db.get_value("Work Order",i.work_order,'production_item'):
 					item.t_warehouse = se.to_warehouse
 					item.qty = no_of_items
 					item.serial_no = serial_no

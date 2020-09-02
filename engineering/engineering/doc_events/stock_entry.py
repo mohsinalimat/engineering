@@ -13,6 +13,7 @@ def validate(self, method):
 		self.get_stock_and_rate()
 	validate_additional_cost(self)
 	validate_transfer_item(self)
+	validate_item_packing(self)
 
 def on_trash(self, method):
 	se_list = []
@@ -55,6 +56,7 @@ def on_cancel(self, method):
 	# 			doc = frappe.get_doc("Serial No", serial_no)
 	# 			doc.save()
 	cancel_job_work(self)
+	remove_ref_from_item_packing(self)
 
 def cancel_job_work(self):
 	if self.jw_ref:
@@ -493,3 +495,16 @@ def validate_additional_cost(self):
 	if self.purpose in ['Material Transfer','Material Transfer for Manufacture','Repack','Manufacture'] and self._action == "submit":
 		if round(self.value_difference/100,0) != round(self.total_additional_costs/100,0):
 			frappe.throw("ValuationError: Value difference between incoming and outgoing amount is higher than additional cost")
+
+def validate_item_packing(self):
+	if self.amended_from and self.from_item_packing:
+		frappe.throw(_("Please create manufacturing entry from Item Packing"))
+
+def remove_ref_from_item_packing(self):
+	if self.from_item_packing and self.purpose == "Manufacture":
+		item_packing_list = frappe.get_list("Item Packing",{'work_order':self.work_order,'stock_entry':self.name},'name')
+		if item_packing_list:
+			for row in item_packing_list:
+				doc = frappe.get_doc("Item Packing",row)
+				doc.db_set('stock_entry','')
+				doc.db_set('not_yet_manufactured', 1)
