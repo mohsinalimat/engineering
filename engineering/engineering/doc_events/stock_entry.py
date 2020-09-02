@@ -124,6 +124,33 @@ def get_items(self):
 				frappe.db.get_single_value("Manufacturing Settings", "backflush_raw_materials_based_on")== "BOM" and \
 				frappe.db.get_single_value("Manufacturing Settings", "material_consumption")== 1:
 				self.get_unconsumed_raw_materials()
+			
+			elif self.work_order and (self.purpose == "Manufacture" or self.purpose == "Material Consumption for Manufacture"):
+				frappe.msgprint("called inside")
+				if not self.fg_completed_qty:
+					frappe.throw(_("Manufacturing Quantity is mandatory"))
+				
+				item_dict = get_work_order_raw_materials(self,self.fg_completed_qty)
+
+				#Get PO Supplied Items Details
+				if self.purchase_order and self.purpose == "Send to Subcontractor":
+					#Get PO Supplied Items Details
+					item_wh = frappe._dict(frappe.db.sql("""
+						select rm_item_code, reserve_warehouse
+						from `tabPurchase Order` po, `tabPurchase Order Item Supplied` poitemsup
+						where po.name = poitemsup.parent
+							and po.name = %s""",self.purchase_order))
+
+				for item in itervalues(item_dict):
+					if self.pro_doc and (cint(self.pro_doc.from_wip_warehouse) or not self.pro_doc.skip_transfer):
+						item["from_warehouse"] = self.pro_doc.wip_warehouse
+					#Get Reserve Warehouse from PO
+					if self.purchase_order and self.purpose=="Send to Subcontractor":
+						item["from_warehouse"] = item_wh.get(item.item_code)
+					item["to_warehouse"] = self.to_warehouse if self.purpose=="Send to Subcontractor" else ""
+
+				self.add_to_stock_entry_detail(item_dict)
+
 			else:
 				if not self.fg_completed_qty:
 					frappe.throw(_("Manufacturing Quantity is mandatory"))
