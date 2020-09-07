@@ -10,13 +10,12 @@ def validate_warehouse(self):
 			self.name, ["item_code", "warehouse"])
 
 		# FinByz Changes Start
-		# if item_code:	
-		# 	if not self.via_stock_ledger and item_code != self.item_code:
-		# 		frappe.throw(_("Item Code cannot be changed for Serial No."),
-		# 			SerialNoCannotCannotChangeError)
-		# if warehouse:
-		# 	if not self.via_stock_ledger and warehouse != self.warehouse:
-		# 		frappe.throw(_("Warehouse cannot be changed for Serial No."),
-		# 			SerialNoCannotCannotChangeError)
-		pass
+		if item_code:	
+			if not self.via_stock_ledger and item_code != self.item_code:
+				frappe.throw(_(f"Item Code cannot be changed for Serial No. {self.name}"),
+					SerialNoCannotCannotChangeError)
+		if warehouse:
+			if not self.via_stock_ledger and warehouse != self.warehouse:
+				frappe.throw(_(f"Warehouse cannot be changed for Serial No. {self.name}"),
+					SerialNoCannotCannotChangeError)
 		# FinByz Changes End
