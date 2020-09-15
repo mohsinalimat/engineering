@@ -76,17 +76,17 @@ def get_serial_nos(serial_no):
 def before_validate(self, method):
 	pass
 
-def validate_item(self):
-	"""
-		Validate whether serial no is required for this item
-	"""
-	if self.item_code:
-		item = frappe.get_cached_doc("Item", self.item_code)
-		if item.has_serial_no!=1:
-			frappe.throw(_("Item {0} is not setup for Serial Nos. Check Item master").format(self.item_code))
+# def validate_item(self):
+# 	"""
+# 		Validate whether serial no is required for this item
+# 	"""
+# 	if self.item_code:
+# 		item = frappe.get_cached_doc("Item", self.item_code)
+# 		if item.has_serial_no!=1:
+# 			frappe.throw(_("Item {0} is not setup for Serial Nos. Check Item master").format(self.item_code))
 
-		self.item_group = item.item_group
-		self.description = item.description
-		self.item_name = item.item_name
-		self.brand = item.brand
-		self.warranty_period = item.warranty_period
+# 		self.item_group = item.item_group
+# 		self.description = item.description
+# 		self.item_name = item.item_name
+# 		self.brand = item.brand
+# 		self.warranty_period = item.warranty_period

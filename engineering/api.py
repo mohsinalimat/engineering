@@ -403,12 +403,12 @@ def update_discounted_amount(self):
 		except:
 			item.discounted_net_rate = 0.0
 
-def update_so_date_based_on_po():
-	data = frappe.get_list("Purchase Order", fields = ['name', 'transaction_date','inter_company_order_reference'])
+# def update_so_date_based_on_po():
+# 	data = frappe.get_list("Purchase Order", fields = ['name', 'transaction_date','inter_company_order_reference'])
 
-	for i in data:
-		if i.inter_company_order_reference:
-			print(i.inter_company_order_reference)
-			frappe.db.set_value("Sales Order", i.inter_company_order_reference, 'transaction_date', i.transaction_date, update_modified = False)
+# 	for i in data:
+# 		if i.inter_company_order_reference:
+# 			print(i.inter_company_order_reference)
+# 			frappe.db.set_value("Sales Order", i.inter_company_order_reference, 'transaction_date', i.transaction_date, update_modified = False)
 	
-	frappe.db.commit()
+# 	frappe.db.commit()
