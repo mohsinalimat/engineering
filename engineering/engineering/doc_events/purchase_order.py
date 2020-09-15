@@ -10,6 +10,7 @@ from frappe.utils import get_url_to_form
 from frappe.model.mapper import get_mapped_doc
 
 from engineering.api import update_discounted_amount
+from frappe.contacts.doctype.address.address import get_company_address
 
 def before_validate(self, method):
 	update_discounted_amount(self)
@@ -17,7 +18,7 @@ def before_validate(self, method):
 def on_submit(self, method):
 	create_sales_order(self)
 	check_real_qty(self)
-
+	
 def on_cancel(self, method):
 	cancel_sales_order(self)
 
@@ -73,11 +74,14 @@ def create_sales_order(self):
 					"name": "po_ref",
 					"transaction_date": "po_date",
 					"buying_price_list": "selling_price_list",
+					"shipping_address": "shipping_address_name",
+					"company_gstin": "customer_gstin",
+					"shipping_address_display": "shipping_address",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
 					"series_value",
-					"set_warehouse"
+					"set_warehouse",
 				]
 			},
 			"Purchase Order Item": {
@@ -125,10 +129,8 @@ def create_sales_order(self):
 			if not valid_price_list:
 				frappe.throw(_("Selected Price List should have buying and selling fields checked."))
 			so = get_sales_order_entry(self.name)
-
 			so.save(ignore_permissions = True)
 			so.submit()
-
 			self.db_set('order_confirmation_no', so.name)
 			self.db_set('order_confirmation_date', so.transaction_date)
 			self.db_set('inter_company_order_reference', so.name)

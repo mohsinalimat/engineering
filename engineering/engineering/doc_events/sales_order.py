@@ -116,6 +116,9 @@ def create_purchase_order(self):
 				"field_map": {
 					"schedule_date": "delivery_date",
 					"po_date": "transaction_date",
+					"shipping_address_name": "shipping_address",
+					"customer_gstin": "company_gstin",
+					"shipping_address": "shipping_address_display",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
