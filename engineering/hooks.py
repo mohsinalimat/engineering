@@ -16,9 +16,8 @@ from erpnext.setup.doctype.naming_series.naming_series import NamingSeries
 from engineering.override_default_class_method import get_transactions
 NamingSeries.get_transactions = get_transactions
 
-from engineering.engineering.doc_events.serial_no import validate_item
 from erpnext.stock.doctype.serial_no.serial_no import SerialNo
-SerialNo.validate_item = validate_item
+
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/css/restrict_button.css"
@@ -113,11 +112,6 @@ doc_events = {
 	},
 	"Company": {
 		"on_update": "engineering.engineering.doc_events.company.on_update",
-	},
-	"Serial No": {
-		"before_save": "engineering.engineering.doc_events.serial_no.before_save",
-		"before_validate": "engineering.engineering.doc_events.serial_no.before_validate",
-		"on_update": "engineering.engineering.doc_events.serial_no.on_save",
 	},
 	"Purchase Receipt": {
 		"before_naming": "engineering.api.before_naming",

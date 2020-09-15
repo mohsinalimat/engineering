@@ -26,6 +26,9 @@ def on_submit(self, method):
 
 def on_update_after_submit(self, method):
 	update_payment_entries(self)
+	if self.authority == "Unauthorized":
+		self.make_gl_entries(cancel=1)
+		self.make_gl_entries(cancel=0)
 
 def update_payment_entries(self):
 	authority = frappe.db.get_value("Company", self.company, 'authority')

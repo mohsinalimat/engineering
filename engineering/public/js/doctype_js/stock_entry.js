@@ -70,7 +70,6 @@ this.frm.cscript.onload = function (frm) {
 
 frappe.ui.form.on('Stock Entry', {
 	refresh: (frm) => {
-		console.log(frm.doc.authority);
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
 			if (frm.doc.se_ref && frm.doc.jw_ref){
 				if (frm.doc.stock_entry_type == "Send to Jobwork" && frm.doc.authority == "Unauthorized"){
