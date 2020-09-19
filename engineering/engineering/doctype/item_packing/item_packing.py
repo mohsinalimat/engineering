@@ -161,6 +161,56 @@ def make_stock_entry(work_order = None, posting_date = None, posting_time = None
 			for j in name_list:
 				frappe.db.set_value("Item Packing", j, 'stock_entry', se.name)
 				frappe.db.set_value("Item Packing", j, 'not_yet_manufactured', 0)
+			return "Manufactuing Entry For this Item has been Created."
+
+@frappe.whitelist()
+def make_material_receipt(warehouse, item_code, company, posting_date = None, posting_time = None):
+	serial_no_list = []
+	no_of_items = 0
+	name_list = []
+	item_code_list = []
+	query = frappe.db.sql(f"""
+		select
+			name, item_code, serial_no, no_of_items
+		from 
+			`tabItem Packing`
+		where
+			work_order IS NULL and stock_entry IS NUll and not_yet_manufactured = 1 and docstatus = 1 and company = '{company}' and warehouse = '{warehouse}' and item_code = '{item_code}'
+	""", as_dict = True)
+	# for j in frappe.get_list("Item Packing", {'item_code': item_code,'not_yet_manufactured': 1, 'docstatus': 1,'company':company, 'warehouse': warehouse}, ['name', 'item_code','serial_no', 'no_of_items']):
+	# 	serial_no_list.append(j.serial_no)
+	# 	no_of_items += j.no_of_items
+	# 	name_list.append(j.name)
+	for j in query:
+		serial_no_list.append(j.serial_no)
+		no_of_items += (j.no_of_items)
+		name_list.append(j.name)
+	if no_of_items:
+		serial_no = '\n'.join(serial_no_list)
+		se = frappe.new_doc("Stock Entry")
+		se.stock_entry_type = "Material Receipt"
+		se.naming_series = "OSTE-.fiscal.company_series.-.####"
+		se.company = company
+		se.to_warehouse = frappe.db.get_value("Warehouse",{'company':company,"warehouse_name":"Finished Goods"},"name")
+		if posting_date and posting_time:
+			se.set_posting_time = 1
+			se.posting_date = posting_date
+			se.posting_time = posting_time
+			se.from_item_packing = 1
+		se.append("items",{
+			"item_code": item_code,
+			"qty": no_of_items,
+			"serial_no": serial_no,
+			"t_warehouse" : se.to_warehouse
+		})
+		se.save()
+		se.submit()
+	
+		for j in name_list:
+			doc = frappe.get_doc("Item Packing",j)
+			doc.db_set("stock_entry",se.name, update_modified=False)
+			#frappe.db.set_value("Item Packing", j, 'stock_entry', se.name)
+		return "Material Receipt For this Item has been Created."
 
 @frappe.whitelist()
 def get_work_order_manufactured_qty(work_order):

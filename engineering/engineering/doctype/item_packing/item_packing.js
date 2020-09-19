@@ -20,7 +20,7 @@ cur_frm.fields_dict.work_order.get_query = function(doc) {
 
 frappe.ui.form.on('Item Packing', {
 	refresh: function(frm){
-		if (frm.doc.docstatus == 1){
+		if (frm.doc.docstatus == 1 && frm.doc.work_order && !frm.doc.stock_entry){
 			frm.add_custom_button("Make Manufacture Entry", function() {
 				frappe.call({
 					method: "engineering.engineering.doctype.item_packing.item_packing.make_stock_entry",
@@ -28,8 +28,37 @@ frappe.ui.form.on('Item Packing', {
 						'work_order': frm.doc.work_order,
 						'posting_date': frm.doc.posting_date,
 						'posting_time': frm.doc.posting_time
+					},
+					freeze: true,
+					callback: function(r){
+						if (r.message){
+							frappe.msgprint(r.message);
+							frm.refresh();
+						}
 					}
 				});
+			})
+		}
+		if (!frm.doc.work_order && frm.doc.docstatus == 1 && !frm.doc.stock_entry){
+			frm.add_custom_button("Make Material Receipt", function() {
+				frappe.call({
+					method: "engineering.engineering.doctype.item_packing.item_packing.make_material_receipt",
+					args: {
+						'warehouse': frm.doc.warehouse,
+						'item_code': frm.doc.item_code,
+						'company': frm.doc.company,
+						'posting_date': frm.doc.posting_date,
+						'posting_time': frm.doc.posting_time
+					},
+					freeze: true,
+					callback: function(r){
+						if (r.message){
+							frappe.msgprint(r.message);
+							cur_frm.refresh();
+							frm.refresh();	
+						}
+					},
+				})
 			})
 		}
 	},
