@@ -1,6 +1,6 @@
-from frappe.utils import cstr
-
 def correct_item_packing():
+	from frappe.utils import cstr
+	import frappe
 	serial_no_list = []
 	stock_entry_list = []
 	final_serial_no_list = []
@@ -11,7 +11,7 @@ def correct_item_packing():
 			from 
 				`tabItem Packing`
 			where
-				work_order IS NULL and partial_entry_not_found = 1 and docstatus = 1
+				work_order IS NULL and stock_entry IS NULL and docstatus = 1
 		""", as_dict = True)
 
 	for ip in ip_list:

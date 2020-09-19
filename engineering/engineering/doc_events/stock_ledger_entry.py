@@ -66,9 +66,9 @@ def validate_serial_no(sle, item_det):
 								frappe.throw(_("Serial No {0} does not belong to Item {1}").format(serial_no,
 									sle.item_code), SerialNoItemError)
 
-					# if cint(sle.actual_qty) > 0 and has_duplicate_serial_no(sr, sle):
-					# 	frappe.throw(_("Serial No {0} has already been received").format(serial_no),
-					# 		SerialNoDuplicateError)
+					if cint(sle.actual_qty) > 0 and has_duplicate_serial_no(sr, sle):
+						frappe.throw(_("Serial No {0} has already been received").format(serial_no),
+							SerialNoDuplicateError)
 
 					if (sr.delivery_document_no and sle.voucher_type not in ['Stock Entry', 'Stock Reconciliation']
 						and sle.voucher_type == sr.delivery_document_type):
