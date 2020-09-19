@@ -11,6 +11,7 @@ from frappe.model.mapper import get_mapped_doc
 from engineering.api import update_discounted_amount	
 
 def before_validate(self, method):
+	get_price_list(self)
 	update_discounted_amount(self)
 	reseting_thorugh_company(self)
 
@@ -126,8 +127,6 @@ def create_purchase_order(self):
 					"series_value",
 					"customer_name",
 					"through_company",
-					"shipping_address",
-					"shipping_address_name",
 					"customer_gstin",
 					"contact_person",
 					"address_display",
@@ -251,3 +250,12 @@ def delete_sales_purchase_order(self):
 
 		if frappe.db.exists("Purchase Order", self.po_ref):
 			frappe.delete_doc("Purchase Order", self.po_ref)
+
+def get_price_list(self):
+	company_doc = frappe.get_doc("Company", self.company)
+	for com in company_doc.allowed_to_transact_with:
+		if com.company == self.customer:
+			if com.price_list:
+				self.selling_price_list = com.price_list
+			else:
+				frappe.throw("Add price list for company {}".format(target.company))
