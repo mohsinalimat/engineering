@@ -65,7 +65,9 @@ doc_events = {
 	"Delivery Note": {
 		"before_validate": "engineering.engineering.doc_events.delivery_note.before_validate",
 		"before_naming": "engineering.api.before_naming",
+		"before_cancel":"engineering.engineering.doc_events.delivery_note.before_cancel",
 		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
+		"before_submit": "engineering.engineering.doc_events.delivery_note.before_submit",
 		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
 		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
 		"validate": "engineering.controllers.item_validation.validate_item_authority"
@@ -151,6 +153,7 @@ doc_events = {
 
 override_doctype_dashboards = {
 	"Sales Order": "engineering.engineering.dashboard.sales_order.get_data",
+	"Work Order": "engineering.engineering.dashboard.work_order.get_data",
 }
 
 override_whitelisted_methods = {

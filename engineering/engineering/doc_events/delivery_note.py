@@ -16,13 +16,18 @@ from engineering.api import update_discounted_amount
 def before_validate(self, method):
 	update_discounted_amount(self)
 
+def before_submit(self,method):
+	check_sales_order_item(self)
+
 def on_submit(self, method):
 	create_purchase_receipt(self)
 	create_delivery_note(self)
 	update_real_delivered_qty(self, "submit")
 
-def on_cancel(self, method):
+def before_cancel(self, method):
 	cancel_all(self)
+def on_cancel(self, method):
+	#cancel_all(self)
 	update_real_delivered_qty(self, "cancel")
 
 def on_trash(self, method):
@@ -34,13 +39,20 @@ def cancel_all(self):
 
 		if doc.docstatus == 1:
 			doc.cancel()
-	
 	if self.pr_ref:
 		doc = frappe.get_doc("Purchase Receipt", self.pr_ref)
 
 		if doc.docstatus == 1:
 			doc.cancel()
 
+def check_sales_order_item(self):
+	auth = frappe.db.get_value("Company", self.company, "authority")
+	if auth == "Unauthorized":
+		for row in self.items:
+			if not row.sales_order_item:
+				frappe.throw("Row {}: Sales Order not found for item {}".format(row.idx,row.item_code))
+			
+				
 def cancel_purchase_received(self):
 	if self.pr_ref:
 		pr = frappe.get_doc("Purchase Receipt", self.pr_ref)
@@ -114,7 +126,7 @@ def create_delivery_note(self):
 					"name": "so_ref",
 					"posting_date": "posting_date",
 					"posting_time": "posting_time",
-					"ignore_pricing_rule": "ignore_pricing_rule"
+					"ignore_pricing_rule": "ignore_pricing_rule",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -295,7 +307,10 @@ def create_purchase_receipt(self):
 					"selling_price_list": "buying_price_list",
 					"posting_date": "posting_date",
 					"posting_time": "posting_time",
-					"ignore_pricing_rule": "ignore_pricing_rule"
+					"ignore_pricing_rule": "ignore_pricing_rule",
+					"shipping_address_name": "shipping_address",
+					"customer_gstin": "company_gstin",
+					"shipping_address": "shipping_address_display",
 				},
 				"field_no_map": [
 					"taxes_and_charges",

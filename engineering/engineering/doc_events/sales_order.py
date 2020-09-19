@@ -29,6 +29,7 @@ def reseting_thorugh_company(self):
 	if self.through_company == self.company:
 		self.through_company == None
 
+
 def create_purchase_order(self):
 	""" This function is use to create purchase order on submit of sales order in inter company invoice """
 
