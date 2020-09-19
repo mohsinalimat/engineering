@@ -10,6 +10,7 @@ from frappe.utils import cint, cstr
 from frappe.model.naming import make_autoname
 from frappe import enqueue
 from random import random
+import re
 
 class SerialNoGenerator(Document):
 	
@@ -38,6 +39,8 @@ class SerialNoGenerator(Document):
 		for item in range(cint(self.from_value), cint(self.to_value) + 1):
 			serial_no = self.serial_no_series + getseries(self.series, 8, item)
 			qr_code_hash = frappe.generate_hash(length = 16)
+			while not re.search('[a-zA-Z]', qr_code_hash):
+				qr_code_hash = frappe.generate_hash(length = 16)
 			time = frappe.utils.get_datetime()
 			values.append((serial_no, time, time , user, user,serial_no, qr_code_hash))
 			if item % 25000 == 0:
