@@ -175,7 +175,7 @@ def make_material_receipt(warehouse, item_code, company, posting_date = None, po
 		from 
 			`tabItem Packing`
 		where
-			work_order IS NULL and stock_entry IS NUll and not_yet_manufactured = 1 and docstatus = 1 and company = '{company}' and warehouse = '{warehouse}' and item_code = '{item_code}'
+			work_order IS NULL and (stock_entry IS NUll or stock_entry = '') and not_yet_manufactured = 1 and docstatus = 1 and company = '{company}' and warehouse = '{warehouse}' and item_code = '{item_code}'
 	""", as_dict = True)
 	# for j in frappe.get_list("Item Packing", {'item_code': item_code,'not_yet_manufactured': 1, 'docstatus': 1,'company':company, 'warehouse': warehouse}, ['name', 'item_code','serial_no', 'no_of_items']):
 	# 	serial_no_list.append(j.serial_no)

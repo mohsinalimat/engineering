@@ -527,8 +527,8 @@ def validate_item_packing(self):
 		frappe.throw(_("Please create manufacturing entry from Item Packing"))
 
 def remove_ref_from_item_packing(self):
-	if self.from_item_packing and self.purpose == "Manufacture":
-		item_packing_list = frappe.get_list("Item Packing",{'work_order':self.work_order,'stock_entry':self.name},'name')
+	if self.from_item_packing and self.purpose in ["Manufacture","Material Receipt"]:
+		item_packing_list = frappe.get_list("Item Packing",{'stock_entry':self.name},'name')
 		if item_packing_list:
 			for row in item_packing_list:
 				doc = frappe.get_doc("Item Packing",row)
