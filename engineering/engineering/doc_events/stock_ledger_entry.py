@@ -8,6 +8,7 @@ class SerialNoRequiredError(ValidationError): pass
 class SerialNoQtyError(ValidationError): pass
 class SerialNoWarehouseError(ValidationError): pass
 class SerialNoItemError(ValidationError): pass
+class SerialNoDuplicateError(ValidationError): pass
 
 def process_serial_no(sle):
 	item_det = get_item_details(sle.item_code)

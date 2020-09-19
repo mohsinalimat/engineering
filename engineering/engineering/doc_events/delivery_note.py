@@ -114,7 +114,7 @@ def create_delivery_note(self):
 					"name": "so_ref",
 					"posting_date": "posting_date",
 					"posting_time": "posting_time",
-					"ignore_pricing_rule": "ignore_pricing_rule"
+					"ignore_pricing_rule": "ignore_pricing_rule",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -295,7 +295,10 @@ def create_purchase_receipt(self):
 					"selling_price_list": "buying_price_list",
 					"posting_date": "posting_date",
 					"posting_time": "posting_time",
-					"ignore_pricing_rule": "ignore_pricing_rule"
+					"ignore_pricing_rule": "ignore_pricing_rule",
+					"shipping_address_name": "shipping_address",
+					"customer_gstin": "company_gstin",
+					"shipping_address": "shipping_address_display",
 				},
 				"field_no_map": [
 					"taxes_and_charges",

@@ -150,7 +150,7 @@ doc_events = {
 }
 
 override_doctype_dashboards = {
-	"Sales Order": "engineering.engineering.dashboard.sales_order.get_data",
+	"Sales Order": "engineering.engineering.dashboard.sales_order.get_data"
 }
 
 override_whitelisted_methods = {
