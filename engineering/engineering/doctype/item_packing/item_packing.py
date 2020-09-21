@@ -11,7 +11,7 @@ from frappe.utils import cint, flt, getdate, nowdate, add_days
 from engineering.api import before_naming as bn
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 from datetime import timedelta, datetime, date
-from frappe.utils.background_jobs import enqueue
+from frappe.utils.background_jobs import enqueue, get_jobs
 
 class ItemPacking(Document):
 	def on_update(self):
