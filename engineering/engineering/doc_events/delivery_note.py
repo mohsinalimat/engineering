@@ -25,9 +25,10 @@ def on_submit(self, method):
 	update_real_delivered_qty(self, "submit")
 
 def before_cancel(self, method):
-	cancel_all(self)
-def on_cancel(self, method):
+	pass
 	#cancel_all(self)
+def on_cancel(self, method):
+	cancel_all(self)
 	update_real_delivered_qty(self, "cancel")
 
 def on_trash(self, method):
@@ -49,7 +50,7 @@ def check_sales_order_item(self):
 	auth = frappe.db.get_value("Company", self.company, "authority")
 	if auth == "Unauthorized":
 		for row in self.items:
-			if not row.sales_order_item:
+			if not row.so_detail:
 				frappe.throw("Row {}: Sales Order not found for item {}".format(row.idx,row.item_code))
 			
 				

@@ -210,7 +210,7 @@ def make_material_receipt(warehouse, item_code, company, posting_date = None, po
 			doc = frappe.get_doc("Item Packing",j)
 			doc.db_set("stock_entry",se.name, update_modified=False)
 			#frappe.db.set_value("Item Packing", j, 'stock_entry', se.name)
-		return "Material Receipt For this Item has been Created."
+		return "Material Receipt For this Item has been Created"
 
 @frappe.whitelist()
 def get_work_order_manufactured_qty(work_order):

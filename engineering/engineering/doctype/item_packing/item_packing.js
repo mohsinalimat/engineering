@@ -33,10 +33,9 @@ frappe.ui.form.on('Item Packing', {
 					callback: function(r){
 						if (r.message){
 							frappe.msgprint(r.message);
-							frm.refresh();
 						}
 					}
-				});
+				})
 			})
 		}
 		if (!frm.doc.work_order && frm.doc.docstatus == 1 && !frm.doc.stock_entry){
@@ -53,11 +52,9 @@ frappe.ui.form.on('Item Packing', {
 					freeze: true,
 					callback: function(r){
 						if (r.message){
-							frappe.msgprint(r.message);
-							cur_frm.refresh();
-							frm.refresh();	
+							frappe.msgprint(r.message)
 						}
-					},
+					}
 				})
 			})
 		}

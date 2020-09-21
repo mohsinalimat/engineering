@@ -11,7 +11,6 @@ from frappe.model.mapper import get_mapped_doc
 from engineering.api import update_discounted_amount	
 
 def before_validate(self, method):
-	get_price_list(self)
 	update_discounted_amount(self)
 	reseting_thorugh_company(self)
 
@@ -258,4 +257,4 @@ def get_price_list(self):
 			if com.price_list:
 				self.selling_price_list = com.price_list
 			else:
-				frappe.throw("Add price list for company {}".format(target.company))
+				frappe.throw("Add price list in Company {0} for customer {1}".format(self.company,self.customer))
