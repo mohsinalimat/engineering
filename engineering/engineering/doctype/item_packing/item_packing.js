@@ -23,7 +23,7 @@ frappe.ui.form.on('Item Packing', {
 		if (frm.doc.docstatus == 1 && frm.doc.work_order && !frm.doc.stock_entry){
 			frm.add_custom_button("Make Manufacture Entry", function() {
 				frappe.call({
-					method: "engineering.engineering.doctype.item_packing.item_packing.make_stock_entry",
+					method: "engineering.engineering.doctype.item_packing.item_packing.enqueue_stock_entry",
 					args: {
 						'work_order': frm.doc.work_order,
 						'posting_date': frm.doc.posting_date,
@@ -41,7 +41,7 @@ frappe.ui.form.on('Item Packing', {
 		if (!frm.doc.work_order && frm.doc.docstatus == 1 && !frm.doc.stock_entry){
 			frm.add_custom_button("Make Material Receipt", function() {
 				frappe.call({
-					method: "engineering.engineering.doctype.item_packing.item_packing.make_material_receipt",
+					method: "engineering.engineering.doctype.item_packing.item_packing.enqueue_material_receipt",
 					args: {
 						'warehouse': frm.doc.warehouse,
 						'item_code': frm.doc.item_code,

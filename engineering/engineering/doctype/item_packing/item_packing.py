@@ -6,10 +6,10 @@ from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
 from frappe.utils import cint, flt
-
+from frappe.utils import cint, flt, getdate, nowdate, add_days
 from engineering.api import before_naming as bn
-
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
+from datetime import timedelta, datetime, date
 
 class ItemPacking(Document):
 	def on_update(self):
@@ -119,7 +119,13 @@ def submit_form(docname):
 	doc.submit()
 
 @frappe.whitelist()
-def make_stock_entry(work_order = None, posting_date = None, posting_time = None):
+def enqueue_stock_entry(work_order, posting_date, posting_time):
+	if posting_date < add_days(nowdate(), -3):
+		enqueue(create_stock_entry,queue= "long", timeout= 1800, job_name= "Stock Entry from Item Packing", work_order= work_order, posting_date= posting_date, posting_time= posting_time)
+	else:
+		create_stock_entry(work_order, posting_date, posting_time)
+
+def create_stock_entry(work_order = None, posting_date = None, posting_time = None):
 	from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
 	filters = {'include_for_manufacturing': 1, 'not_yet_manufactured': 1, 'docstatus': 1}
 	if work_order:
@@ -164,6 +170,12 @@ def make_stock_entry(work_order = None, posting_date = None, posting_time = None
 			return "Manufactuing Entry For this Item has been Created."
 
 @frappe.whitelist()
+def enqueue_material_receipt(warehouse, item_code, company, posting_date, posting_time):
+	if posting_date < add_days(nowdate(), -3):
+		enqueue(make_material_receipt,queue= "long", timeout= 1800, job_name= "Material Receipt from Item Packing", warehouse= warehouse, item_code=item_code, company= company, posting_date= posting_date, posting_time= posting_time)
+	else:
+		make_material_receipt(warehouse, item_code, company, posting_date, posting_time)
+
 def make_material_receipt(warehouse, item_code, company, posting_date = None, posting_time = None):
 	serial_no_list = []
 	no_of_items = 0

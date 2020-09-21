@@ -17,7 +17,8 @@ def before_validate(self, method):
 	update_discounted_amount(self)
 
 def before_submit(self,method):
-	check_sales_order_item(self)
+	#check_sales_order_item(self)
+	pass
 
 def on_submit(self, method):
 	create_purchase_receipt(self)
