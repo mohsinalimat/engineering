@@ -4,6 +4,7 @@
 
 from __future__ import unicode_literals
 import frappe
+from frappe import _
 from frappe.model.document import Document
 from frappe.utils import cstr, cint, flt, comma_or, getdate, nowdate, formatdate, format_time
 from erpnext.setup.doctype.item_group.item_group import get_item_group_defaults
@@ -11,6 +12,8 @@ from erpnext.setup.doctype.brand.brand import get_brand_defaults
 from erpnext.stock.get_item_details import get_bin_details, get_default_cost_center
 from erpnext.stock.doctype.stock_entry.stock_entry import get_uom_details,get_warehouse_details
 from erpnext.stock.doctype.batch.batch import get_batch_no
+from frappe.utils.background_jobs import enqueue, get_jobs
+from frappe.utils import cint, flt, getdate, nowdate, add_days
 
 class JobWorkReturn(Document):
 	def validate(self):
@@ -20,8 +23,10 @@ class JobWorkReturn(Document):
 
 	def on_submit(self):
 #		self.create_stock_entry()
-		self.send_jobwork_finish_entry()
-		self.jobwork_manufacturing_entry()
+		self.enqueue_send_jobwork_finish_entry()
+		self.enqueue_jobwork_manufacturing_entry()
+		# self.send_jobwork_finish_entry()
+		# self.jobwork_manufacturing_entry()
 
 	def on_cancel(self):
 		self.cancel_repack_entry()
@@ -33,88 +38,31 @@ class JobWorkReturn(Document):
 	def create_stock_entry(self):
 		pass
 		
+	def enqueue_jobwork_manufacturing_entry(self):
+		if self.posting_date < add_days(nowdate(), -3):
+			queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
+			job = "Job Work Manufacturing Entry" + self.name
+			if job not in queued_jobs:
+				frappe.msgprint(_(" The Stock Entry is of old date. It has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")
+				enqueue(jobwork_manufacturing_entry,queue= "long", timeout= 1800, job_name= job, self= self)
+			else:
+				frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
+		else:
+			jobwork_manufacturing_entry(self= self)
+			frappe.msgprint("Stock Entry For this Item has been Created")		
 
-	def jobwork_manufacturing_entry(self):
-		#create repack
-		se = frappe.new_doc("Stock Entry")
-		se.stock_entry_type = "Jobwork Manufacturing"
-		se.purpose = "Repack"
-		se.set_posting_time = 1
-		se.reference_doctype = self.doctype
-		se.reference_docname =self.name
-		se.posting_date = self.posting_date
-		se.posting_time = self.posting_time
-		se.company = self.job_work_company
-		source_abbr = frappe.db.get_value('Company',self.company,'abbr')
-		target_abbr = frappe.db.get_value('Company',self.job_work_company,'abbr')
-		for row in self.items:
-			se.append("items",{
-				'item_code': row.item_code,
-				's_warehouse': self.s_warehouse,
-				'batch_no': row.batch_no,
-				'serial_no': row.serial_no,
-				'qty': row.qty,
-			})
-		se.append("items",{
-			'item_code': self.item_code,
-			't_warehouse': self.t_warehouse,
-			'batch_no': self.batch_no,
-			'serial_no': self.serial_no,
-			'qty': self.qty,
-		})
-		for row in self.additional_cost:
-			se.append("additional_costs",{
-				'expense_account': row.expense_account.replace(source_abbr,target_abbr),
-				'description': row.description,
-				'amount': row.amount
-			})
-		se.save(ignore_permissions=True)
-		se.get_stock_and_rate()
-		se.save(ignore_permissions=True)
-		se.submit()
-		self.db_set('repack_ref',se.name)
-		self.repack_ref = se.name
-
-	def send_jobwork_finish_entry(self):
-		# create material issue
-		mi = frappe.new_doc("Stock Entry")
-		mi.stock_entry_type = "Send Jobwork Finish"
-		mi.purpose = "Material Issue"
-		mi.set_posting_time = 1
-		mi.reference_doctype = self.doctype
-		mi.reference_docname = self.name
-		mi.company = self.company
-		mi.posting_date = self.posting_date
-		mi.posting_time = self.posting_time
-		mi.send_to_company = 1
-		mi.job_work_company = self.job_work_company
-		
-		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
-		target_abbr = frappe.db.get_value("Company", self.job_work_company,'abbr')
-		
-		mi.append("items",{
-			'item_code': self.item_code,
-			's_warehouse': self.jobwork_in_warehouse,
-			'batch_no': self.batch_no,
-			'serial_no': self.serial_no,
-			'qty': self.qty,
-			'cost_center': frappe.db.get_value("Company",self.company,'cost_center') or 'Main - {0}'.format(source_abbr)
-		})
-		
-		for row in self.additional_cost:
-			mi.append("additional_costs",{
-				'expense_account': row.expense_account,
-				'description': row.description,
-				'amount': row.amount
-			})
-
-		mi.save(ignore_permissions=True)
-		
-		# mi.update_stock_ledger()
-		mi.save(ignore_permissions=True)
-		mi.submit()
-		self.db_set('issue_ref',mi.name)
-		self.issue_ref = mi.name
+	def enqueue_send_jobwork_finish_entry(self):
+		if self.posting_date < add_days(nowdate(), -3):
+			queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
+			job = "Job Work Finish Entry" + self.name
+			if job not in queued_jobs:
+				frappe.msgprint(_(" The Stock Entry is of old date. It has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")
+				enqueue(send_jobwork_finish_entry,queue= "long", timeout= 1800, job_name= job, self= self)
+			else:
+				frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
+		else:
+			send_jobwork_finish_entry(self= self)
+			frappe.msgprint("Stock Entry For this Item has been Created")
 
 	def cancel_repack_entry(self):
 		if frappe.db.exists("Stock Entry",{'reference_doctype': self.doctype,'reference_docname':self.name,'company': self.job_work_company}):
@@ -192,3 +140,85 @@ class JobWorkReturn(Document):
 			args.batch_no = get_batch_no(args['item_code'], args['s_warehouse'], args['qty'])
 
 		return ret
+
+def send_jobwork_finish_entry(self):
+	# create material issue
+	mi = frappe.new_doc("Stock Entry")
+	mi.stock_entry_type = "Send Jobwork Finish"
+	mi.purpose = "Material Issue"
+	mi.set_posting_time = 1
+	mi.reference_doctype = self.doctype
+	mi.reference_docname = self.name
+	mi.company = self.company
+	mi.posting_date = self.posting_date
+	mi.posting_time = self.posting_time
+	mi.send_to_company = 1
+	mi.job_work_company = self.job_work_company
+	
+	source_abbr = frappe.db.get_value("Company", self.company,'abbr')
+	target_abbr = frappe.db.get_value("Company", self.job_work_company,'abbr')
+	
+	mi.append("items",{
+		'item_code': self.item_code,
+		's_warehouse': self.jobwork_in_warehouse,
+		'batch_no': self.batch_no,
+		'serial_no': self.serial_no,
+		'qty': self.qty,
+		'cost_center': frappe.db.get_value("Company",self.company,'cost_center') or 'Main - {0}'.format(source_abbr)
+	})
+	
+	for row in self.additional_cost:
+		mi.append("additional_costs",{
+			'expense_account': row.expense_account,
+			'description': row.description,
+			'amount': row.amount
+		})
+
+	mi.save(ignore_permissions=True)
+	
+	# mi.update_stock_ledger()
+	mi.save(ignore_permissions=True)
+	mi.submit()
+	self.db_set('issue_ref',mi.name)
+	self.issue_ref = mi.name
+
+def jobwork_manufacturing_entry(self):
+	#create repack
+	se = frappe.new_doc("Stock Entry")
+	se.stock_entry_type = "Jobwork Manufacturing"
+	se.purpose = "Repack"
+	se.set_posting_time = 1
+	se.reference_doctype = self.doctype
+	se.reference_docname =self.name
+	se.posting_date = self.posting_date
+	se.posting_time = self.posting_time
+	se.company = self.job_work_company
+	source_abbr = frappe.db.get_value('Company',self.company,'abbr')
+	target_abbr = frappe.db.get_value('Company',self.job_work_company,'abbr')
+	for row in self.items:
+		se.append("items",{
+			'item_code': row.item_code,
+			's_warehouse': self.s_warehouse,
+			'batch_no': row.batch_no,
+			'serial_no': row.serial_no,
+			'qty': row.qty,
+		})
+	se.append("items",{
+		'item_code': self.item_code,
+		't_warehouse': self.t_warehouse,
+		'batch_no': self.batch_no,
+		'serial_no': self.serial_no,
+		'qty': self.qty,
+	})
+	for row in self.additional_cost:
+		se.append("additional_costs",{
+			'expense_account': row.expense_account.replace(source_abbr,target_abbr),
+			'description': row.description,
+			'amount': row.amount
+		})
+	se.save(ignore_permissions=True)
+	se.get_stock_and_rate()
+	se.save(ignore_permissions=True)
+	se.submit()
+	self.db_set('repack_ref',se.name)
+	self.repack_ref = se.name
