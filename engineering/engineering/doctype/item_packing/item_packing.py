@@ -10,6 +10,7 @@ from frappe.utils import cint, flt, getdate, nowdate, add_days
 from engineering.api import before_naming as bn
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 from datetime import timedelta, datetime, date
+from frappe.utils.background_jobs import enqueue
 
 class ItemPacking(Document):
 	def on_update(self):
@@ -121,11 +122,11 @@ def submit_form(docname):
 @frappe.whitelist()
 def enqueue_stock_entry(work_order, posting_date, posting_time):
 	if posting_date < add_days(nowdate(), -3):
-		enqueue(create_stock_entry,queue= "long", timeout= 1800, job_name= "Stock Entry from Item Packing", work_order= work_order, posting_date= posting_date, posting_time= posting_time)
+		enqueue(make_stock_entry,queue= "long", timeout= 1800, job_name= "Stock Entry from Item Packing", work_order= work_order, posting_date= posting_date, posting_time= posting_time)
 	else:
-		create_stock_entry(work_order, posting_date, posting_time)
+		make_stock_entry(work_order, posting_date, posting_time)
 
-def create_stock_entry(work_order = None, posting_date = None, posting_time = None):
+def make_stock_entry(work_order = None, posting_date = None, posting_time = None):
 	from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
 	filters = {'include_for_manufacturing': 1, 'not_yet_manufactured': 1, 'docstatus': 1}
 	if work_order:
