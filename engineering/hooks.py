@@ -118,7 +118,8 @@ doc_events = {
 	"Purchase Receipt": {
 		"before_naming": "engineering.api.before_naming",
 		# "before_validate": "engineering.engineering.doc_events.purchase_receipt.before_validate",
-		"validate": "engineering.controllers.item_validation.validate_item_authority"
+		"validate": "engineering.controllers.item_validation.validate_item_authority",
+		"on_submit": "engineering.engineering.doc_events.purchase_receipt.on_submit"
 	},
 	"Journal Entry": {
 		"on_submit": "engineering.engineering.doc_events.journal_entry.on_submit",

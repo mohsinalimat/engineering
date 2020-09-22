@@ -11,7 +11,7 @@ def correct_item_packing():
 			from 
 				`tabItem Packing`
 			where
-				work_order IS NULL and stock_entry IS NOT NULL and docstatus = 1
+				work_order IS NOT NULL and stock_entry IS NULL and docstatus = 1
 		""", as_dict = True)
 
 	for ip in ip_list:

@@ -7,6 +7,14 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import get_url_to_form
 from frappe.contacts.doctype.address.address import get_company_address
 
+def on_submit(self,method):
+	validate_rate(self)
+
+def validate_rate(self):
+	for row in self.items:
+		if not row.rate:
+			frappe.throw("Row {}: Rate should not be Zero for item <b>{}</b>".format(row.idx,row.item_code))
+
 def get_invoiced_qty_map(purchase_receipt):
 	"""returns a map: {pr_detail: invoiced_qty}"""
 	invoiced_qty_map = {}

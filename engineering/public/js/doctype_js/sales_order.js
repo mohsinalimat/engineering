@@ -413,6 +413,22 @@ frappe.ui.form.on('Sales Order', {
 			frm.trigger('naming_series');
 		}
 		frm.trigger('get_company');
+		frm.trigger('get_price_list');
+	},
+	get_price_list: function (frm) {
+		if (frm.doc.comapny) {	
+			frappe.model.with_doc("Company", frm.doc.company, function (r) { 
+				var com_doc = frappe.model.get_doc("Company", frm.doc.company);
+				com_doc.allowed_to_transact_with.forEach(function (d) {
+					if (d.comapny == frm.doc.customer && d.price_list) {
+						frm.set_value('selling_price_list', d.price_list)
+					}
+					else {
+						frappe.throw('Define price list in {0} for customer {1}',[frm.doc.company,frm.doc.customer])
+					}
+				})
+			});
+		}
 	},
 	naming_series: function (frm) {
 		if (frm.doc.company && !frm.doc.amended_from && frm.doc.__islocal) {
@@ -433,6 +449,7 @@ frappe.ui.form.on('Sales Order', {
 			frm.trigger('naming_series');
 		}
 		frm.trigger('get_company')
+		frm.trigger('get_price_list');
 	},
 	get_company: function (frm) {
 		if (frm.doc.company && frm.doc.docstatus != 1){

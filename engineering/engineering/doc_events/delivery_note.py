@@ -21,6 +21,7 @@ def before_submit(self,method):
 	pass
 
 def on_submit(self, method):
+	validate_rate(self)
 	create_purchase_receipt(self)
 	create_delivery_note(self)
 	update_real_delivered_qty(self, "submit")
@@ -54,6 +55,11 @@ def check_sales_order_item(self):
 			if not row.so_detail:
 				frappe.throw("Row {}: Sales Order not found for item {}".format(row.idx,row.item_code))
 			
+
+def validate_rate(self):
+	for row in self.items:
+		if not row.rate:
+			frappe.throw("Row {}: Rate should not be Zero for item <b>{}</b>".format(row.idx,row.item_code))
 				
 def cancel_purchase_received(self):
 	if self.pr_ref:
