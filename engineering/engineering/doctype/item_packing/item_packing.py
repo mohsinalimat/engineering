@@ -60,7 +60,12 @@ class ItemPacking(Document):
 			# se.submit()
 		
 		self.submit()
-	
+		
+	def before_cancel(self):
+		if self.include_for_manufacturing:
+			if frappe.db.exists("Stock Entry", {'from_item_packing':1,'name':self.stock_entry, 'docstatus': 1}):
+				frappe.throw("Please Cancel Stock Entry before cancelling this Item Packing")
+
 	def on_cancel(self):
 		serial_no = get_serial_nos(self.serial_no)
 
@@ -122,7 +127,7 @@ def submit_form(docname):
 
 @frappe.whitelist()
 def enqueue_stock_entry(work_order, posting_date, posting_time):
-	if posting_date < add_days(nowdate(), -3):
+	if posting_date < add_days(nowdate(), -15):
 		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
 		job = "Stock Entry from Item Packing " + work_order
 		if job not in queued_jobs:
@@ -181,7 +186,7 @@ def make_stock_entry(work_order = None, posting_date = None, posting_time = None
 
 @frappe.whitelist()
 def enqueue_material_receipt(warehouse, item_code, company, posting_date, posting_time):
-	if posting_date < add_days(nowdate(), -3):
+	if posting_date < add_days(nowdate(), -15):
 		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
 		job = "Material Receipt from Item Packing "+item_code
 		if job not in queued_jobs:
@@ -239,6 +244,7 @@ def make_material_receipt(warehouse, item_code, company, posting_date = None, po
 		for j in name_list:
 			doc = frappe.get_doc("Item Packing",j)
 			doc.db_set("stock_entry",se.name, update_modified=False)
+			doc.db_set("not_yet_manufactured",0, update_modified=False)
 			#frappe.db.set_value("Item Packing", j, 'stock_entry', se.name)
 		return "Material Receipt For this Item has been Created"
 

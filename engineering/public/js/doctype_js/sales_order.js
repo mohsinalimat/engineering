@@ -100,7 +100,7 @@ erpnext.utils.update_child_items = function (opts) {
 }
 
 erpnext.selling.SalesOrderController = erpnext.selling.SalesOrderController.extend({
-	
+
 	refresh: function (doc, dt, dn) {
 		var me = this;
 		// FinByz Changes Start
@@ -401,12 +401,15 @@ cur_frm.fields_dict.taxes_and_charges.get_query = function (doc) {
 	}
 };
 frappe.ui.form.on('Sales Order', {
-	refresh: function(frm) {
-		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
+	refresh: function (frm) {
+		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0) {
 			frm.set_value("so_ref", "");
 			frm.set_value("inter_company_order_reference", "");
 			frm.set_value("po_ref");
 		}
+	},
+	customer: function (frm) {
+		frm.trigger('get_price_list');
 	},
 	onload: function (frm) {
 		if (frm.doc.__islocal) {
@@ -416,16 +419,14 @@ frappe.ui.form.on('Sales Order', {
 		frm.trigger('get_price_list');
 	},
 	get_price_list: function (frm) {
-		if (frm.doc.comapny) {	
-			frappe.model.with_doc("Company", frm.doc.company, function (r) { 
+		if (frm.doc.company && frm.doc.customer) {
+			frappe.model.with_doc("Company", frm.doc.company, function () {
 				var com_doc = frappe.model.get_doc("Company", frm.doc.company);
 				com_doc.allowed_to_transact_with.forEach(function (d) {
-					if (d.comapny == frm.doc.customer && d.price_list) {
+					if (d.company == frm.doc.customer && d.price_list) {
 						frm.set_value('selling_price_list', d.price_list)
 					}
-					else {
-						frappe.throw('Define price list in {0} for customer {1}',[frm.doc.company,frm.doc.customer])
-					}
+
 				})
 			});
 		}
@@ -452,10 +453,10 @@ frappe.ui.form.on('Sales Order', {
 		frm.trigger('get_price_list');
 	},
 	get_company: function (frm) {
-		if (frm.doc.company && frm.doc.docstatus != 1){
+		if (frm.doc.company && frm.doc.docstatus != 1) {
 			frappe.db.get_value("Company", frm.doc.company, 'through_company').then(
-				function(r){
-					if (frm.doc.through_company != r.message.through_company){
+				function (r) {
+					if (frm.doc.through_company != r.message.through_company) {
 						frm.set_value('through_company', r.message.through_company)
 					}
 				}

@@ -96,6 +96,75 @@ this.frm.cscript.onload = function (frm) {
 	});
 }
 frappe.ui.form.on('Job Work Return', {
+	
+	refresh: function(frm){
+		if (frm.doc.docstatus == 1 && frm.doc.issue_ref && !frm.doc.repack_ref){
+			frm.add_custom_button("Make JOB Work Manufacturing Entry", function() {
+				frappe.call({
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.job_work_manufacturing_button",
+					args:
+					{
+						'name': frm.doc.name
+					},
+					freeze: true,
+					callback: function(r){
+						if (r.message){
+							frappe.msgprint(r.message);
+						}
+					}
+				})
+			})
+		}
+		if (frm.doc.docstatus == 1 && !frm.doc.issue_ref && frm.doc.repack_ref){
+			frm.add_custom_button("Make JOB Work Finish Entry", function() {
+				frappe.call({
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.send_jobwork_finish_entry_button",
+					args:
+					{
+						'name': frm.doc.name
+					},
+					freeze: true,
+					callback: function(r){
+						if (r.message){
+							frappe.msgprint(r.message);
+						}
+					}
+				})
+			})
+		}
+		if (frm.doc.docstatus == 1 && !frm.doc.issue_ref && !frm.doc.repack_ref){
+			frm.add_custom_button("Make JOB Work Finish Entry", function() {
+				frappe.call({
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.send_jobwork_finish_entry_button",
+					args:
+					{
+						'name': frm.doc.name
+					},
+					freeze: true,
+					callback: function(r){
+						if (r.message){
+							frappe.msgprint(r.message);
+						}
+					}
+				})
+			})
+			frm.add_custom_button("Make JOB Work Manufacturing Entry", function() {
+				frappe.call({
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.job_work_manufacturing_button",
+					args:
+					{
+						'name': frm.doc.name
+					},
+					freeze: true,
+					callback: function(r){
+						if (r.message){
+							frappe.msgprint(r.message);
+						}
+					}
+				})
+			})
+		}
+	},
 	validate: function (frm, cdt, cdn) {
 		frm.trigger('set_basic_rate')
 		frm.trigger('set_default_account')

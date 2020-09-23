@@ -66,7 +66,7 @@ class JobWorkReturn(Document):
 		# 	frappe.msgprint("Stock Entry For this Item has been Created")
 
 	def enqueue_stock_entry(self):
-		if self.posting_date < add_days(nowdate(), -3):
+		if self.posting_date < add_days(nowdate(), -15):
 			queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
 			job_finish = "Job Work Stock Entry" + self.name
 			if job_finish not in queued_jobs:
@@ -236,3 +236,91 @@ def send_jobwork_finish_entry(self):
 	se.submit()
 	self.db_set('repack_ref',se.name)
 	self.repack_ref = se.name
+
+@frappe.whitelist()
+def job_work_manufacturing_button(name):
+	#create repack
+	doc = frappe.get_doc("Job Work Return",name)
+	se = frappe.new_doc("Stock Entry")
+	se.stock_entry_type = "Jobwork Manufacturing"
+	se.purpose = "Repack"
+	se.set_posting_time = 1
+	se.reference_doctype = doc.doctype
+	se.reference_docname =doc.name
+	se.posting_date = doc.posting_date
+	se.posting_time = doc.posting_time
+	se.company = doc.job_work_company
+	source_abbr = frappe.db.get_value('Company',doc.company,'abbr')
+	target_abbr = frappe.db.get_value('Company',doc.job_work_company,'abbr')
+	for row in doc.items:
+		se.append("items",{
+			'item_code': row.item_code,
+			's_warehouse': doc.s_warehouse,
+			'batch_no': row.batch_no,
+			'serial_no': row.serial_no,
+			'qty': row.qty,
+		})
+		se.append("items",{
+			'item_code': doc.item_code,
+			't_warehouse': doc.t_warehouse,
+			'batch_no': doc.batch_no,
+			'serial_no': doc.serial_no,
+			'qty': doc.qty,
+		})
+	for row in doc.additional_cost:
+		se.append("additional_costs",{
+			'expense_account': row.expense_account.replace(source_abbr,target_abbr),
+			'description': row.description,
+			'amount': row.amount
+		})
+	se.save(ignore_permissions=True)
+	se.get_stock_and_rate()
+	se.save(ignore_permissions=True)
+	se.submit()
+	doc.db_set('repack_ref',se.name)
+	doc.repack_ref = se.name
+	return "Stock Entry has been Created"
+
+@frappe.whitelist()
+def send_jobwork_finish_entry_button(name):
+	# create material issue
+	doc = frappe.get_doc("Job Work Return",name)
+	mi = frappe.new_doc("Stock Entry")
+	mi.stock_entry_type = "Send Jobwork Finish"
+	mi.purpose = "Material Issue"
+	mi.set_posting_time = 1
+	mi.reference_doctype = doc.doctype
+	mi.reference_docname = doc.name
+	mi.company = doc.company
+	mi.posting_date = doc.posting_date
+	mi.posting_time = doc.posting_time
+	mi.send_to_company = 1
+	mi.job_work_company = doc.job_work_company
+	
+	source_abbr = frappe.db.get_value("Company", doc.company,'abbr')
+	target_abbr = frappe.db.get_value("Company", doc.job_work_company,'abbr')
+	
+	mi.append("items",{
+		'item_code': doc.item_code,
+		's_warehouse': doc.jobwork_in_warehouse,
+		'batch_no': doc.batch_no,
+		'serial_no': doc.serial_no,
+		'qty': doc.qty,
+		'cost_center': frappe.db.get_value("Company",doc.company,'cost_center') or 'Main - {0}'.format(source_abbr)
+	})
+	
+	for row in doc.additional_cost:
+		mi.append("additional_costs",{
+			'expense_account': row.expense_account,
+			'description': row.description,
+			'amount': row.amount
+		})
+
+	mi.save(ignore_permissions=True)
+	
+	# mi.update_stock_ledger()
+	mi.save(ignore_permissions=True)
+	mi.submit()
+	doc.db_set('issue_ref',mi.name)
+	doc.issue_ref = mi.name
+	return "Stock Entry has been Created"
