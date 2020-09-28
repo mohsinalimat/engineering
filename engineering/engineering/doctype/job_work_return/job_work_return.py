@@ -14,6 +14,7 @@ from erpnext.stock.doctype.stock_entry.stock_entry import get_uom_details,get_wa
 from erpnext.stock.doctype.batch.batch import get_batch_no
 from frappe.utils.background_jobs import enqueue, get_jobs
 from frappe.utils import cint, flt, getdate, nowdate, add_days
+from datetime import datetime, timedelta
 
 class JobWorkReturn(Document):
 	def validate(self):
