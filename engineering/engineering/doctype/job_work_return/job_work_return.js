@@ -101,7 +101,7 @@ frappe.ui.form.on('Job Work Return', {
 		if (frm.doc.docstatus == 1 && frm.doc.issue_ref && !frm.doc.repack_ref){
 			frm.add_custom_button("Make JOB Work Manufacturing Entry", function() {
 				frappe.call({
-					method: "engineering.engineering.doctype.job_work_return.job_work_return.job_work_manufacturing_button",
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.enqueue_job_work_manufacturing_button",
 					args:
 					{
 						'name': frm.doc.name
@@ -118,7 +118,7 @@ frappe.ui.form.on('Job Work Return', {
 		if (frm.doc.docstatus == 1 && !frm.doc.issue_ref && frm.doc.repack_ref){
 			frm.add_custom_button("Make JOB Work Finish Entry", function() {
 				frappe.call({
-					method: "engineering.engineering.doctype.job_work_return.job_work_return.send_jobwork_finish_entry_button",
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.enqueue_send_jobwork_finish_entry_button",
 					args:
 					{
 						'name': frm.doc.name
@@ -135,7 +135,7 @@ frappe.ui.form.on('Job Work Return', {
 		if (frm.doc.docstatus == 1 && !frm.doc.issue_ref && !frm.doc.repack_ref){
 			frm.add_custom_button("Make JOB Work Finish Entry", function() {
 				frappe.call({
-					method: "engineering.engineering.doctype.job_work_return.job_work_return.send_jobwork_finish_entry_button",
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.enqueue_send_jobwork_finish_entry_button",
 					args:
 					{
 						'name': frm.doc.name
@@ -150,7 +150,7 @@ frappe.ui.form.on('Job Work Return', {
 			})
 			frm.add_custom_button("Make JOB Work Manufacturing Entry", function() {
 				frappe.call({
-					method: "engineering.engineering.doctype.job_work_return.job_work_return.job_work_manufacturing_button",
+					method: "engineering.engineering.doctype.job_work_return.job_work_return.enqueue_job_work_manufacturing_button",
 					args:
 					{
 						'name': frm.doc.name

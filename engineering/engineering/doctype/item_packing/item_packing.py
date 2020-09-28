@@ -186,6 +186,8 @@ def make_stock_entry(work_order = None, posting_date = None, posting_time = None
 
 @frappe.whitelist()
 def enqueue_material_receipt(warehouse, item_code, company, posting_date, posting_time):
+	if not warehouse:
+		frappe.throw("Please Enter Warehouse")
 	if posting_date < add_days(nowdate(), -15):
 		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
 		job = "Material Receipt from Item Packing "+item_code
@@ -226,7 +228,7 @@ def make_material_receipt(warehouse, item_code, company, posting_date = None, po
 		se.stock_entry_type = "Material Receipt"
 		se.naming_series = "OSTE-.fiscal.company_series.-.####"
 		se.company = company
-		se.to_warehouse = frappe.db.get_value("Warehouse",{'company':company,"warehouse_name":"Finished Goods"},"name")
+		se.to_warehouse = warehouse
 		if posting_date and posting_time:
 			se.set_posting_time = 1
 			se.posting_date = posting_date

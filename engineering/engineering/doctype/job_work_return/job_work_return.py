@@ -35,10 +35,6 @@ class JobWorkReturn(Document):
 		self.db_set('repack_ref', '')
 		self.db_set('issue_ref', '')
 		
-
-	def create_stock_entry(self):
-		pass
-		
 	# def enqueue_jobwork_manufacturing_entry(self):
 	# 	if self.posting_date < add_days(nowdate(), -3):
 	# 		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
@@ -71,12 +67,11 @@ class JobWorkReturn(Document):
 			job_finish = "Job Work Stock Entry" + self.name
 			if job_finish not in queued_jobs:
 				frappe.msgprint(_(" The Stock Entry is of old date. It has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")
-				enqueue(send_jobwork_finish_entry,queue= "long", timeout= 1800, job_name= job_finish, self= self)
-				frappe.msgprint("Stock Entry For this Item has been Created")
+				enqueue(create_stock_entry,queue= "long", timeout= 1800, job_name= job_finish, self= self)
 			else:
 				frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
 		else:
-			send_jobwork_finish_entry(self= self)
+			create_stock_entry(self= self)
 			frappe.msgprint("Stock Entry For this Item has been Created")
 
 	def cancel_repack_entry(self):
@@ -156,6 +151,10 @@ class JobWorkReturn(Document):
 
 		return ret
 
+def create_stock_entry(self):
+	send_jobwork_finish_entry(self)
+	job_work_manufacturing(self)
+
 def send_jobwork_finish_entry(self):
 	# create material issue
 	mi = frappe.new_doc("Stock Entry")
@@ -197,6 +196,7 @@ def send_jobwork_finish_entry(self):
 	self.db_set('issue_ref',mi.name)
 	self.issue_ref = mi.name
 
+def job_work_manufacturing(self):
 	#create repack
 	se = frappe.new_doc("Stock Entry")
 	se.stock_entry_type = "Jobwork Manufacturing"
@@ -238,6 +238,20 @@ def send_jobwork_finish_entry(self):
 	self.repack_ref = se.name
 
 @frappe.whitelist()
+def enqueue_job_work_manufacturing_button(name):
+	doc = frappe.get_doc("Job Work Return",name)
+	if doc.posting_date < add_days(nowdate(), -15):
+		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
+		job_finish = "Job Work Stock Entry" + name + "Manufacturing"
+		if job_finish not in queued_jobs:
+			frappe.msgprint(_(" The Stock Entry is of old date. It has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")
+			enqueue(job_work_manufacturing_button,queue= "long", timeout= 1800, job_name= job_finish, name= name)
+			frappe.msgprint("Stock Entry For this Item has been Created")
+		else:
+			frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
+	else:
+		job_work_manufacturing_button(name= name)
+
 def job_work_manufacturing_button(name):
 	#create repack
 	doc = frappe.get_doc("Job Work Return",name)
@@ -279,9 +293,24 @@ def job_work_manufacturing_button(name):
 	se.submit()
 	doc.db_set('repack_ref',se.name)
 	doc.repack_ref = se.name
-	return "Stock Entry has been Created"
+	frappe.msgprint("Stock Entry For this Item has been Created")
 
 @frappe.whitelist()
+def enqueue_send_jobwork_finish_entry_button(name):
+	doc = frappe.get_doc("Job Work Return",name)
+	if doc.posting_date < add_days(nowdate(), -15):
+		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
+		job_finish = "Job Work Stock Entry" + name + "Finish"
+		if job_finish not in queued_jobs:
+			frappe.msgprint(_(" The Stock Entry is of old date. It has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")
+			enqueue(send_jobwork_finish_entry_button,queue= "long", timeout= 1800, job_name= job_finish, name= name)
+			frappe.msgprint("Stock Entry For this Item has been Created")
+		else:
+			frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
+	else:
+		send_jobwork_finish_entry_button(name= name)
+		
+
 def send_jobwork_finish_entry_button(name):
 	# create material issue
 	doc = frappe.get_doc("Job Work Return",name)
@@ -323,4 +352,4 @@ def send_jobwork_finish_entry_button(name):
 	mi.submit()
 	doc.db_set('issue_ref',mi.name)
 	doc.issue_ref = mi.name
-	return "Stock Entry has been Created"
+	frappe.msgprint("Stock Entry For this Item has been Created")

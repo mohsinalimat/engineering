@@ -3,7 +3,7 @@ import erpnext
 from frappe import _, ValidationError
 from frappe.utils import flt, cint
 from erpnext.stock.get_item_details import get_reserved_qty_for_so
-from erpnext.stock.doctype.serial_no.serial_no import get_item_details, validate_serial_no, update_serial_nos, get_serial_nos, validate_material_transfer_entry, has_duplicate_serial_no
+from erpnext.stock.doctype.serial_no.serial_no import get_item_details, validate_serial_no, update_serial_nos, get_serial_nos, validate_material_transfer_entry, has_duplicate_serial_no, allow_serial_nos_with_different_item
 class SerialNoRequiredError(ValidationError): pass
 class SerialNoQtyError(ValidationError): pass
 class SerialNoWarehouseError(ValidationError): pass
@@ -50,15 +50,16 @@ def validate_serial_no(sle, item_det):
 			if len(serial_nos) != len(set(serial_nos)):
 				frappe.throw(_("Duplicate Serial No entered for Item {0}").format(sle.item_code), SerialNoDuplicateError)
 
-			#finbyz changes Start
+			
 			for serial_no in serial_nos:
-			#finbyz Changes End
+			
 				if frappe.db.exists("Serial No", serial_no):
 					sr = frappe.db.get_value("Serial No", serial_no, ["name", "item_code", "batch_no", "sales_order",
 						"delivery_document_no", "delivery_document_type", "warehouse",
 						"purchase_document_no", "company"], as_dict=1)
-
+					#finbyz changes Start
 					if sr.item_code:
+						#finbyz Changes End
 						if sr.item_code!=sle.item_code:
 							if not allow_serial_nos_with_different_item(serial_no, sle):
 								frappe.throw(_("Serial No {0} does not belong to Item {1}").format(serial_no,
