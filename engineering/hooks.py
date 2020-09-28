@@ -144,9 +144,9 @@ doc_events = {
 	"Work Order": {
 		'validate': 'engineering.engineering.doc_events.work_order.validate'
 	},
-	"Stock Ledger Entry": {
-		'before_submit': 'engineering.engineering.doc_events.stock_ledger_entry.before_submit'
-	},
+	# "Stock Ledger Entry": {
+	# 	'before_submit': 'engineering.engineering.doc_events.stock_ledger_entry.before_submit'
+	# },
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
 	},
@@ -181,6 +181,7 @@ from engineering.override_default_class_method import search_serial_or_batch_or_
 
 from engineering.engineering.override.stock_ledger import raise_exceptions, set_actual_qty
 from engineering.engineering.override.serial_no import validate_warehouse
+from engineering.engineering.override.serial_no import process_serial_no
 from engineering.engineering.override.opening_invoice_creation_tool import get_invoice_dict, make_invoices
 from engineering.engineering.override.taxes_and_totals import get_current_tax_amount, determine_exclusive_rate, calculate_taxes
 
@@ -196,6 +197,7 @@ update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
 StockEntry.get_items =  my_get_items
 SerialNo.validate_warehouse = validate_warehouse
+SerialNo.process_serial_no = process_serial_no
 calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
 calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate
 calculate_taxes_and_totals.calculate_taxes = calculate_taxes
