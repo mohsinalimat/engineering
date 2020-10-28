@@ -65,7 +65,7 @@ erpnext.utils.update_child_items = function (opts) {
 		primary_action: function () {
 			const trans_items = this.get_values()["trans_items"];
 			frappe.call({
-				method: 'engineering.engineering.override.update_items.update_child_qty_rate',
+				method: 'engineering.engineering.override.accounts_controller.update_child_qty_rate',
 				freeze: true,
 				args: {
 					'parent_doctype': frm.doc.doctype,
@@ -463,4 +463,48 @@ frappe.ui.form.on('Sales Order', {
 			)
 		}
 	}
+});
+
+
+frappe.ui.form.on('Sales Order Item', {
+	last_5_transaction: function(frm, cdt, cdn){
+		let d = locals[cdt][cdn];
+		frappe.call({
+			method: "engineering.engineering.doc_events.sales_order.get_last_5_transaction_details",
+			args: {
+				url:window.location.href.split("#")[0] + "#Form/Sales Order" + "/",
+				name:d.name,
+				item_code: d.item_code,
+				customer: frm.doc.customer
+			},
+			callback: function (r) {
+				frappe.msgprint({
+					message: r.message,
+					title: "Item Code : " + d.item_code + " And Customer : " + frm.doc.customer,
+					wide: true,
+				});
+			}
+		})
+	}
+});
+
+frappe.ui.keys.on('ctrl+i', function(e) {
+	const current_doc = $('.data-row.editable-row').parent().attr("data-name");
+	const d = locals["Sales Order Item"][current_doc];
+	frappe.call({
+		method: "engineering.engineering.doc_events.sales_order.get_last_5_transaction_details",
+		args: {
+			url:window.location.href.split("#")[0] + "#Form/Sales Order" + "/",
+			name:d.name,
+			item_code: d.item_code,
+			customer: cur_frm.doc.customer
+		},
+		callback: function (r) {
+			frappe.msgprint({
+				message: r.message,
+				title: "Item Code : " + d.item_code + " And Customer : " + cur_frm.doc.customer,
+				wide: true,
+			});
+		}
+	})
 });

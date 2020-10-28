@@ -2,7 +2,7 @@ import frappe
 from frappe import _
 from frappe.utils import flt, cint
 import json
-from erpnext.controllers.accounts_controller import set_sales_order_defaults, set_purchase_order_defaults, check_and_delete_children
+from erpnext.controllers.accounts_controller import set_sales_order_defaults, set_purchase_order_defaults, validate_and_delete_children
 
 
 @frappe.whitelist()
@@ -12,16 +12,16 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 	sales_doctypes = ['Sales Order', 'Sales Invoice', 'Delivery Note', 'Quotation']
 	parent = frappe.get_doc(parent_doctype, parent_doctype_name)
 
-	check_and_delete_children(parent, data)
+	validate_and_delete_children(parent, data)
 
 	for d in data:
 		new_child_flag = False
 		if not d.get("docname"):
 			new_child_flag = True
 			if parent_doctype == "Sales Order":
-				child_item  = set_sales_order_defaults(parent_doctype, parent_doctype_name, child_docname, d.get("item_code"))
+				child_item  = set_sales_order_defaults(parent_doctype, parent_doctype_name, child_docname, d)
 			if parent_doctype == "Purchase Order":
-				child_item = set_purchase_order_defaults(parent_doctype, parent_doctype_name, child_docname, d.get("item_code"))
+				child_item = set_purchase_order_defaults(parent_doctype, parent_doctype_name, child_docname, d)
 		else:
 			child_item = frappe.get_doc(parent_doctype + ' Item', d.get("docname"))
 			if flt(child_item.get("rate")) == flt(d.get("rate")) and flt(child_item.get("qty")) == flt(d.get("qty")) and flt(child_item.get("discounted_rate")) == flt(d.get("discounted_rate")) and flt(child_item.get("real_qty")) == flt(d.get("real_qty")):
@@ -50,7 +50,7 @@ def update_child_qty_rate(parent_doctype, trans_items, parent_doctype_name, chil
 		child_item.qty = flt(d.get("qty"))
 		# FinByz Changes Start
 		child_item.real_qty = flt(d.get("real_qty"))
-		child_item.discounted_amount = child_item.real_qty * child_item.discounted_rate
+		child_item.discounted_amount = flt(child_item.real_qty) * flt(child_item.discounted_rate)
 		# FinByz Changes End
 		precision = child_item.precision("rate") or 2
 		

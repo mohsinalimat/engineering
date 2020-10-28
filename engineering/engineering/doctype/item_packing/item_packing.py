@@ -127,17 +127,13 @@ def submit_form(docname):
 
 @frappe.whitelist()
 def enqueue_stock_entry(work_order, posting_date, posting_time):
-	if posting_date < add_days(nowdate(), -15):
-		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
-		job = "Stock Entry from Item Packing " + work_order
-		if job not in queued_jobs:
-			frappe.msgprint(_(" The Stock Entry is of old date. It has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")
-			enqueue(make_stock_entry,queue= "long", timeout= 1800, job_name= job, work_order= work_order, posting_date= posting_date, posting_time= posting_time)
-		else:
-			frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
+	queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
+	job = "Stock Entry from Item Packing " + work_order
+	if job not in queued_jobs:
+		frappe.msgprint(_(" The Stock Entry has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")
+		enqueue(make_stock_entry,queue= "long", timeout= 1800, job_name= job, work_order= work_order, posting_date= posting_date, posting_time= posting_time)
 	else:
-		make_stock_entry(work_order, posting_date, posting_time)
-		return "Manufactuing Entry For this Item has been Created"
+		frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
 
 def make_stock_entry(work_order = None, posting_date = None, posting_time = None):
 	from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
@@ -188,18 +184,13 @@ def make_stock_entry(work_order = None, posting_date = None, posting_time = None
 def enqueue_material_receipt(warehouse, item_code, company, posting_date, posting_time):
 	if not warehouse:
 		frappe.throw("Please Enter Warehouse")
-	if posting_date < add_days(nowdate(), -15):
-		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
-		job = "Material Receipt from Item Packing "+item_code
-		if job not in queued_jobs:
-			frappe.msgprint(_(" The Material Receipt is of old date. It has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Material Receipt creation job is in Queue '),indicator="green")
-			enqueue(make_material_receipt,queue= "long", timeout= 1800, job_name= job, warehouse= warehouse, item_code=item_code, company= company, posting_date= posting_date, posting_time= posting_time)
-		else:
-			frappe.msgprint(_(" Material Receipt Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Material Receipt creation job is Already in Queue '),indicator="green")			
-
+	queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
+	job = "Material Receipt from Item Packing "+item_code
+	if job not in queued_jobs:
+		frappe.msgprint(_(" The Material Receipt has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Material Receipt creation job is in Queue '),indicator="green")
+		enqueue(make_material_receipt,queue= "long", timeout= 1800, job_name= job, warehouse= warehouse, item_code=item_code, company= company, posting_date= posting_date, posting_time= posting_time)
 	else:
-		make_material_receipt(warehouse, item_code, company, posting_date, posting_time)
-		return "Material Receipt For this Item has been Created"
+		frappe.msgprint(_(" Material Receipt Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Material Receipt creation job is Already in Queue '),indicator="green")			
 
 def make_material_receipt(warehouse, item_code, company, posting_date = None, posting_time = None):
 	serial_no_list = []

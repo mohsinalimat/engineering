@@ -43,17 +43,22 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 							if (data.item_code == item.item_code){
 								let serial_no = item.serial_no + '\n' + data.serial_no;
 								var ks = serial_no.split(/\r?\n/);
-								var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort();
+								var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort()
+								var i = unique.indexOf("null")
+								delete unique[i];
 								frappe.model.set_value(item.doctype, item.name, 'serial_no', unique.join('\n'));
 								frappe.model.set_value(item.doctype, item.name, 'qty', unique.length);
 								flag = true
+								frappe.show_alert({message:__("{0} Pcs added for item {1}", [data.no_of_items,data.item_code]), indicator:'green'});
+								
 							}
 						});
 						if (flag == false){
 							let d =frm.add_child('items');
 							frappe.model.set_value(d.doctype, d.name, 'item_code', data.item_code);
 							frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
-							frappe.model.set_value(d.doctype, d.name, 'qty', 1);
+							frappe.model.set_value(d.doctype, d.name, 'qty', data.no_of_items);
+							frappe.show_alert({message:__("{0} Pcs added for item {1}", [data.no_of_items||1,data.item_code]), indicator:'green'});
 							frm.refresh_field('items');
 						}
 
@@ -248,5 +253,53 @@ frappe.ui.form.on('Delivery Note', {
         if (frm.doc.__islocal){
             frm.trigger('naming_series');
         }
+	},
+	remove_barcode: function(frm){
+		if(frm.doc.remove_barcode) {
+			var scan_barcode_field = frm.fields_dict["remove_barcode"]
+			frappe.call({
+				method: "engineering.override_default_class_method.search_serial_or_batch_or_barcode_number",
+				args: { search_value: frm.doc.remove_barcode },
+				callback: function(r){
+					
+					if (r.message.item_code){
+						let data = r.message;
+						(frm.doc.items || []).forEach(function(item, idx) {
+							if (data.item_code == item.item_code){
+								let serial_no = item.serial_no
+								var ks = serial_no.split(/\r?\n/);
+								let remove_serial_no = data.serial_no
+								var rm = remove_serial_no.split(/\r?\n/);
+								var final = removeFromArray(ks, rm)
+								frappe.model.set_value(item.doctype, item.name, 'serial_no', final.join('\n'));
+								frappe.model.set_value(item.doctype, item.name, 'qty', final.length);	
+								frappe.show_alert({message:__("{0} Pcs removed for item {1}", [data.no_of_items||1,data.item_code]), indicator:'red'});
+								
+							}
+						});
+						scan_barcode_field.set_value('');
+					} else {
+						scan_barcode_field.set_new_description(__('Cannot find Item with this barcode'));
+					}
+				}
+			});
+		}
+	}
+});
+function removeFromArray(original, remove) {
+	return original.filter(value => !remove.includes(value));
+} 
+frappe.ui.form.on("Delivery Note Item",{
+	item_code: function(frm, cdt, cdn){
+		let d = locals[cdt][cdn];
+		if(d.qty_per_box){
+			d.no_of_boxes = flt(d.qty) / flt(d.qty_per_box)
+		}
+	},
+	qty: function(frm, cdt, cdn){
+		let d = locals[cdt][cdn];
+		if(d.qty_per_box){
+			d.no_of_boxes = flt(d.qty) / flt(d.qty_per_box)
+		}
 	}
 });

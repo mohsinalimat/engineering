@@ -81,7 +81,11 @@ def get_serial_nos(serial_no):
 	return [s.strip() for s in cstr(serial_no).strip().upper().replace(',', '\n').split('\n')
 		if s.strip()]
 
-
+def validate(self, method):
+	if not self.sr_no_info:
+		sr_no = ''.join(filter(lambda i: i.isdigit(), self.name))
+		self.sr_no_info = sr_no[-9:]
+	
 def before_validate(self, method):
 	pass
 

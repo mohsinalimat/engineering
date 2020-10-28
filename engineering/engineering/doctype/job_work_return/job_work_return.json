@@ -97,6 +97,7 @@
    "reqd": 1
   },
   {
+   "allow_on_submit": 1,
    "fieldname": "posting_time",
    "fieldtype": "Time",
    "label": "Posting Time",
@@ -258,7 +259,7 @@
   }
  ],
  "is_submittable": 1,
- "modified": "2020-08-25 14:54:25.604982",
+ "modified": "2020-09-28 17:19:42.993654",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Return",

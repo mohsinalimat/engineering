@@ -37,9 +37,13 @@ doctype_js = {
 	"Stock Entry": "public/js/doctype_js/stock_entry.js",
 	"Company": "public/js/doctype_js/company.js",
 	"Batch": "public/js/doctype_js/batch.js",
+	"Serial No": "public/js/doctype_js/serial_no.js",
 }
 
 doc_events = {
+	"Serial No":{
+		"validate":"engineering.engineering.doc_events.serial_no.validate",
+	},
 	"Account": {
 		"validate": "engineering.engineering.doc_events.account.validate",
 		"on_trash": "engineering.engineering.doc_events.account.on_trash",

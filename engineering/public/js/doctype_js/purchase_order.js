@@ -109,6 +109,9 @@ erpnext.buying.PurchaseOrderController = erpnext.buying.PurchaseOrderController.
 
 		return current_tax_amount;
 	},
+// added
+	
+	
 });
 
 cur_frm.fields_dict.taxes_and_charges.get_query = function(doc) {
@@ -147,6 +150,26 @@ frappe.ui.form.on('Purchase Order', {
 			frm.trigger('company');
 		}
 	},
+	
+	select_billing_address: function(frm) {
+		console.log("enter")
+		// var me = this;
+		if(frm.doc.select_billing_address) {
+			frappe.call({
+				method: "frappe.contacts.doctype.address.address.get_address_display",
+				args: {"address_dict": frm.doc.select_billing_address },
+				callback: function(r) {
+					console.log(r.message)
+					if(r.message) {
+						frm.set_value("billing_address", r.message)
+					}
+				}
+			})
+		} else {
+			frm.set_value("billing_address", "");
+		}
+	},
+
 	naming_series: function(frm) {
 		if (frm.doc.company && !frm.doc.amended_from && frm.doc.__islocal){
 			frappe.call({

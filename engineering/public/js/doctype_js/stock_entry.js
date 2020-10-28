@@ -67,7 +67,9 @@ this.frm.cscript.onload = function (frm) {
 	});
 	
 }
-
+function removeFromArray(original, remove) {
+	return original.filter(value => !remove.includes(value));
+} 
 frappe.ui.form.on('Stock Entry', {
 	refresh: (frm) => {
 		if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
@@ -81,7 +83,39 @@ frappe.ui.form.on('Stock Entry', {
 				frm.set_value("jw_ref", null);
 			}
 		}
+	},
+	remove_barcode: function(frm){
+		if(frm.doc.remove_barcode) {
+			var scan_barcode_field = frm.fields_dict["remove_barcode"]
+			frappe.call({
+				method: "engineering.override_default_class_method.search_serial_or_batch_or_barcode_number",
+				args: { search_value: frm.doc.remove_barcode },
+				callback: function(r){
+					
+					if (r.message.item_code){
+						let data = r.message;
+						(frm.doc.items || []).forEach(function(item, idx) {
+							if (data.item_code == item.item_code){
+								let serial_no = item.serial_no
+								var ks = serial_no.split(/\r?\n/);
+								let remove_serial_no = data.serial_no
+								var rm = remove_serial_no.split(/\r?\n/);
+								var final = removeFromArray(ks, rm)
+								frappe.model.set_value(item.doctype, item.name, 'serial_no', final.join('\n'));
+								frappe.model.set_value(item.doctype, item.name, 'qty', final.length);	
+								frappe.show_alert({message:__("{0} Pcs removed for item {1}", [data.no_of_items||1,data.item_code]), indicator:'red'});
+								
+							}
+						});
+						scan_barcode_field.set_value('');
+					} else {
+						scan_barcode_field.set_new_description(__('Cannot find Item with this barcode'));
+					}
+				}
+			});
+		}
 	}
+
 });
 erpnext.stock.StockController = erpnext.stock.StockController.extend({
 	onload: function () {
@@ -100,6 +134,61 @@ erpnext.stock.StockController = erpnext.stock.StockController.extend({
 			// });
 		}
 	},
+	scan_barcode: function(){
+		let scan_barcode_field = this.frm.fields_dict["scan_barcode"];
+
+		let show_description = function(idx, exist = null) {
+			if (exist) {
+				scan_barcode_field.set_new_description(__('Row #{0}: Qty increased by 1', [idx]));
+			} else {
+				scan_barcode_field.set_new_description(__('Row #{0}: Item added', [idx]));
+			}
+		};
+
+		let doc = this.frm.doc;
+		let frm = this.frm;
+		if(this.frm.doc.scan_barcode) {
+			frappe.call({
+				method: "engineering.override_default_class_method.search_serial_or_batch_or_barcode_number",
+				args: { search_value: this.frm.doc.scan_barcode },
+				callback: function(r){
+					 
+					if (r.message.item_code){
+						let data = r.message;
+						var flag = false;
+						(doc.items || []).forEach(function(item, idx) {
+							if (data.item_code == item.item_code){
+								let serial_no = item.serial_no + '\n' + data.serial_no;
+								var ks = serial_no.split(/\r?\n/);
+								var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort()
+								var i = unique.indexOf("null")
+								delete unique[i];
+								frappe.model.set_value(item.doctype, item.name, 'serial_no', unique.join('\n'));
+								frappe.model.set_value(item.doctype, item.name, 'qty', unique.length);
+								flag = true
+								frappe.show_alert({message:__("{0} Pcs added for item {1}", [data.no_of_items,data.item_code]), indicator:'green'});
+								
+							}
+						});
+						if (flag == false){
+							let d =frm.add_child('items');
+							frappe.model.set_value(d.doctype, d.name, 'item_code', data.item_code);
+							frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
+							frappe.model.set_value(d.doctype, d.name, 'qty', data.no_of_items);
+							frappe.show_alert({message:__("{0} Pcs added for item {1}", [data.no_of_items||1,data.item_code]), indicator:'green'});
+							frm.refresh_field('items');
+						}
+
+						scan_barcode_field.set_value('');
+					} else {
+						scan_barcode_field.set_new_description(__('Cannot find Item with this barcode'));
+					}
+				}
+			});
+		}
+		// return false;
+	},
+
 	setup_warehouse_query: function () {
 		
 	},

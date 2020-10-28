@@ -7,7 +7,7 @@ import frappe
 from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from frappe.contacts.doctype.address.address import get_company_address
-from frappe.utils import get_url_to_form
+from frappe.utils import get_url_to_form, flt
 from frappe.model.utils import get_fetch_values
 from engineering.api import make_inter_company_transaction
 
@@ -15,6 +15,7 @@ from engineering.api import update_discounted_amount
 
 def before_validate(self, method):
 	update_discounted_amount(self)
+	validate_no_of_boxes(self)
 
 def before_submit(self,method):
 	#check_sales_order_item(self)
@@ -22,8 +23,9 @@ def before_submit(self,method):
 
 def on_submit(self, method):
 	validate_rate(self)
-	create_purchase_receipt(self)
-	create_delivery_note(self)
+	if not self.dont_replicate:
+		create_purchase_receipt(self)
+		create_delivery_note(self)
 	update_real_delivered_qty(self, "submit")
 
 def before_cancel(self, method):
@@ -601,3 +603,11 @@ def create_invoice(source_name, target_doc=None):
 	)
 
 	return doc
+
+def validate_no_of_boxes(self):
+	for item in self.items:
+		qty_per_box = frappe.db.get_value("Item",item.item_code,"qty_per_box")
+		if qty_per_box:
+			item.db_set("qty_per_box",flt(qty_per_box))
+			item.db_set("no_of_boxes",flt(item.qty) / flt(qty_per_box))
+			item.db_update()

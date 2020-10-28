@@ -9,8 +9,7 @@ frappe.query_reports["Stock Ledger Engineering"] = {
 			"label": __("Company"),
 			"fieldtype": "Link",
 			"options": "Company",
-			"default": frappe.defaults.get_user_default("Company"),
-			"reqd": 1
+			"default": frappe.defaults.get_user_default("Company")
 		},
 		{
 			"fieldname":"from_date",
@@ -73,16 +72,9 @@ frappe.query_reports["Stock Ledger Engineering"] = {
 			"fieldtype": "Data"
 		},
 		{
-			"fieldname":"project",
-			"label": __("Project"),
-			"fieldtype": "Link",
-			"options": "Project"
+			"fieldname":"serial_no",
+			"label": __("Serial No"),
+			"fieldtype": "Data",
 		},
-		{
-			"fieldname":"include_uom",
-			"label": __("Include UOM"),
-			"fieldtype": "Link",
-			"options": "UOM"
-		}
 	]
 }

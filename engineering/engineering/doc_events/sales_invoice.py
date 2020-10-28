@@ -21,10 +21,11 @@ def validate(self, method):
 	calculate_full_amount(self)
 
 def on_submit(self, method):
-	create_purchase_invoice(self)
-	create_branch_company_sales_invoice(self)
-	create_sales_invoice(self)
-	self.db_set('inter_company_invoice_reference', self.pi_ref)
+	if not self.dont_replicate:
+		create_purchase_invoice(self)
+		create_branch_company_sales_invoice(self)
+		create_sales_invoice(self)
+		self.db_set('inter_company_invoice_reference', self.pi_ref)
 
 def on_trash(self, method):
 	delete_all(self)

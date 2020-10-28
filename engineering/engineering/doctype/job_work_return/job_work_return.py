@@ -218,13 +218,13 @@ def job_work_manufacturing(self):
 			'serial_no': row.serial_no,
 			'qty': row.qty,
 		})
-		se.append("items",{
-			'item_code': self.item_code,
-			't_warehouse': self.t_warehouse,
-			'batch_no': self.batch_no,
-			'serial_no': self.serial_no,
-			'qty': self.qty,
-		})
+	se.append("items",{
+		'item_code': self.item_code,
+		't_warehouse': self.t_warehouse,
+		'batch_no': self.batch_no,
+		'serial_no': self.serial_no,
+		'qty': self.qty,
+	})
 	for row in self.additional_cost:
 		se.append("additional_costs",{
 			'expense_account': row.expense_account.replace(source_abbr,target_abbr),
@@ -241,7 +241,7 @@ def job_work_manufacturing(self):
 @frappe.whitelist()
 def enqueue_job_work_manufacturing_button(name):
 	doc = frappe.get_doc("Job Work Return",name)
-	if doc.posting_date < add_days(nowdate(), -15):
+	if str(doc.posting_date) < add_days(nowdate(), -15):
 		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
 		job_finish = "Job Work Stock Entry" + name + "Manufacturing"
 		if job_finish not in queued_jobs:
@@ -275,13 +275,13 @@ def job_work_manufacturing_button(name):
 			'serial_no': row.serial_no,
 			'qty': row.qty,
 		})
-		se.append("items",{
-			'item_code': doc.item_code,
-			't_warehouse': doc.t_warehouse,
-			'batch_no': doc.batch_no,
-			'serial_no': doc.serial_no,
-			'qty': doc.qty,
-		})
+	se.append("items",{
+		'item_code': doc.item_code,
+		't_warehouse': doc.t_warehouse,
+		'batch_no': doc.batch_no,
+		'serial_no': doc.serial_no,
+		'qty': doc.qty,
+	})
 	for row in doc.additional_cost:
 		se.append("additional_costs",{
 			'expense_account': row.expense_account.replace(source_abbr,target_abbr),
@@ -299,7 +299,7 @@ def job_work_manufacturing_button(name):
 @frappe.whitelist()
 def enqueue_send_jobwork_finish_entry_button(name):
 	doc = frappe.get_doc("Job Work Return",name)
-	if doc.posting_date < add_days(nowdate(), -15):
+	if str(doc.posting_date) < add_days(nowdate(), -15):
 		queued_jobs = get_jobs(site=frappe.local.site, key='job_name')[frappe.local.site]
 		job_finish = "Job Work Stock Entry" + name + "Finish"
 		if job_finish not in queued_jobs:

@@ -40,6 +40,9 @@ frappe.ui.form.on('Item Packing', {
 		}
 		if (!frm.doc.work_order && frm.doc.docstatus == 1 && !frm.doc.stock_entry){
 			frm.add_custom_button("Make Material Receipt", function() {
+				if (!frm.doc.warehouse){
+					frappe.throw("Please Enter Warehouse")
+				}
 				frappe.call({
 					method: "engineering.engineering.doctype.item_packing.item_packing.enqueue_material_receipt",
 					args: {

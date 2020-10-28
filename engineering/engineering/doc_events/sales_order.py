@@ -258,3 +258,38 @@ def get_price_list(self):
 				self.selling_price_list = com.price_list
 			else:
 				frappe.throw("Add price list in Company {0} for customer {1}".format(self.company,self.customer))
+
+@frappe.whitelist()
+def get_last_5_transaction_details(url, name, item_code, customer):
+	data = frappe.db.sql("""
+		SELECT soi.qty, soi.rate, so.transaction_date, so.company,so.name FROM `tabSales Order Item` as soi JOIN `tabSales Order` as so on soi.parent=so.name WHERE soi.name != '{}' and so.customer = '{}' and soi.item_code = '{}' ORDER By so.transaction_date DESC LIMIT 5	
+	""".format(name, customer, item_code), as_dict = 1)
+
+	table = """<table class="table table-bordered" style="margin: 0; font-size:80%;">
+		<thead>
+			<tr>
+				<th>Sales Order</th>
+				<th>Company</th>
+				<th>Date</th>
+				<th>Qty</th>
+				<th>Rate</th>
+
+			<tr>
+		</thead>
+	<tbody>"""
+	for i in data:
+		url_new = url + i.name
+		table += f"""
+			<tr>
+				<td>{"<a href='{0}' target='_blank'>{1}</a>".format(url_new,i.name)}</td>
+				<td>{i.company}</td>
+				<td>{frappe.format(i.transaction_date, {'fieldtype': 'Date'})}</td>
+				<td>{i.qty}</td>
+				<td>{i.rate}</td>
+			</tr>
+		"""
+	
+	table += """
+	</tbody></table>
+	"""
+	return table
