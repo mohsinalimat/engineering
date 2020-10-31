@@ -1,7 +1,8 @@
 // Copyright (c) 2016, Frappe Technologies Pvt. Ltd. and contributors
 // For license information, please see license.txt
 /* eslint-disable */
-
+var d = new Date();
+var dt = new Date(d.getFullYear(),d.getMonth(),1);
 frappe.query_reports["Stock Ledger Engineering"] = {
 	"filters": [
 		{
@@ -15,7 +16,7 @@ frappe.query_reports["Stock Ledger Engineering"] = {
 			"fieldname":"from_date",
 			"label": __("From Date"),
 			"fieldtype": "Date",
-			"default": frappe.datetime.add_months(frappe.datetime.get_today(), -1),
+			"default":dt,
 			"reqd": 1
 		},
 		{

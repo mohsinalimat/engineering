@@ -61,42 +61,42 @@ doc_events = {
 	"Sales Order": {
 		"before_naming": "engineering.api.before_naming",
 		"before_validate": "engineering.engineering.doc_events.sales_order.before_validate",
+		"validate": "engineering.controllers.item_validation.validate_item_authority",
 		"on_submit": "engineering.engineering.doc_events.sales_order.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.sales_order.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.sales_order.on_trash",
-		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Delivery Note": {
 		"before_validate": "engineering.engineering.doc_events.delivery_note.before_validate",
+		"validate": "engineering.controllers.item_validation.validate_item_authority",
 		"before_naming": "engineering.api.before_naming",
 		"before_cancel":"engineering.engineering.doc_events.delivery_note.before_cancel",
 		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",
 		"before_submit": "engineering.engineering.doc_events.delivery_note.before_submit",
 		"on_submit": "engineering.engineering.doc_events.delivery_note.on_submit",
 		"on_trash": "engineering.engineering.doc_events.delivery_note.on_trash",
-		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Purchase Order": {
-		"before_validate": "engineering.engineering.doc_events.purchase_order.before_validate",
-		"on_submit": "engineering.engineering.doc_events.purchase_order.on_submit",
 		"before_naming": "engineering.api.before_naming",
+		"before_validate": "engineering.engineering.doc_events.purchase_order.before_validate",
+		"validate": "engineering.controllers.item_validation.validate_item_authority",
+		"on_submit": "engineering.engineering.doc_events.purchase_order.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.purchase_order.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_order.on_trash",
-		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Purchase Invoice": {
+		"before_naming": ["engineering.engineering.doc_events.purchase_invoice.before_naming", "engineering.api.before_naming"],
+		"validate": "engineering.controllers.item_validation.validate_item_authority",
 		"on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.purchase_invoice.on_trash",
-		"before_naming": ["engineering.engineering.doc_events.purchase_invoice.before_naming", "engineering.api.before_naming"],
-		"validate": "engineering.controllers.item_validation.validate_item_authority"
 	},
 	"Sales Invoice": {
-		"before_validate": "engineering.engineering.doc_events.sales_invoice.before_validate",
 		"before_naming": [
 			"engineering.engineering.doc_events.sales_invoice.before_naming",
 			"engineering.api.before_naming",
 		],
+		"before_validate": "engineering.engineering.doc_events.sales_invoice.before_validate",
 		"validate": [
 			"engineering.engineering.doc_events.sales_invoice.validate",
 			"engineering.controllers.item_validation.validate_item_authority"
@@ -107,11 +107,11 @@ doc_events = {
 	},
 	"Payment Entry": {
 		"before_naming": "engineering.api.before_naming",
+		"validate": "engineering.engineering.doc_events.payment_entry.validate",
 		"on_submit": "engineering.engineering.doc_events.payment_entry.on_submit",
 		"on_update_after_submit": "engineering.engineering.doc_events.payment_entry.on_update_after_submit",
 		"on_cancel": "engineering.engineering.doc_events.payment_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.payment_entry.on_trash",
-		"validate": "engineering.engineering.doc_events.payment_entry.validate"
 	},
 	"Customer": {
 		"onload": "engineering.engineering.doc_events.customer.onload",
@@ -126,21 +126,21 @@ doc_events = {
 		"on_submit": "engineering.engineering.doc_events.purchase_receipt.on_submit"
 	},
 	"Journal Entry": {
+		"before_naming": "engineering.api.before_naming",	
 		"on_submit": "engineering.engineering.doc_events.journal_entry.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.journal_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.journal_entry.on_trash",
-		"before_naming": "engineering.api.before_naming",	
 	},
 	"Stock Entry": {
-		"on_submit": "engineering.engineering.doc_events.stock_entry.on_submit",
-		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
-		"on_trash": "engineering.engineering.doc_events.stock_entry.on_trash",
 		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate",
 		"validate": [
 			"engineering.controllers.item_validation.validate_item_authority",
 			"engineering.engineering.doc_events.stock_entry.validate"
 
-		]
+		],
+		"on_submit": "engineering.engineering.doc_events.stock_entry.on_submit",
+		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
+		"on_trash": "engineering.engineering.doc_events.stock_entry.on_trash",
 	},
 	"Fiscal Year": {
 		'before_save': 'engineering.engineering.doc_events.fiscal_year.before_save'

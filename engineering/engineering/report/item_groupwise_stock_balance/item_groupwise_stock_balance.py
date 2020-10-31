@@ -91,12 +91,11 @@ def get_final_out (filters, out):
 		if row.balance_qty > 0:
 			row.valuation = flt(row.balance_value)/flt(row.balance_qty)
 			data.append(row)
-		
 		if row.is_group:
 			row.view_sle = f"""
 				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
 					type='button' company='{filters.company}' item-group='{row.item_group}'
-					onClick='route_to_sle(this.getAttribute("company"),this.getAttribute("item-group"))'>View</button>"""
+					onClick='route_to_sbe(this.getAttribute("company"),this.getAttribute("item-group"))'>View</button>"""
 
 		if not row.is_group:
 			row.view_sle = f"""

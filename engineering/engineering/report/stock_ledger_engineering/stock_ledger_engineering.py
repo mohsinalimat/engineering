@@ -5,12 +5,11 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _
 from erpnext.stock.utils import update_included_uom_in_report
-
-# import frappe
+from datetime import datetime
 
 def execute(filters=None):
 	include_uom = filters.get("include_uom")
-	columns = get_columns()
+	columns = get_columns(filters)
 	items = get_items(filters)
 	sl_entries = get_stock_ledger_entries(filters, items)
 	item_details = get_item_details(items, sl_entries, include_uom)
@@ -63,10 +62,17 @@ def execute(filters=None):
 	update_included_uom_in_report(columns, data, include_uom, conversion_factors)
 	return columns, data
 
-def get_columns():
-	columns = [
-		{"label": _("Date"), "fieldname": "date", "fieldtype": "Datetime", "width": 110},
-		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 150},
+def get_columns(filters):
+	columns = []
+	columns += [{"label": _("Date"), "fieldname": "date", "fieldtype": "Datetime", "width": 110},
+		{"label": _("Voucher Type"), "fieldname": "voucher_type", "width": 110},
+		{"label": _("Voucher #"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 100},
+		{"label": _("Particular"), "fieldname": "particular", "fieldtype": "Data","width": 100},
+
+	]
+	if not filters.get('item_code'):
+		columns += [{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 150},]
+	columns += [
 		# {"label": _("Item Name"), "fieldname": "item_name", "width": 100},
 		{"label": _("UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 40},
 		# {"label": _("Qty"), "fieldname": "actual_qty", "fieldtype": "Float", "width": 70, "precision": 2, "convertible": "qty"},
@@ -86,8 +92,6 @@ def get_columns():
 			"options": "Company:company:default_currency", "convertible": "rate"},
 		{"label": _("Balance Value"), "fieldname": "stock_value", "fieldtype": "Currency", "width": 110,
 			"options": "Company:company:default_currency"},
-		{"label": _("Voucher Type"), "fieldname": "voucher_type", "width": 110},
-		{"label": _("Voucher #"), "fieldname": "voucher_no", "fieldtype": "Dynamic Link", "options": "voucher_type", "width": 100},
 		{"label": _("Batch"), "fieldname": "batch_no", "fieldtype": "Link", "options": "Batch", "width": 100},
 		{"label": _("Serial #"), "fieldname": "serial_no", "width": 100},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
@@ -103,23 +107,29 @@ def get_columns():
 	return columns
 
 def get_stock_ledger_entries(filters, items):
-	item_conditions_sql = serial_no_condition = ''
+	item_conditions_sql  = serial_no_condition = ''
 	if items:
 		item_conditions_sql = 'and sle.item_code in ({})'\
 			.format(', '.join([frappe.db.escape(i) for i in items]))
 	if filters.get('serial_no'):
-		serial_no_condition = "and instr(serial_no,'%s') > 0" % filters.serial_no
+		serial_no_condition = "and instr(sle.serial_no,'%s') > 0" % filters.serial_no
 
-	return frappe.db.sql("""select concat_ws(" ", posting_date, posting_time) as date,
-			item_code, warehouse, actual_qty, qty_after_transaction, incoming_rate, valuation_rate,
-			stock_value, voucher_type, voucher_no, batch_no, serial_no, company, project, stock_value_difference
-		from `tabStock Ledger Entry` sle
+	return frappe.db.sql("""select concat_ws(" ", sle.posting_date, sle.posting_time) as date,
+			sle.item_code, sle.warehouse, sle.actual_qty, sle.qty_after_transaction, sle.incoming_rate, sle.valuation_rate,
+			sle.stock_value, sle.voucher_type, sle.voucher_no, sle.batch_no, sle.serial_no, sle.company, sle.project, sle.stock_value_difference,
+			IFNULL(pr.supplier, IFNULL(pi.supplier,IFNULL(dn.customer,IFNULL(si.customer,se.stock_entry_type)))) as particular
+		from `tabStock Ledger Entry` as sle
+		LEFT JOIN `tabPurchase Receipt` as pr on pr.name = sle.voucher_no
+		LEFT JOIN `tabPurchase Invoice` as pi on pi.name = sle.voucher_no
+		LEFT JOIN `tabDelivery Note` as dn on dn.name = sle.voucher_no
+		LEFT JOIN `tabSales Invoice` as si on si.name = sle.voucher_no
+		LEFT JOIN `tabStock Entry` as se on se.name = sle.voucher_no
 		where
-			posting_date between %(from_date)s and %(to_date)s
+			sle.posting_date between %(from_date)s and %(to_date)s
 			{sle_conditions}
 			{item_conditions_sql}
 			{serial_no_condition}
-			order by posting_date asc, posting_time asc, creation asc"""\
+			order by sle.posting_date asc, sle.posting_time asc, sle.creation asc"""\
 		.format(
 			sle_conditions=get_sle_conditions(filters),
 			item_conditions_sql = item_conditions_sql,
@@ -178,12 +188,11 @@ def get_sle_conditions(filters):
 		if warehouse_condition:
 			conditions.append(warehouse_condition)
 	if filters.get("voucher_no"):
-		conditions.append("voucher_no=%(voucher_no)s")
+		conditions.append("sle.voucher_no=%(voucher_no)s")
 	if filters.get("batch_no"):
-		conditions.append("batch_no=%(batch_no)s")
-	if filters.get("project"):
-		conditions.append("project=%(project)s")
-
+		conditions.append("sle.batch_no=%(batch_no)s")
+	if filters.get("company"):
+		conditions.append("sle.company=%(company)s")
 	return "and {}".format(" and ".join(conditions)) if conditions else ""
 
 def get_opening_balance(filters, columns):
