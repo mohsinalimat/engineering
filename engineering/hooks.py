@@ -11,10 +11,15 @@ app_color = "grey"
 app_email = "info@finbyz.tech"
 app_license = "MIT"
 
-
+from erpnext.accounts.doctype.bank_statement_transaction_entry.bank_statement_transaction_entry import BankStatementTransactionEntry
 from erpnext.setup.doctype.naming_series.naming_series import NamingSeries
+
 from engineering.override_default_class_method import get_transactions
+from engineering.engineering.doc_events.bank_statement_transaction_entry import create_payment_entry, match_invoice_to_payment, populate_matching_vouchers
 NamingSeries.get_transactions = get_transactions
+BankStatementTransactionEntry.create_payment_entry = create_payment_entry
+BankStatementTransactionEntry.match_invoice_to_payment = match_invoice_to_payment
+BankStatementTransactionEntry.populate_matching_vouchers = populate_matching_vouchers
 
 from erpnext.stock.doctype.serial_no.serial_no import SerialNo
 

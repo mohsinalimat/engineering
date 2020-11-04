@@ -108,3 +108,4 @@ def get_naming_series_options(doctype):
 				options_list.append(name)
 		
 	return "\n".join(options_list)
+
