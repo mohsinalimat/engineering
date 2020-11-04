@@ -5,25 +5,66 @@
  "engine": "InnoDB",
  "field_order": [
   "package",
-  "item_code"
+  "item_code",
+  "serial_no",
+  "company",
+  "warehouse",
+  "status"
  ],
  "fields": [
   {
    "fieldname": "package",
    "fieldtype": "Data",
    "in_list_view": 1,
-   "label": "package"
+   "label": "package",
+   "read_only": 1
   },
   {
    "fieldname": "item_code",
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "item code",
-   "options": "Item"
+   "options": "Item",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "serial_no",
+   "fieldtype": "Text",
+   "in_list_view": 1,
+   "label": "Serial No",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "serial_no.company",
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "serial_no.warehouse",
+   "fieldname": "warehouse",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Warehouse",
+   "options": "Warehouse",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fetch_from": "serial_no.status",
+   "fieldname": "status",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Status",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2020-10-28 11:40:29.532838",
+ "modified": "2020-11-04 14:14:12.928336",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Package Verification Detail",

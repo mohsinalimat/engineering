@@ -24,6 +24,7 @@ frappe.ui.form.on('Package Verification', {
 							let d =frm.add_child('packages_detail');
 							frappe.model.set_value(d.doctype, d.name, 'package', frm.doc.package);
 							frappe.model.set_value(d.doctype, d.name, 'item_code', r.message.item_code);
+							frappe.model.set_value(d.doctype, d.name, 'serial_no', r.message.serial_no);
 							frm.refresh_field('packages_detail');
 	
 							package_field.set_value('');
@@ -35,5 +36,27 @@ frappe.ui.form.on('Package Verification', {
 			});
 		}
 		// return false;
+		frm.trigger('serial_no')
 	},
+});
+frappe.ui.form.on('Package Verification Detail', {
+	serial_no: function(frm,cdt,cdn){
+		var d = locals[cdt][cdn]
+		frappe.call({
+			method:"engineering.engineering.doctype.package_verification.package_verification.get_serial_nos",
+			args:{
+				"serial_no" : d.serial_no,
+			},
+			callback:function(r){
+				frappe.db.get_value("Serial No",r.message,['company','warehouse','status'],function(r){
+					frappe.model.set_value(d.doctype,d.name,'company',r.company)
+					frappe.model.set_value(d.doctype,d.name,'warehouse',r.warehouse)
+					frappe.model.set_value(d.doctype,d.name,'status',r.status)
+				})
+			
+				//frappe.model.set_value(d.doctype,d.name,'company',)
+			}
+		})
+
+	}
 });

@@ -7,9 +7,10 @@
  "field_order": [
   "naming_series",
   "package",
-  "packages_detail",
-  "data_4",
-  "amended_from"
+  "column_break_3",
+  "company",
+  "section_break_5",
+  "packages_detail"
  ],
  "fields": [
   {
@@ -31,21 +32,24 @@
    "options": "Package Verification Detail"
   },
   {
-   "fieldname": "data_4",
-   "fieldtype": "Data"
+   "fieldname": "column_break_3",
+   "fieldtype": "Column Break"
   },
   {
-   "fieldname": "amended_from",
+   "fieldname": "company",
    "fieldtype": "Link",
-   "label": "Amended From",
-   "no_copy": 1,
-   "options": "Package Verification",
-   "print_hide": 1,
-   "read_only": 1
+   "in_list_view": 1,
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_5",
+   "fieldtype": "Section Break"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-10-28 12:41:08.055761",
+ "modified": "2020-11-04 14:13:30.610943",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Package Verification",
