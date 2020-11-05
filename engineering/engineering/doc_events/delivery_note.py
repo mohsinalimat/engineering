@@ -390,7 +390,9 @@ def create_purchase_receipt(self):
 				if purchase_order:
 					pr.items[index].schedule_date = frappe.db.get_value("Purchase Order", purchase_order, 'schedule_date')
 					pr.items[index].purchase_order = purchase_order
-					frappe.db.set_value("Delivery Note Item", self.items[index].name, 'pr_detail', pr.items[index].name)
+				self.items[index].pr_detail = pr.items[index].name
+				# frappe.msgprint(str(pr.items[index].name))
+				# frappe.db.set_value("Delivery Note Item", self.items[index].name, 'pr_detail', pr.items[index].name)
 			
 			pr.save(ignore_permissions = True)
 
