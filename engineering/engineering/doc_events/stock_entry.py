@@ -462,7 +462,7 @@ def submit_job_work_entry(name):
 
 @frappe.whitelist()
 def create_job_work_receipt_entry(self):
-	if self.stock_entry_type == "Send to Jobwork" and self.purpose == "Material Transfer" and self.send_to_company and not self.jw_ref:
+	if self.stock_entry_type == "Send Serialized Item" and self.purpose == "Material Issue" and self.send_to_company and not self.jw_ref:
 
 		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
 		target_abbr = frappe.db.get_value("Company", self.job_work_company,'abbr')
@@ -509,7 +509,7 @@ def create_job_work_receipt_entry(self):
 		self.db_set('jw_ref', se.name)
 		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
-		# se.submit()
+		se.submit()
 
 def validate_transfer_item(self):
 	if self.purpose == "Material Transfer for Manufacture" and self.work_order:
