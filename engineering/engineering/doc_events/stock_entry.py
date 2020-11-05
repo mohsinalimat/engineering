@@ -489,6 +489,8 @@ def create_job_work_receipt_entry(self):
 			se.append("items",{
 				'item_code': row.item_code,
 				't_warehouse':  self.to_company_receive_warehouse or job_work_warehouse,
+				'serial_no': row.serial_no,
+				'basic_rate':row.basic_rate,
 				'batch_no': row.batch_no,
 				'qty': row.qty,
 				'expense_account': expense_account,
@@ -507,7 +509,7 @@ def create_job_work_receipt_entry(self):
 		self.db_set('jw_ref', se.name)
 		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
-		se.submit()
+		# se.submit()
 
 def validate_transfer_item(self):
 	if self.purpose == "Material Transfer for Manufacture" and self.work_order:
