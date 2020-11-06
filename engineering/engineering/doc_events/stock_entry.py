@@ -72,6 +72,7 @@ def cancel_job_work(self):
 def on_submit(self, method):
 	create_stock_entry(self)
 	create_job_work_receipt_entry(self)
+	create_job_work_receipt_entry_serialized_item(self)
 	# save_serial_no(self)
 	setting_references(self)
 
@@ -461,7 +462,7 @@ def submit_job_work_entry(name):
 		return doc.se_ref
 
 @frappe.whitelist()
-def create_job_work_receipt_entry(self):
+def create_job_work_receipt_entry_serialized_item(self):
 	if self.stock_entry_type == "Send Serialized Item" and self.purpose == "Material Issue" and self.send_to_company and not self.jw_ref:
 
 		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
@@ -510,6 +511,58 @@ def create_job_work_receipt_entry(self):
 		# frappe.flags.warehouse_account_map = None
 		self.jw_ref = se.name
 		se.submit()
+
+@frappe.whitelist()
+def create_job_work_receipt_entry(self):
+	if self.stock_entry_type == "Send to Jobwork" and self.purpose == "Material Transfer" and self.send_to_company and not self.jw_ref:
+
+		source_abbr = frappe.db.get_value("Company", self.company,'abbr')
+		target_abbr = frappe.db.get_value("Company", self.job_work_company,'abbr')
+		expense_account = frappe.db.get_value('Company',self.job_work_company,'job_work_difference_account')
+		job_work_warehouse = frappe.db.get_value('Company',self.job_work_company,'job_work_warehouse')
+
+		if not expense_account or not job_work_warehouse:
+			frappe.throw(_("Please set Job work difference account and warehouse in company <b>{0}</b>").format(self.job_work_company))
+
+		se = frappe.new_doc("Stock Entry")
+		se.stock_entry_type = "Receive Jobwork Raw Material"
+		se.replicate = self.replicate
+		se.purpose = "Material Receipt"
+		se.set_posting_time = 1
+		se.jw_ref = self.name
+		se.posting_date = self.posting_date
+		se.posting_time = self.posting_time
+		se.company = self.job_work_company
+		se.to_warehouse = self.to_company_receive_warehouse or job_work_warehouse
+
+		if self.amended_from:
+			se.amended_from = frappe.db.get_value("Stock Entry", {'jw_ref': self.amended_from}, "name")
+		for row in self.items:
+			se.append("items",{
+				'item_code': row.item_code,
+				't_warehouse':  self.to_company_receive_warehouse or job_work_warehouse,
+				'serial_no': row.serial_no,
+				'basic_rate':row.basic_rate,
+				'batch_no': row.batch_no,
+				'qty': row.qty,
+				'expense_account': expense_account,
+				'cost_center': row.cost_center.replace(source_abbr, target_abbr)
+			})
+		
+		if self.additional_costs:
+			for row in self.additional_costs:
+				se.append("additional_costs",{
+					'expense_account': row.expense_account.replace(source_abbr, target_abbr),
+					'description': row.description,
+					'amount': row.amount
+				})
+		
+		se.save(ignore_permissions=True)
+		self.db_set('jw_ref', se.name)
+		# frappe.flags.warehouse_account_map = None
+		self.jw_ref = se.name
+		se.submit()
+
 
 def validate_transfer_item(self):
 	if self.purpose == "Material Transfer for Manufacture" and self.work_order:
