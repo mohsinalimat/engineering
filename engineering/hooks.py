@@ -140,10 +140,10 @@ doc_events = {
 		"before_validate": "engineering.engineering.doc_events.stock_entry.before_validate",
 		"validate": [
 			"engineering.controllers.item_validation.validate_item_authority",
-			"engineering.engineering.doc_events.stock_entry.validate"
-
+			"engineering.engineering.doc_events.stock_entry.validate",
 		],
 		"on_submit": "engineering.engineering.doc_events.stock_entry.on_submit",
+		"before_cancel": "engineering.engineering.doc_events.stock_entry.before_cancel",
 		"on_cancel": "engineering.engineering.doc_events.stock_entry.on_cancel",
 		"on_trash": "engineering.engineering.doc_events.stock_entry.on_trash",
 	},

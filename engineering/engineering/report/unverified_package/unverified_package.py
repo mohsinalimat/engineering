@@ -16,7 +16,7 @@ def execute(filters=None):
 def get_data(filters):
 	query = frappe.db.sql("""
 	select
-		ip.name as package_no, ip.item_code, ip.item_name,ip.item_group,sno.warehouse, ip.no_of_items, sno.company, sno.status, ip.serial_no
+		ip.name as package_no, ip.item_code, ip.item_group,sno.warehouse, ip.no_of_items, sno.company, sno.status, ip.serial_no, ip.item_name
 	from
 		`tabItem Packing` as ip JOIN
 		`tabSerial No` as sno on sno.name = SUBSTRING_INDEX(ip.serial_no,'\n',1)
@@ -40,12 +40,12 @@ def get_conditions(filters):
 def get_columns(filters):
 	columns = [{"label": _("Package No"), "fieldname": "package_no", "fieldtype": "Link", "options": "Item Packing","width": 120},
 		{"label": _("Item Code"), "fieldname": "item_code", "fieldtype":"Link","options": "Item","width": 120},
-		{"label": _("Item Name"), "fieldname": "item_name", "fieldtype":"Data","width": 120},
 		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype":"Link","options": "Item Group","width": 120},
 		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 200},
 		{"label": _("No of Pcs"), "fieldname": "no_of_items", "fieldtype": "Float","width": 80},
 		{"label": _("Company"), "fieldname": "company", "fieldtype": "Link","options": "Company","width": 220},
 		{"label": _("Status"), "fieldname": "status", "fieldtype": "Data","width": 120},
 		{"label": _("Serial No"), "fieldname": "serial_no", "fieldtype": "Data","width": 200},
+		{"label": _("Item Name"), "fieldname": "item_name", "fieldtype":"Data","width": 120},
 	]
 	return columns

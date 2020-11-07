@@ -49,24 +49,28 @@ def on_trash(self, method):
 		if self.name != item:
 			frappe.delete_doc("Stock Entry", item)
 
-def on_cancel(self, method):
-	# for item in self.items:
-	# 	if item.serial_no:
-	# 		for serial_no in get_serial_nos(item.serial_no):
-	# 			doc = frappe.get_doc("Serial No", serial_no)
-	# 			doc.save()
+def before_cancel(self, method):
 	cancel_job_work(self)
+
+def on_cancel(self, method):
 	remove_ref_from_item_packing(self)
 
 def cancel_job_work(self):
 	if self.jw_ref:
 		jw_doc = frappe.get_doc("Stock Entry", self.jw_ref)
+		self.db_set('jw_ref',None)
+		self.db_update()
 		if jw_doc.docstatus == 1:
+			jw_doc.flags.ignore_links = True
+			jw_doc.db_set('jw_ref',None)
 			jw_doc.cancel()
-	
 	if self.se_ref:
 		se_doc = frappe.get_doc("Stock Entry", self.se_ref)
+		self.db_set('se_ref',None)
+		self.db_update()
 		if se_doc.docstatus == 1:
+			se_doc.flags.ignore_links = True
+			se_doc.db_set('se_ref',None)
 			se_doc.cancel()
 
 def on_submit(self, method):
@@ -474,7 +478,7 @@ def create_job_work_receipt_entry_serialized_item(self):
 			frappe.throw(_("Please set Job work difference account and warehouse in company <b>{0}</b>").format(self.job_work_company))
 
 		se = frappe.new_doc("Stock Entry")
-		se.stock_entry_type = "Receive Jobwork Raw Material"
+		se.stock_entry_type = "Receive Jobwork Serialized Item"
 		se.replicate = self.replicate
 		se.purpose = "Material Receipt"
 		se.set_posting_time = 1
