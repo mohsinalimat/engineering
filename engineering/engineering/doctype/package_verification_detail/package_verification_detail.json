@@ -9,7 +9,8 @@
   "serial_no",
   "company",
   "warehouse",
-  "status"
+  "status",
+  "no_of_items"
  ],
  "fields": [
   {
@@ -61,10 +62,16 @@
    "in_list_view": 1,
    "label": "Status",
    "read_only": 1
+  },
+  {
+   "fieldname": "no_of_items",
+   "fieldtype": "Int",
+   "label": "No of items",
+   "read_only": 1
   }
  ],
  "istable": 1,
- "modified": "2020-11-04 14:14:12.928336",
+ "modified": "2020-11-09 14:48:09.886820",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Package Verification Detail",
