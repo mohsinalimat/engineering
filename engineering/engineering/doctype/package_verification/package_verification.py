@@ -46,7 +46,6 @@ def create_stock_entry(name):
 		se.send_to_company = 1
 		se.job_work_company = doc.company
 		se.to_company_receive_warehouse = doc.to_company_receive_warehouse
-		item_found = 1
 		item_warehouse_dict = {}
 		for row in doc.packages_detail:	
 			if row.status == "Inactive":
@@ -56,7 +55,6 @@ def create_stock_entry(name):
 			}))
 			item_warehouse_dict[row.item_code, row.warehouse].qty += row.no_of_items
 			item_warehouse_dict[row.item_code, row.warehouse].serial_no += "\n"+ row.serial_no
-		print(item_warehouse_dict)
 		for item,value in item_warehouse_dict.items():
 			se.append("items",{
 				'item_code': item[0],
