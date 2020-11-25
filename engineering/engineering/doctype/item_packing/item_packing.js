@@ -20,6 +20,9 @@ cur_frm.fields_dict.work_order.get_query = function(doc) {
 
 frappe.ui.form.on('Item Packing', {
 	refresh: function(frm){
+		if (frm.doc.__islocal){
+			frm.trigger('auto_create_serial_no')
+		}
 		if (frm.doc.docstatus == 1 && frm.doc.work_order && !frm.doc.stock_entry){
 			frm.add_custom_button("Make Manufacture Entry", function() {
 				frappe.call({
@@ -65,6 +68,7 @@ frappe.ui.form.on('Item Packing', {
 	onload: function(frm){
 		if (frm.doc.__islocal){
 			frm.trigger('naming_series');
+			frm.trigger('auto_create_serial_no')
 		}
 	},
 	before_save: function (frm) {
@@ -81,6 +85,14 @@ frappe.ui.form.on('Item Packing', {
 					frm.set_value('no_of_item_work_order', r.message)
 				}
 			})
+		}
+	},
+	auto_create_serial_no: function(frm){
+		if(frm.doc.auto_create_serial_no){
+			frm.set_df_property("serial_no", "reqd", 0);
+		}
+		else{
+			frm.set_df_property("serial_no", "reqd", 1);
 		}
 	},
 	// cal_wt: function(frm){

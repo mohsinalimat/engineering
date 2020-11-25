@@ -5,15 +5,61 @@
 from __future__ import unicode_literals
 import frappe
 from frappe import _
+from frappe.model.naming import make_autoname
 from frappe.model.document import Document
-from frappe.utils import cint, flt
-from frappe.utils import cint, flt, getdate, nowdate, add_days
+from frappe.utils import cint, flt, getdate, nowdate, add_days, cstr
 from engineering.api import before_naming as bn
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 from datetime import timedelta, datetime, date
 from frappe.utils.background_jobs import enqueue, get_jobs
+from random import random
+import re
 
 class ItemPacking(Document):
+	def before_validate(self):
+		values = []
+		user = frappe.session.user
+		if self.auto_create_serial_no and not self.serial_no:
+			serial_no_series = frappe.db.get_value("Item",self.item_code,'serial_no_series')
+			if not serial_no_series:
+				frappe.throw("Please Add Serial Number Series In Item: " + str(self.item_code))
+			else:
+				self.serial_no = get_auto_serial_nos(serial_no_series,self.qty_per_box)
+
+					# serial_no = serial_no_series + getseries(8, item)
+					# if frappe.db.exists("Serial No", serial_no):
+					# 	sr_no = frappe.db.sql("select sr_no_info from `tabSerial No` where item_code = '{}' and name LIKE '%{}%' ORDER BY sr_no_info DESC limit 1".format(self.item_code,serial_no_series))[0][0]
+					# 	zero_digit = 8 - len(str(sr_no))
+					# 	serial_no_with_zeros = serial_no_series.ljust(zero_digit + len(serial_no_series),'0')
+					# 	serial_no = serial_no_with_zeros + str(sr_no + 1)
+
+					# sr_no = ''.join(filter(lambda i: i.isdigit(), serial_no))
+					# sr_no_info = sr_no[-9:]
+					# qr_code_hash = frappe.generate_hash(length = 16)
+					# while re.search('[eE]',qr_code_hash):
+					# 	qr_code_hash = frappe.generate_hash(length = 16)
+					# while not re.search('[a-zA-Z]', qr_code_hash):
+					# 	qr_code_hash = frappe.generate_hash(length = 16)
+					# 	while re.search('[eE]',qr_code_hash):
+					# 		qr_code_hash = frappe.generate_hash(length = 16)		
+					# time = frappe.utils.get_datetime()
+					# doc = frappe.new_doc("Serial No")
+					# doc.serial_no = serial_no_series
+					# doc.creation = time
+					# doc.modified = time
+					# doc.modified_by = user
+					# doc.owner = user
+					# doc.sr_no_info = sr_no_info
+					# doc.qr_code_hash = qr_code_hash
+					# doc.item_code = self.item_code
+					# doc.company = self.company
+					# doc.db_insert()
+					# ip_serial_no += doc.name + "\n"
+				# 	values.append((serial_no, time, time , user, user,serial_no, sr_no_info,qr_code_hash,self.item_code,self.warehouse or None,self.company))
+				# if values !=[]:
+				# 	frappe.db.bulk_insert("Serial No", fields=['name', "creation", "modified", "modified_by", "owner", 'serial_no', 'sr_no_info','qr_code_hash','item_code','warehouse','company'], values=values)
+				# 	values = []
+
 	def on_update(self):
 		serial_no = get_serial_nos(self.serial_no)
 		self.no_of_items = len(serial_no)
@@ -26,8 +72,8 @@ class ItemPacking(Document):
 	def on_submit(self):
 		serial_no = get_serial_nos(self.serial_no)
 
-		if len(serial_no) != cint(frappe.db.get_value("Item", self.item_code,'qty_per_box')):
-			frappe.throw(f"Cannot Have More than {cint(frappe.db.get_value('Item', self.item_code ,'qty_per_box'))} item in box")
+		# if len(serial_no) != cint(frappe.db.get_value("Item", self.item_code,'qty_per_box')):
+		# 	frappe.throw(f"Cannot Have More than {cint(frappe.db.get_value('Item', self.item_code ,'qty_per_box'))} item in box")
 
 		serial_no_check = []
 		for item in serial_no:
@@ -249,3 +295,13 @@ def get_work_order_manufactured_qty(work_order):
 	if qty + qty_item_packing > (flt(frappe.db.get_value("Work Order", work_order, 'qty')) or 0):
 		frappe.throw(f"Work Order {work_order} completed.")
 	return qty_item_packing + qty
+
+def getseries(digits, current):
+	return ('%0'+str(digits)+'d') % current
+
+def get_auto_serial_nos(serial_no_series, qty):
+	serial_nos = []
+	for i in range(cint(qty)):
+		serial_nos.append(make_autoname(serial_no_series, "Serial No"))
+
+	return "\n".join(serial_nos)
