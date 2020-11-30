@@ -16,6 +16,15 @@ from random import random
 import re
 
 class ItemPacking(Document):
+	def validate(self):
+		self.validate_serial_no()
+
+	def validate_serial_no(self):
+		specialchars = '[@_!#$\\\\"\'%^&*()<>?/|}{~:]'
+		regex = re.compile(specialchars)
+		if(regex.search(self.serial_no)):
+			frappe.throw("Special characters like <b> < > ? / ; : \' \" { } [ ] | \\ # $ % ^ ( ) * + </b> are not allowed in Serial No!", title="Invalid Characters")
+
 	def before_validate(self):
 		values = []
 		user = frappe.session.user
