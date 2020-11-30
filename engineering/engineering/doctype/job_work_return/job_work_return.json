@@ -24,6 +24,10 @@
   "column_break_16",
   "s_warehouse",
   "t_warehouse",
+  "barcode_detail_section",
+  "scan_barcode",
+  "column_break_22",
+  "remove_barcode",
   "consumed_items_section",
   "items",
   "section_break_22",
@@ -256,10 +260,29 @@
    "fieldname": "add_serial_no",
    "fieldtype": "Button",
    "label": "Add Serial No"
+  },
+  {
+   "fieldname": "barcode_detail_section",
+   "fieldtype": "Section Break",
+   "label": " Barcode Detail"
+  },
+  {
+   "fieldname": "scan_barcode",
+   "fieldtype": "Data",
+   "label": "Scan Barcode"
+  },
+  {
+   "fieldname": "column_break_22",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "remove_barcode",
+   "fieldtype": "Data",
+   "label": "Remove Barcode"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-09-28 17:19:42.993654",
+ "modified": "2020-11-30 10:38:20.881625",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Job Work Return",
