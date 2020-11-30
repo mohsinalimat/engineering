@@ -192,7 +192,23 @@ frappe.ui.form.on('Purchase Receipt', {
 		}
 	}
 });
+frappe.ui.form.on('Purchase Receipt Item', {
+	copy_serial_nos: function(frm,cdt,cdn){
+		let d = locals[cdt][cdn]
+		let input = $("<textarea>");
+		$("body").append(input);
+		input.val(d.serial_no).select();
 
+		document.execCommand("copy");
+		input.remove();
+
+		frappe.show_alert({
+			indicator: 'green',
+			message: __('Copied to clipboard.')
+		});
+	}
+
+});
 cur_frm.fields_dict.taxes_and_charges.get_query = function(doc) {
 	return {
 		filters: {
