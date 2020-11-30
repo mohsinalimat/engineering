@@ -194,7 +194,7 @@ from engineering.engineering.override.serial_no import process_serial_no
 from engineering.engineering.override.opening_invoice_creation_tool import get_invoice_dict, make_invoices
 from engineering.engineering.override.taxes_and_totals import get_current_tax_amount, determine_exclusive_rate, calculate_taxes
 
-from engineering.engineering.doc_events.stock_entry import get_items as my_get_items
+from engineering.engineering.doc_events.stock_entry import get_items as my_get_items, set_serial_nos
 from erpnext.accounts.doctype.opening_invoice_creation_tool.opening_invoice_creation_tool import OpeningInvoiceCreationTool
 # from erpnext.stock.doctype.stock_ledger_entry.stock_ledger_entry import StockLedgerEntry
 
@@ -205,6 +205,7 @@ OpeningInvoiceCreationTool.make_invoices = make_invoices
 update_entries_after.raise_exceptions = raise_exceptions
 StockEntry.set_actual_qty = set_actual_qty
 StockEntry.get_items =  my_get_items
+StockEntry.set_serial_nos =  set_serial_nos
 SerialNo.validate_warehouse = validate_warehouse
 SerialNo.process_serial_no = process_serial_no
 calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount

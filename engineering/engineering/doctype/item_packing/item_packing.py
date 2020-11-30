@@ -81,8 +81,8 @@ class ItemPacking(Document):
 	def on_submit(self):
 		serial_no = get_serial_nos(self.serial_no)
 
-		# if len(serial_no) != cint(frappe.db.get_value("Item", self.item_code,'qty_per_box')):
-		# 	frappe.throw(f"Cannot Have More than {cint(frappe.db.get_value('Item', self.item_code ,'qty_per_box'))} item in box")
+		if len(serial_no) != cint(frappe.db.get_value("Item", self.item_code,'qty_per_box')):
+			frappe.throw(f"Cannot Have More than {cint(frappe.db.get_value('Item', self.item_code ,'qty_per_box'))} item in box")
 
 		serial_no_check = []
 		for item in serial_no:

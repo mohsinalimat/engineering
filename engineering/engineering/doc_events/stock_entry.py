@@ -4,6 +4,7 @@ from frappe.utils import cstr, flt, cint
 from erpnext.manufacturing.doctype.bom.bom import add_additional_cost
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.stock.doctype.stock_entry.stock_entry import get_used_alternative_items
+from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 
 from six import itervalues
 from frappe.model.mapper import get_mapped_doc
@@ -593,3 +594,24 @@ def remove_ref_from_item_packing(self):
 				doc = frappe.get_doc("Item Packing",row)
 				doc.db_set('stock_entry','')
 				doc.db_set('not_yet_manufactured', 1)
+
+def set_serial_nos(self,work_order):
+	previous_se = frappe.db.get_value("Stock Entry", {"work_order": work_order,
+			"purpose": "Material Transfer for Manufacture"}, "name")
+
+	for d in self.get('items'):
+		transferred_serial_no = frappe.db.get_value("Stock Entry Detail",{"parent": previous_se,
+			"item_code": d.item_code}, "serial_no")
+
+		list_serial_no = get_serial_nos(transferred_serial_no)
+		serial_no_final = ''
+		counter = 0
+		for sr_no in list_serial_no:
+			if frappe.db.get_value("Serial No",sr_no,'warehouse') == d.s_warehouse:
+				serial_no_final += sr_no + "\n"
+				counter += 1
+				if counter == d.qty:
+					break
+		
+		if serial_no_final:
+			d.serial_no = serial_no_final.strip()
