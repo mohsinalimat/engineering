@@ -294,7 +294,7 @@ def create_purchase_receipt(self):
 			target_company_abbr = frappe.db.get_value("Company", source_parent.customer, "abbr")
 
 			if source_doc.warehouse:
-				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
+				target_doc.warehouse = self.set_target_warehouse
 			
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
