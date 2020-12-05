@@ -77,11 +77,17 @@ class ReceivablePayableReport(object):
 				row.bank_outstanding = row.outstanding
 
 				if row.reference_doc:
-					row_data = self.data_map[row.reference_doc][row.party]
-					row.invoiced = row_data.invoiced
-					row.paid = row_data.paid
-					row.outstanding = row_data.outstanding
-					covered_vouchers.append(row.reference_doc)
+					try:
+						row_data = self.data_map[row.reference_doc][row.party]
+						row.invoiced = row_data.invoiced
+						row.paid = row_data.paid
+						row.outstanding = row_data.outstanding
+						covered_vouchers.append(row.reference_doc)
+					except KeyError:
+						row_data = ''
+						row.invoiced = 0
+						row.paid = 0
+						row.outstanding = 0
 				else:
 					row.invoiced = 0
 					row.paid = 0

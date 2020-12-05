@@ -13,9 +13,10 @@ from erpnext.stock.report.stock_ageing.stock_ageing import get_fifo_queue, get_a
 from six import iteritems
 
 def execute(filters=None):
+	validate_filters(filters)
+
 	if not filters: filters = {}
 
-	# validate_filters(filters)
 
 	from_date = filters.get('from_date')
 	to_date = filters.get('to_date')
@@ -40,7 +41,8 @@ def execute(filters=None):
 
 	iwb_map = get_item_warehouse_map(filters, sle)
 	item_map = get_item_details(items, sle, filters)
-	item_reorder_detail_map = get_item_reorder_details(item_map.keys())
+	if filters.get('show_reorder_details'):
+		item_reorder_detail_map = get_item_reorder_details(item_map.keys())
 
 	data = []
 	conversion_factors = {}
@@ -52,9 +54,10 @@ def execute(filters=None):
 			qty_dict = iwb_map[(company, item, warehouse)]
 			item_reorder_level = 0
 			item_reorder_qty = 0
-			if item + warehouse in item_reorder_detail_map:
-				item_reorder_level = item_reorder_detail_map[item + warehouse]["warehouse_reorder_level"]
-				item_reorder_qty = item_reorder_detail_map[item + warehouse]["warehouse_reorder_qty"]
+			if filters.get('show_reorder_details'):
+				if item + warehouse in item_reorder_detail_map:
+					item_reorder_level = item_reorder_detail_map[item + warehouse]["warehouse_reorder_level"]
+					item_reorder_qty = item_reorder_detail_map[item + warehouse]["warehouse_reorder_qty"]
 
 			report_data = {
 				'currency': company_currency,
@@ -103,29 +106,54 @@ def execute(filters=None):
 def get_columns(filters):
 	"""return columns"""
 	columns = [
-		{"label": _("Item Name"), "fieldname": "item_name", "width": 150},
+		{"label": _("Item Name"), "fieldname": "item_name", "width": 170},
 		{"label": _("Opening Qty"), "fieldname": "opening_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
-		{"label": _("Opening Rate"), "fieldname": "opening_rate", "fieldtype": "Float", "width": 80},
-		{"label": _("Opening Value"), "fieldname": "opening_val", "fieldtype": "Currency", "width": 110, "options": "currency"},
-		{"label": _("In Qty"), "fieldname": "in_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
-		{"label": _("In Rate"), "fieldname": "in_rate", "fieldtype": "Float", "width": 80},
-		{"label": _("In Value"), "fieldname": "in_val", "fieldtype": "Float", "width": 80},
-		{"label": _("Out Qty"), "fieldname": "out_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
-		{"label": _("Out Rate"), "fieldname": "out_rate", "fieldtype": "Float", "width": 80},
-		{"label": _("Out Value"), "fieldname": "out_val", "fieldtype": "Float", "width": 80},
-		{"label": _("Balance Qty"), "fieldname": "bal_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
-		{"label": _("Balance Rate"), "fieldname": "bal_rate", "fieldtype": "Float", "width": 80},
-		{"label": _("Balance Value"), "fieldname": "bal_val", "fieldtype": "Currency", "width": 100, "options": "currency"},
-		{"label": _("Valuation Rate"), "fieldname": "val_rate", "fieldtype": "Currency", "width": 90, "convertible": "rate", "options": "currency"},
-		{"label": _("Reorder Level"), "fieldname": "reorder_level", "fieldtype": "Float", "width": 80, "convertible": "qty"},
-		{"label": _("Reorder Qty"), "fieldname": "reorder_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
-		{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
-		{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
-		{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
-		{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 100},
-		{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 100},
-		{"label": _("Stock Ledger"), "fieldname": "stock_ledger", "fieldtype": "button", "width": 120},
 	]
+	if filters.get('show_rate_value'):
+		columns +=[
+			{"label": _("Opening Rate"), "fieldname": "opening_rate", "fieldtype": "Float", "width": 80},
+			{"label": _("Opening Value"), "fieldname": "opening_val", "fieldtype": "Currency", "width": 110, "options": "currency"},
+		]
+	columns+=[
+			{"label": _("In Qty"), "fieldname": "in_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
+	]
+	if filters.get('show_rate_value'):
+		columns +=[
+			{"label": _("In Rate"), "fieldname": "in_rate", "fieldtype": "Float", "width": 80},
+			{"label": _("In Value"), "fieldname": "in_val", "fieldtype": "Float", "width": 80},
+		]
+	columns +=[
+			{"label": _("Out Qty"), "fieldname": "out_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
+	]
+	if filters.get('show_rate_value'):
+		columns +=[
+			{"label": _("Out Rate"), "fieldname": "out_rate", "fieldtype": "Float", "width": 80},
+			{"label": _("Out Value"), "fieldname": "out_val", "fieldtype": "Float", "width": 80},
+		]
+	columns +=[
+			{"label": _("Balance Qty"), "fieldname": "bal_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
+	]
+	if filters.get('show_rate_value'):
+		columns +=[
+			{"label": _("Balance Rate"), "fieldname": "bal_rate", "fieldtype": "Float", "width": 80},
+			{"label": _("Balance Value"), "fieldname": "bal_val", "fieldtype": "Currency", "width": 100, "options": "currency"},
+		]
+	columns += [
+			{"label": _("Valuation Rate"), "fieldname": "val_rate", "fieldtype": "Currency", "width": 90, "convertible": "rate", "options": "currency"},
+	]
+	if filters.get('show_reorder_details'):
+		columns +=[
+			{"label": _("Reorder Level"), "fieldname": "reorder_level", "fieldtype": "Float", "width": 80, "convertible": "qty"},
+			{"label": _("Reorder Qty"), "fieldname": "reorder_qty", "fieldtype": "Float", "width": 80, "convertible": "qty"},
+		]
+	columns +=[
+			{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
+			{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
+			{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
+			{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 130},
+			{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 130},
+			{"label": _("Stock Ledger"), "fieldname": "stock_ledger", "fieldtype": "button", "width": 120},
+		]
 
 	if filters.get('show_stock_ageing_data'):
 		columns += [{'label': _('Average Age'), 'fieldname': 'average_age', 'width': 100},
@@ -321,11 +349,16 @@ def get_item_reorder_details(items):
 
 	return dict((d.parent + d.warehouse, d) for d in item_reorder_details)
 
+@frappe.whitelist()
 def validate_filters(filters):
 	if not (filters.get("company") or filters.get("warehouse") or filters.get("item_code")):
-		sle_count = flt(frappe.db.sql("""select count(name) from `tabStock Ledger Entry`""")[0][0])
-		if sle_count > 500000:	
-				frappe.throw(_("Please set filter based on Item or Warehouse or Company due to a large amount of entries."))
+		frappe.throw(_("Please set filter based on Item or Warehouse or Company due to a large amount of entries."))
+
+
+	# if not (filters.get("company") or filters.get("warehouse") or filters.get("item_code")):
+	# 	sle_count = flt(frappe.db.sql("""select count(name) from `tabStock Ledger Entry`""")[0][0])
+	# 	if sle_count > 500000:	
+	# 			frappe.throw(_("Please set filter based on Item or Warehouse or Company due to a large amount of entries."))
 
 def get_variants_attributes():
 	'''Return all item variant attributes.'''

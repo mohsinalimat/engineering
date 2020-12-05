@@ -4,6 +4,12 @@
 var d = new Date();
 var dt = new Date(d.getFullYear(),d.getMonth(),1);
 frappe.query_reports["Stock Balance Engineering"] = {
+	onload: function(report){
+		frappe.call({
+			method:"engineering.engineering.report.stock_balance_engineering.stock_balance_engineering.validate_filters",
+			args:filters,
+		})
+	},
 	"filters": [
 		{
 			"fieldname": "company",
@@ -11,7 +17,8 @@ frappe.query_reports["Stock Balance Engineering"] = {
 			"fieldtype": "Link",
 			"width": "80",
 			"options": "Company",
-			"default": frappe.defaults.get_default("company")
+			"default": frappe.defaults.get_default("company"),
+			"reqd":1
 		},
 		{
 			"fieldname":"from_date",
@@ -82,6 +89,16 @@ frappe.query_reports["Stock Balance Engineering"] = {
 		{
 			"fieldname": 'show_stock_ageing_data',
 			"label": __('Show Stock Ageing Data'),
+			"fieldtype": 'Check'
+		},
+		{
+			"fieldname": 'show_rate_value',
+			"label": __('Show Rate Value'),
+			"fieldtype": 'Check'
+		},
+		{
+			"fieldname": 'show_reorder_details',
+			"label": __('Show Reorder Details'),
 			"fieldtype": 'Check'
 		},
 	],
