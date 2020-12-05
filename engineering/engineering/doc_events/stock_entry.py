@@ -5,6 +5,7 @@ from erpnext.manufacturing.doctype.bom.bom import add_additional_cost
 from erpnext.stock.doctype.item.item import get_item_defaults
 from erpnext.stock.doctype.stock_entry.stock_entry import get_used_alternative_items
 from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
+from engineering.engineering.doc_events.delivery_note import serial_no_validate
 
 from six import itervalues
 from frappe.model.mapper import get_mapped_doc
@@ -15,7 +16,8 @@ def validate(self, method):
 	validate_additional_cost(self)
 	validate_transfer_item(self)
 	validate_item_packing(self)
-
+	serial_no_validate(self)
+	
 def on_trash(self, method):
 	se_list = []
 	if self.se_ref:

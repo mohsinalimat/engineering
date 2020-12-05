@@ -73,7 +73,10 @@ doc_events = {
 	},
 	"Delivery Note": {
 		"before_validate": "engineering.engineering.doc_events.delivery_note.before_validate",
-		"validate": "engineering.controllers.item_validation.validate_item_authority",
+		"validate": [
+			"engineering.controllers.item_validation.validate_item_authority",
+			"engineering.engineering.doc_events.delivery_note.validate",
+		],
 		"before_naming": "engineering.api.before_naming",
 		"before_cancel":"engineering.engineering.doc_events.delivery_note.before_cancel",
 		"on_cancel": "engineering.engineering.doc_events.delivery_note.on_cancel",

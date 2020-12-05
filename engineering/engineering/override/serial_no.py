@@ -3,12 +3,14 @@ from frappe import _, ValidationError
 
 import frappe
 import erpnext
+import json
 from frappe import _, ValidationError
 from frappe.utils import flt, cint
 from erpnext.stock.get_item_details import get_reserved_qty_for_so
 from erpnext.stock.doctype.serial_no.serial_no import get_item_details, validate_serial_no, update_serial_nos, get_serial_nos, validate_material_transfer_entry, has_duplicate_serial_no, allow_serial_nos_with_different_item
 from erpnext.stock.doctype.serial_no.serial_no import SerialNoCannotCannotChangeError
 class SerialNoRequiredError(ValidationError): pass
+class SerialNoNotRequiredError(ValidationError): pass
 class SerialNoQtyError(ValidationError): pass
 class SerialNoWarehouseError(ValidationError): pass
 class SerialNoItemError(ValidationError): pass
