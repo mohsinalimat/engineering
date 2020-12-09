@@ -11,12 +11,13 @@ from six import itervalues
 from frappe.model.mapper import get_mapped_doc
 
 def validate(self, method):
+	if self._action in ['submit','cancel']:
+		serial_no_validate(self)
 	if self.purpose in ['Repack','Manufacture','Material Issue']:
 		self.get_stock_and_rate()
 	validate_additional_cost(self)
 	validate_transfer_item(self)
 	validate_item_packing(self)
-	serial_no_validate(self)
 	
 def on_trash(self, method):
 	se_list = []
