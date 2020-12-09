@@ -629,110 +629,104 @@ def validate_no_of_boxes(self):
 
 def serial_no_validate(self):
 	for item in self.items:
-		serial_nos = get_serial_nos(item.serial_no) if item.serial_no else []
-		item_det = get_item_details(item.item_code)
+		if self.doctype == "Stock Entry":
+			item_warehouse = item.s_warehouse
+		else:
+			item_warehouse = item.warehouse
+		if item.serial_no and item_warehouse:
+			serial_nos = get_serial_nos(item.serial_no) if item.serial_no else []
+			item_det = get_item_details(item.item_code)
 
-		if item_det.has_serial_no==0:
-			if serial_nos:
-				frappe.throw(_("Item {0} is not setup for Serial Nos. Column must be blank").format(item.item_code),
-					SerialNoNotRequiredError)
+			if item_det.has_serial_no==0:
+				if serial_nos:
+					frappe.throw(_("Item {0} is not setup for Serial Nos. Column must be blank").format(item.item_code),
+						SerialNoNotRequiredError)
 
-		elif self._action == "submit":
-			if serial_nos:
-				if cint(item.qty) != flt(item.qty):
-					frappe.throw(_("Serial No {0} quantity {1} cannot be a fraction").format(item.item_code, item.qty))
+			elif self._action == "submit":
+				if serial_nos:
+					if cint(item.qty) != flt(item.qty):
+						frappe.throw(_("Serial No {0} quantity {1} cannot be a fraction").format(item.item_code, item.qty))
 
-				if len(serial_nos) and len(serial_nos) != abs(cint(item.qty)):
-					frappe.throw(_("{0} Serial Numbers required for Item {1}. You have provided {2}.").format(abs(item.qty), item.item_code, len(serial_nos)),
-						SerialNoQtyError)
+					if len(serial_nos) and len(serial_nos) != abs(cint(item.qty)):
+						frappe.throw(_("{0} Serial Numbers required for Item {1}. You have provided {2}.").format(abs(item.qty), item.item_code, len(serial_nos)),
+							SerialNoQtyError)
 
-				if len(serial_nos) != len(set(serial_nos)):
-					frappe.throw(_("Duplicate Serial No entered for Item {0}").format(item.item_code), SerialNoDuplicateError)
+					if len(serial_nos) != len(set(serial_nos)):
+						frappe.throw(_("Duplicate Serial No entered for Item {0}").format(item.item_code), SerialNoDuplicateError)
 
-				
-				for serial_no in serial_nos:
-				
-					if frappe.db.exists("Serial No", serial_no):
-						sr = frappe.db.get_value("Serial No", serial_no, ["name", "item_code", "batch_no", "sales_order",
-							"delivery_document_no", "delivery_document_type", "warehouse",
-							"purchase_document_no", "company"], as_dict=1)
-						#finbyz changes Start
-						if sr.item_code:
-							#finbyz Changes End
-							if sr.item_code!=item.item_code:
-								frappe.throw(_("Serial No {0} does not belong to Item {1}").format(serial_no,
-									item.item_code), SerialNoItemError)
+					
+					for serial_no in serial_nos:
+					
+						if frappe.db.exists("Serial No", serial_no):
+							sr = frappe.db.get_value("Serial No", serial_no, ["name", "item_code", "batch_no", "sales_order",
+								"delivery_document_no", "delivery_document_type", "warehouse",
+								"purchase_document_no", "company"], as_dict=1)
+							#finbyz changes Start
+							if sr.item_code:
+								#finbyz Changes End
+								if sr.item_code!=item.item_code:
+									frappe.throw(_("Serial No {0} does not belong to Item {1}").format(serial_no,
+										item.item_code), SerialNoItemError)
 
-						if has_duplicate_serial_no(self,sr, item):
-							frappe.throw(_("Serial No {0} has already been received").format(serial_no),
-								SerialNoDuplicateError)
+							if has_duplicate_serial_no(self,sr, item):
+								frappe.throw(_("Serial No {0} has already been received").format(serial_no),
+									SerialNoDuplicateError)
 
-						if (sr.delivery_document_no and self.doctype not in ['Stock Entry', 'Stock Reconciliation']
-								and self.name == sr.delivery_document_type):
-									if self.return_against and self.return_against != sr.delivery_document_no:
-										frappe.throw(_("Serial no {0} has been already returned").format(sr.name)) 
+							if (sr.delivery_document_no and self.doctype not in ['Stock Entry', 'Stock Reconciliation']
+									and self.name == sr.delivery_document_type):
+										if self.return_against and self.return_against != sr.delivery_document_no:
+											frappe.throw(_("Serial no {0} has been already returned").format(sr.name)) 
 
-						if self.doctype == "Stock Entry":
-							item_warehouse = item.s_warehouse
-						else:
-							item_warehouse = item.warehouse
+							if sr.warehouse!=item_warehouse:
+								frappe.throw(_("Serial No {0} does not belong to Warehouse {1}").format(serial_no,
+									item_warehouse), SerialNoWarehouseError)
 
-						if sr.warehouse!=item_warehouse:
-							frappe.msgprint(str(sr.warehouse))
-							frappe.throw(_("Serial No {0} does not belong to Warehouse {1}").format(serial_no,
-								item_warehouse), SerialNoWarehouseError)
+							if self.doctype in ["Delivery Note"]:
+								if sr.batch_no and sr.batch_no != item.batch_no:
+									frappe.throw(_("Serial No {0} does not belong to Batch {1}").format(serial_no,
+										item.batch_no), SerialNoBatchError)
+								if not sr.warehouse:
+									frappe.throw(_("Serial No {0} does not belong to any Warehouse")
+										.format(serial_no), SerialNoWarehouseError)
 
-						if self.doctype in ["Delivery Note"]:
-							if sr.batch_no and sr.batch_no != item.batch_no:
-								frappe.throw(_("Serial No {0} does not belong to Batch {1}").format(serial_no,
-									item.batch_no), SerialNoBatchError)
-							if not sr.warehouse:
-								frappe.throw(_("Serial No {0} does not belong to any Warehouse")
-									.format(serial_no), SerialNoWarehouseError)
+							# if Sales Order reference in Serial No validate the Delivery Note or Invoice is against the same
+							if sr.sales_order:
+								if self.doctype == "Delivery Note":
+									if item.against_sales_order != sr.sales_order:
+										if not item.against_sales_invoice or frappe.db.exists("Sales Invoice Item",
+											{"parent": item.against_sales_invoice, "item_code": item.item_code,
+											"sales_order": sr.sales_order}):
+											frappe.throw(_("Cannot deliver Serial No {0} of item {1} as it is reserved to \
+												fullfill Sales Order {2}").format(sr.name, item.item_code, sr.sales_order))
 
-						# if Sales Order reference in Serial No validate the Delivery Note or Invoice is against the same
-						if sr.sales_order:
+							# if Sales Order reference in Delivery Note or Invoice validate SO reservations for item
 							if self.doctype == "Delivery Note":
-								if item.against_sales_order != sr.sales_order:
-									if not item.against_sales_invoice or frappe.db.exists("Sales Invoice Item",
-										{"parent": item.against_sales_invoice, "item_code": item.item_code,
-										"sales_order": sr.sales_order}):
-										frappe.throw(_("Cannot deliver Serial No {0} of item {1} as it is reserved to \
-											fullfill Sales Order {2}").format(sr.name, item.item_code, sr.sales_order))
-
-						# if Sales Order reference in Delivery Note or Invoice validate SO reservations for item
-						if self.doctype == "Delivery Note":
-							if item.against_sales_order and get_reserved_qty_for_so(item.against_sales_order, item.item_code):
-								validate_so_serial_no(sr, item.against_sales_order)
-							else:
-								if item.against_sales_invoice:
-									sales_order = frappe.db.get_value("Sales Invoice Item", {
-										"parent": item.against_sales_invoice, "item_code": item.item_code}, "sales_order")
-									if sales_order and get_reserved_qty_for_so(sales_order, item.item_code):
-										validate_so_serial_no(sr, sales_order)
-					elif hasattr(self,'is_return'):
-						if not self.is_return:
-							# transfer out
+								if item.against_sales_order and get_reserved_qty_for_so(item.against_sales_order, item.item_code):
+									validate_so_serial_no(sr, item.against_sales_order)
+								else:
+									if item.against_sales_invoice:
+										sales_order = frappe.db.get_value("Sales Invoice Item", {
+											"parent": item.against_sales_invoice, "item_code": item.item_code}, "sales_order")
+										if sales_order and get_reserved_qty_for_so(sales_order, item.item_code):
+											validate_so_serial_no(sr, sales_order)
+						elif hasattr(self,'is_return'):
+							if not self.is_return:
+								# transfer out
+								frappe.throw(_("Serial No {0} not in stock").format(serial_no), SerialNoNotExistsError)
+						else:
 							frappe.throw(_("Serial No {0} not in stock").format(serial_no), SerialNoNotExistsError)
-					else:
-						frappe.throw(_("Serial No {0} not in stock").format(serial_no), SerialNoNotExistsError)
 
-			else:
-				frappe.throw(_("Serial Nos Required for Serialized Item {0}").format(item.item_code),
-					SerialNoRequiredError)
-
-		elif serial_nos and self._action == "cancel":
-			for serial_no in serial_nos:
-				sr = frappe.db.get_value("Serial No", serial_no, ["name", "warehouse"], as_dict=1)
-
-				if self.doctype == "Stock Entry":
-					item_warehouse = item.s_warehouse
 				else:
-					item_warehouse = item.warehouse
+					frappe.throw(_("Serial Nos Required for Serialized Item {0}").format(item.item_code),
+						SerialNoRequiredError)
 
-				if sr and sr.warehouse != item_warehouse:
-					frappe.throw(_("Cannot cancel {0} {1} because Serial No {2} does not belong to the warehouse {3}")
-						.format(self.doctype, self.name, serial_no, item_warehouse))
+			elif serial_nos and self._action == "cancel":
+				for serial_no in serial_nos:
+					sr = frappe.db.get_value("Serial No", serial_no, ["name", "warehouse"], as_dict=1)
+
+					if sr and sr.warehouse != item_warehouse:
+						frappe.throw(_("Cannot cancel {0} {1} because Serial No {2} does not belong to the warehouse {3}")
+							.format(self.doctype, self.name, serial_no, item_warehouse))
 
 
 def has_duplicate_serial_no(self,sr, item):
