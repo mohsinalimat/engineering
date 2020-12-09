@@ -1,6 +1,5 @@
 frappe.ui.form.on('Journal Entry', {
 	refresh: function(frm){
-        console.log("AbraKadabra")
 		if (frm.doc.__islocal){
 			if (cur_frm.doc.company){
 				frappe.db.get_value("Company", cur_frm.doc.company, 'company_series',(r) => {
