@@ -151,8 +151,7 @@ erpnext.stock.StockController = erpnext.stock.StockController.extend({
 			frappe.call({
 				method: "engineering.override_default_class_method.search_serial_or_batch_or_barcode_number",
 				args: { search_value: this.frm.doc.scan_barcode },
-				callback: function(r){
-					 
+				callback: function(r){					 
 					if (r.message.item_code){
 						let data = r.message;
 						var flag = false;
@@ -163,11 +162,18 @@ erpnext.stock.StockController = erpnext.stock.StockController.extend({
 								var unique = ks.filter((v, i, a) => a.indexOf(v) === i).sort()
 								var i = unique.indexOf("null")
 								delete unique[i];
+								var i = unique.indexOf("undefined")
+								delete unique[i];
+								unique  = unique.filter(item => item);
+								frappe.db.get_value("Serial No",data.serial_no.split('\n')[0],'warehouse', function(r){
+									if (r.warehouse != item.s_warehouse){
+										frappe.msgprint("Row: " + item.idx + " Warehouse is Different in this Serial No: " + data.serial_no.split('\n')[0])
+									}
+								})
 								frappe.model.set_value(item.doctype, item.name, 'serial_no', unique.join('\n'));
 								frappe.model.set_value(item.doctype, item.name, 'qty', unique.length);
 								flag = true
 								frappe.show_alert({message:__("{0} Pcs added for item {1}", [data.no_of_items,data.item_code]), indicator:'green'});
-								
 							}
 						});
 						if (flag == false){
