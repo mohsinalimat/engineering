@@ -79,6 +79,14 @@ class ItemPacking(Document):
 		self.submit()
 
 	def on_submit(self):
+		if self.work_order:
+			if self.item_code != frappe.db.get_value("Work Order",self.work_order,'production_item'):
+				frappe.throw("Work Order Item is Different than Current Item")
+			wo_planned_date = frappe.get_value("Work Order",self.work_order,'planned_start_date')
+			wo_date = datetime.strftime(wo_planned_date,'%Y-%m-%d')
+			if str(self.posting_date) < str(wo_date):
+				frappe.throw("Posting Date should not be before Work Order start date")
+
 		serial_no = get_serial_nos(self.serial_no)
 
 		if len(serial_no) != cint(frappe.db.get_value("Item", self.item_code,'qty_per_box')):
@@ -92,7 +100,7 @@ class ItemPacking(Document):
 				frappe.throw("You can not add same serial number more than once")
 
 		self.create_serial_no(serial_no)
-
+		self.submit()
 		# if self.include_for_manufacturing:
 			# from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
 			# se = frappe.new_doc("Stock Entry")
@@ -114,7 +122,7 @@ class ItemPacking(Document):
 			# se.save()
 			# se.submit()
 		
-		self.submit()
+
 		
 	def before_cancel(self):
 		if self.include_for_manufacturing:
