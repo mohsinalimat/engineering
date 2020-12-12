@@ -59,7 +59,7 @@ def cancel_all(self):
 			doc.cancel()
 	if self.pr_ref:
 		doc = frappe.get_doc("Purchase Receipt", self.pr_ref)
-
+		doc.flags.ignore_links = True
 		if doc.docstatus == 1:
 			doc.cancel()
 
