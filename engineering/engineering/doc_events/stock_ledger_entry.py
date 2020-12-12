@@ -17,7 +17,7 @@ def process_serial_no(sle):
 
 def before_submit(self, method):
 	batch_qty_validation_with_date_time(self)
-	erpnext.stock.doctype.serial_no.serial_no.process_serial_no = process_serial_no
+	#erpnext.stock.doctype.serial_no.serial_no.process_serial_no = process_serial_no
 
 def batch_qty_validation_with_date_time(self):
 	if self.batch_no and not self.get("allow_negative_stock"):
