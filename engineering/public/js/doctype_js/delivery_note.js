@@ -14,8 +14,6 @@
 // 		}
 // 	}
 // };
-
-
 erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.extend({
 	scan_barcode: function(){
 		let scan_barcode_field = this.frm.fields_dict["scan_barcode"];
@@ -318,5 +316,43 @@ frappe.ui.form.on("Delivery Note Item",{
 		if(d.qty_per_box){
 			d.no_of_boxes = flt(d.qty) / flt(d.qty_per_box)
 		}
-	}
+	},
+	
 });
+
+
+erpnext.show_serial_batch_selector = function(frm, d, callback, on_close, show_dialog) {
+	frappe.require("assets/engineering/js/serial_no_batch_selector.js", function() {
+		new erpnext.SerialNoBatchSelector({
+			frm: frm,
+			item: d,
+			warehouse_details: {
+				type: "Warehouse",
+				name: d.warehouse
+			},
+			callback: callback,
+			on_close: on_close
+		}, show_dialog);
+	});
+}
+// erpnext.stock.select_batch_and_serial_no = (frm, item) => {
+// 	let get_warehouse_type_and_name = (item) => {
+// 		let value = '';
+// 			value = cstr(item.warehouse) || '';
+// 			return {
+// 				type: 'Warehouse',
+// 				name: value
+// 			};
+// 	}
+
+// 	if(item && !item.has_serial_no && !item.has_batch_no) return;
+
+// 	frappe.require("assets/engineering/js/serial_no_batch_selector.js", function() {
+// 		new erpnext.SerialNoBatchSelector({
+// 			frm: frm,
+// 			item: item,
+// 			warehouse_details: get_warehouse_type_and_name(item),
+// 		});
+// 	});
+
+// }

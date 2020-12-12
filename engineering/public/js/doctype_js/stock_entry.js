@@ -215,4 +215,18 @@ erpnext.stock.StockController = erpnext.stock.StockController.extend({
     },
 })
 
+erpnext.show_serial_batch_selector = function(frm, d, callback, on_close, show_dialog) {
+	frappe.require("assets/engineering/js/serial_no_batch_selector.js", function() {
+		new erpnext.SerialNoBatchSelector({
+			frm: frm,
+			item: d,
+			warehouse_details: {
+				type: "Warehouse",
+				name: d.s_warehouse
+			},
+			callback: callback,
+			on_close: on_close
+		}, show_dialog);
+	});
+}
 $.extend(cur_frm.cscript, new erpnext.stock.StockController({ frm: cur_frm }));
