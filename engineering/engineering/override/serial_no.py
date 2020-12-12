@@ -149,3 +149,20 @@ def validate_serial_no(sle, item_det):
 			if sr and cint(sle.actual_qty) < 0 and sr.warehouse != sle.warehouse:
 				frappe.throw(_("Cannot cancel {0} {1} because Serial No {2} does not belong to the warehouse {3}")
 					.format(sle.voucher_type, sle.voucher_no, serial_no, sle.warehouse))
+	
+
+@frappe.whitelist()
+def auto_fetch_serial_number(qty, item_code, warehouse, posting_date=None,batch_nos=None):
+	import json
+	filters = {
+		"item_code": item_code,
+		"warehouse": warehouse,
+		"delivery_document_no": "",
+		"sales_invoice": "",
+		"purchase_document_no":('!=',''),
+		"purchase_date":('<=',posting_date)
+	}
+	if batch_nos: filters["batch_no"] = ["in", json.loads(batch_nos)]
+
+	serial_numbers = frappe.get_list("Serial No", filters=filters, limit=qty, order_by="creation")
+	return [item['name'] for item in serial_numbers]
