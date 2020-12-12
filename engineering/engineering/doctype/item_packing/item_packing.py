@@ -85,7 +85,7 @@ class ItemPacking(Document):
 			wo_planned_date = frappe.get_value("Work Order",self.work_order,'planned_start_date')
 			wo_date = datetime.strftime(wo_planned_date,'%Y-%m-%d %H:%M:%S')
 			if str(self.posting_date + " " + self.posting_time) < str(wo_date):
-				frappe.throw("Posting Date should not be before Work Order start date")
+				frappe.throw("Posting Date and Posting Time should not be before Work Order start date and time")
 
 		serial_no = get_serial_nos(self.serial_no)
 
