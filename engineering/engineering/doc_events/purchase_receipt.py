@@ -248,10 +248,20 @@ def make_inter_company_transaction(doctype, source_name, target_doc=None):
 
 		return doclist
 
-def on_cancel(self, method):
+def before_cancel(self, method):
 	# self.flags.ignore_link = True
-	pass
 	# cancel_delivery_note(self)
+	if self.inter_company_delivery_reference:
+		self.inter_company_delivery_reference=None
+	if self.supplier_delivery_note:
+		self.supplier_delivery_note=None
+	if self.dn_ref:
+		doc = frappe.get_doc("Delivery Note",self.dn_ref)
+		if doc.inter_company_receipt_reference == self.name:
+			doc.db_set('inter_company_receipt_reference',None)
+		if doc.pr_ref == self.name:
+			doc.db_set('pr_ref',None)
+		self.dn_ref = None
 
 def cancel_delivery_note(self):
 	try:
