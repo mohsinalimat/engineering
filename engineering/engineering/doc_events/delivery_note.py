@@ -42,10 +42,9 @@ def on_submit(self, method):
 	update_real_delivered_qty(self, "submit")
 
 def before_cancel(self, method):
-	pass
-	#cancel_all(self)
-def on_cancel(self, method):
 	cancel_all(self)
+def on_cancel(self, method):
+	# cancel_all(self)
 	update_real_delivered_qty(self, "cancel")
 
 def on_trash(self, method):
@@ -57,11 +56,19 @@ def cancel_all(self):
 
 		if doc.docstatus == 1:
 			doc.cancel()
+	if self.inter_company_receipt_reference:
+		self.db_set('inter_company_receipt_reference',None)
 	if self.pr_ref:
 		doc = frappe.get_doc("Purchase Receipt", self.pr_ref)
-		doc.flags.ignore_links = True
+		doc.db_set('inter_company_delivery_reference', None)
+		doc.db_set('supplier_delivery_note', None)
+		doc.db_set('dn_ref', None)
+		self.db_set('pr_ref',None)
 		if doc.docstatus == 1:
 			doc.cancel()
+		#doc.flags.ignore_links = True
+		# if doc.docstatus == 1:
+		# 	doc.cancel()
 
 def check_sales_order_item(self):
 	auth = frappe.db.get_value("Company", self.company, "authority")
