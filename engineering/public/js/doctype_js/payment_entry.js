@@ -7,7 +7,6 @@ frappe.ui.form.on('Payment Entry', {
 				});
 			}
 			if (frm.doc.amended_from && frm.doc.__islocal && frm.doc.docstatus == 0){
-				console.log("Hi")
 				if ((frm.doc.pe_ref) || (!frm.doc.pe_ref && frm.doc.branch_pay_pe_ref && frm.doc.branch_receive_pe_ref)){
 					frm.set_value('pe_ref', null);
 					frm.set_value('branch_pay_pe_ref', null);
