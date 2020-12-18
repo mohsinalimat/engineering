@@ -158,7 +158,6 @@ def auto_fetch_serial_number(qty, item_code, warehouse, posting_date=None,batch_
 		"item_code": item_code,
 		"warehouse": warehouse,
 		"delivery_document_no": "",
-		"sales_invoice": "",
 		"purchase_document_no":('!=',''),
 		"purchase_date":('<=',posting_date)
 	}
