@@ -22,7 +22,7 @@ cur_frm.fields_dict.item_code.get_query = function(doc) {
 	return {
 		filters: {
 			"authority": "Unauthorized",
-			"has_batch_no":1
+			"has_serial_no":1
 		}
 	}
 };
