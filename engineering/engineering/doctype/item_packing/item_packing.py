@@ -191,7 +191,6 @@ def submit_form(docname):
 @frappe.whitelist()
 def enqueue_stock_entry(work_order, posting_date, posting_time):
 	queued_jobs = get_jobs(site = frappe.local.site,key='job_name')[frappe.local.site]
-	frappe.msgprint(str(queued_jobs))
 	job = "Stock Entry from Item Packing " + work_order
 	if job not in queued_jobs:
 		frappe.msgprint(_(" The Stock Entry has been queued in background jobs, may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is in Queue '),indicator="green")

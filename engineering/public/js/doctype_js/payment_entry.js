@@ -33,6 +33,9 @@ frappe.ui.form.on('Payment Entry', {
 	company: function(frm){
 		if (frm.doc.__islocal){
 			frm.trigger('naming_series');
-		}
+		};
+		frappe.db.get_value("Company",frm.doc.company,"through_company",function(r){
+			frm.set_value("through_company",r.through_company)
+		})
 	}
 });
