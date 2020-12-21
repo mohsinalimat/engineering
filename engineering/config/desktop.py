@@ -6,9 +6,11 @@ def get_data():
 	return [
 		{
 			"module_name": "Engineering",
-			"color": "grey",
-			"icon": "octicon octicon-file-directory",
+			"category": "Modules",
+			"label": _("Engineering"),
+			"color": "#1abc9c",
+			"icon": "icon finbyz-engineering",
 			"type": "module",
-			"label": _("Engineering")
+			"onboard_present": 1
 		}
 	]
