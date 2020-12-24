@@ -131,10 +131,15 @@ def get_item_group(filters):
 	
 
 def get_item_map(filters):
+	filter_warehouse = ''
+
+	if filters.get('warehouse'):
+		filter_warehouse = " and b.warehouse = '{}'".format(filters.warehouse)
+
 	data = frappe.db.sql(f"""
 		select b.item_code, sum(actual_qty) as qty, sum(stock_value) as value
 		from `tabBin` as b JOIN `tabWarehouse` as w on w.name = b.warehouse
-		where w.company = '{filters.company}'
+		where w.company = '{filters.company}'{filter_warehouse}
 		group by b.item_code
 	""", as_dict = 1)
 

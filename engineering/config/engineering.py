@@ -45,6 +45,12 @@ def get_data():
 			"items": [
 				{
 					"type": "doctype",
+					"name": "Production Plan",
+					"description": _(""),
+					"onboard": 1
+				},
+				{
+					"type": "doctype",
 					"name": "Work Order",
 					"description": _(""),
 					"onboard": 1
@@ -295,6 +301,58 @@ def get_data():
 				{
 					"type": "report",
 					"name": "Purchase Analytics",
+					"is_query_report": True,
+				},
+			]
+		},
+
+		{
+			"label": _("Balance Reports"),
+			"items": [
+				{
+					"type": "report",
+					"name": "Profit and Loss Statement Engineering",
+					"is_query_report": True,
+				},
+				{
+					"type": "report",
+					"name": "Balance Sheet Engineering",
+					"is_query_report": True,
+				},
+			]
+		},
+
+		{
+			"label": _("Trends Report"),
+			"items": [
+				{
+					"type": "report",
+					"name": "Purchase Order Trends",
+					"is_query_report": True,
+				},
+				{
+					"type": "report",
+					"name": "Purchase Receipt Trends",
+					"is_query_report": True,
+				},
+				{
+					"type": "report",
+					"name": "Purchase Invoice Trends",
+					"is_query_report": True,
+				},			
+				{
+					"type": "report",
+					"name": "Sales Order Trends",
+					"is_query_report": True,
+				},
+				{
+					"type": "report",
+					"name": "Delivery Note Trends",
+					"is_query_report": True,
+				},
+				{
+					"type": "report",
+					"name": "Sales Invoice Trends",
 					"is_query_report": True,
 				},
 			]
