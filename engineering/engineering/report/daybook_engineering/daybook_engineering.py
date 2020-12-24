@@ -117,15 +117,57 @@ def get_result(filters, account_details):
 
 	return result
 
+# def get_gl_entries(filters):
+# 	currency_map = get_currency(filters)
+# 	select_fields = """, gle.debit, gle.credit, gle.debit_in_account_currency,
+# 		credit_in_account_currency """
+
+# 	order_by_statement = "order by gle.posting_date, gle.account, gle.creation"
+
+# 	if filters.get("group_by") == _("Group by Voucher"):
+# 		order_by_statement = "order by gle.posting_date, gle.voucher_type, gle.voucher_no"
+
+# 	if filters.get("include_default_book_entries"):
+# 		filters['company_fb'] = frappe.db.get_value("Company",
+# 			filters.get("company"), 'default_finance_book')
+
+# 	gl_entries = frappe.db.sql(
+# 		"""
+# 		select
+# 			gle.name as gl_entry, gle.posting_date, gle.account, gle.party_type, gle.party,
+# 			gle.voucher_type, gle.voucher_no, gle.cost_center, gle.project,
+# 			gle.against_voucher_type, gle.against_voucher, gle.account_currency,
+# 			gle.remarks, gle.against, gle.is_opening,
+# 			IFNULL(pr.supplier, IFNULL(pi.supplier,IFNULL(dn.customer,IFNULL(si.customer,se.stock_entry_type)))) as particular
+# 			{select_fields}
+		# from `tabGL Entry` as gle
+		# LEFT JOIN `tabPurchase Receipt` as pr on pr.name = gle.voucher_no
+		# LEFT JOIN `tabPurchase Invoice` as pi on pi.name = gle.voucher_no
+		# LEFT JOIN `tabDelivery Note` as dn on dn.name = gle.voucher_no
+		# LEFT JOIN `tabSales Invoice` as si on si.name = gle.voucher_no
+		# LEFT JOIN `tabStock Entry` as se on se.name = gle.voucher_no
+# 		where gle.company=%(company)s {conditions}
+# 		{order_by_statement}
+# 		""".format(
+# 			select_fields=select_fields, conditions=get_conditions(filters),
+# 			order_by_statement=order_by_statement
+# 		),
+# 		filters, as_dict=1)
+
+# 	if filters.get('presentation_currency'):
+# 		return convert_to_presentation_currency(gl_entries, currency_map)
+# 	else:
+# 		return gl_entries
+
 def get_gl_entries(filters):
 	currency_map = get_currency(filters)
-	select_fields = """, gle.debit, gle.credit, gle.debit_in_account_currency,
+	select_fields = """, debit, credit, debit_in_account_currency,
 		credit_in_account_currency """
 
-	order_by_statement = "order by gle.posting_date, gle.account, gle.creation"
+	order_by_statement = "order by posting_date, account, creation"
 
 	if filters.get("group_by") == _("Group by Voucher"):
-		order_by_statement = "order by gle.posting_date, gle.voucher_type, gle.voucher_no"
+		order_by_statement = "order by posting_date, voucher_type, voucher_no"
 
 	if filters.get("include_default_book_entries"):
 		filters['company_fb'] = frappe.db.get_value("Company",
@@ -134,19 +176,13 @@ def get_gl_entries(filters):
 	gl_entries = frappe.db.sql(
 		"""
 		select
-			gle.name as gl_entry, gle.posting_date, gle.account, gle.party_type, gle.party,
-			gle.voucher_type, gle.voucher_no, gle.cost_center, gle.project,
-			gle.against_voucher_type, gle.against_voucher, gle.account_currency,
-			gle.remarks, gle.against, gle.is_opening,
-			IFNULL(pr.supplier, IFNULL(pi.supplier,IFNULL(dn.customer,IFNULL(si.customer,se.stock_entry_type)))) as particular
+			name as gl_entry, posting_date, account, party_type, party,
+			voucher_type, voucher_no, cost_center, project,
+			against_voucher_type, against_voucher, account_currency,
+			remarks, against, is_opening
 			{select_fields}
-		from `tabGL Entry` as gle
-		LEFT JOIN `tabPurchase Receipt` as pr on pr.name = gle.voucher_no
-		LEFT JOIN `tabPurchase Invoice` as pi on pi.name = gle.voucher_no
-		LEFT JOIN `tabDelivery Note` as dn on dn.name = gle.voucher_no
-		LEFT JOIN `tabSales Invoice` as si on si.name = gle.voucher_no
-		LEFT JOIN `tabStock Entry` as se on se.name = gle.voucher_no
-		where gle.company=%(company)s {conditions}
+		from `tabGL Entry`
+		where company=%(company)s {conditions}
 		{order_by_statement}
 		""".format(
 			select_fields=select_fields, conditions=get_conditions(filters),
@@ -154,49 +190,71 @@ def get_gl_entries(filters):
 		),
 		filters, as_dict=1)
 
+	gl_entries = get_particular(filters,gl_entries)
 	if filters.get('presentation_currency'):
 		return convert_to_presentation_currency(gl_entries, currency_map)
 	else:
 		return gl_entries
 
+def get_particular(filters,gl_entries):
+	gl_map = {}	
+	
+	query = frappe.db.sql("""
+		select
+			gle.name as gl_entry, IFNULL(pr.supplier, IFNULL(pi.supplier,IFNULL(dn.customer,IFNULL(si.customer,se.stock_entry_type)))) as particular
+		from `tabGL Entry` as gle
+			LEFT JOIN `tabPurchase Receipt` as pr on pr.name = gle.voucher_no
+			LEFT JOIN `tabPurchase Invoice` as pi on pi.name = gle.voucher_no
+			LEFT JOIN `tabDelivery Note` as dn on dn.name = gle.voucher_no
+			LEFT JOIN `tabSales Invoice` as si on si.name = gle.voucher_no
+			LEFT JOIN `tabStock Entry` as se on se.name = gle.voucher_no
+		""",as_dict=1)
+		
+	for row in query:
+		gl_map[row.gl_entry] = row.particular
+	
+	for row in gl_entries:
+		row.particular = gl_map[row.gl_entry]
+
+	return gl_entries
 
 def get_conditions(filters):
 	conditions = []
 	if filters.get("account"):
 		lft, rgt = frappe.db.get_value("Account", filters["account"], ["lft", "rgt"])
-		conditions.append("""gle.account in (select name from tabAccount
+		conditions.append("""account in (select name from tabAccount
 			where lft>=%s and rgt<=%s and docstatus<2)""" % (lft, rgt))
 
 	if filters.get("cost_center"):
 		filters.cost_center = get_cost_centers_with_children(filters.cost_center)
-		conditions.append("gle.cost_center in %(cost_center)s")
+		conditions.append("cost_center in %(cost_center)s")
 
 	if filters.get("voucher_no"):
-		conditions.append("gle.voucher_no=%(voucher_no)s")
+		conditions.append("voucher_no=%(voucher_no)s")
 
 	if filters.get("group_by") == "Group by Party" and not filters.get("party_type"):
-		conditions.append("gle.party_type in ('Customer', 'Supplier')")
+		conditions.append("party_type in ('Customer', 'Supplier')")
 
 	if filters.get("party_type"):
-		conditions.append("gle.party_type=%(party_type)s")
+		conditions.append("party_type=%(party_type)s")
 
 	if filters.get("party"):
-		conditions.append("gle.party in %(party)s")
+		conditions.append("party in %(party)s")
 
 	if not (filters.get("account") or filters.get("party") or
 		filters.get("group_by") in ["Group by Account", "Group by Party"]):
-		conditions.append("gle.posting_date >=%(from_date)s")
+		conditions.append("posting_date >=%(from_date)s")
 
-	conditions.append("(gle.posting_date <=%(to_date)s or gle.is_opening = 'Yes')")
+	conditions.append("(posting_date <=%(to_date)s or is_opening = 'Yes')")
 
 	if filters.get("project"):
-		conditions.append("gle.project in %(project)s")
+		conditions.append("project in %(project)s")
 
 	if filters.get("finance_book"):
 		if filters.get("include_default_book_entries"):
-			conditions.append("(gle.finance_book in (%(finance_book)s, %(company_fb)s, '') OR gle.finance_book IS NULL)")
+			conditions.append("(finance_book in (%(finance_book)s, %(company_fb)s, '') OR finance_book IS NULL)")
 		else:
-			conditions.append("gle.finance_book in (%(finance_book)s)")
+			conditions.append("finance_book in (%(finance_book)s)")
 
 	from frappe.desk.reportview import build_match_conditions
 	match_conditions = build_match_conditions("GL Entry")
