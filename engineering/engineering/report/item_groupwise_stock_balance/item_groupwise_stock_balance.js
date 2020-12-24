@@ -9,6 +9,19 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 				"default": frappe.defaults.get_user_default("Company"),
 				"reqd": 1
 			},
+			{
+				"fieldname":"warehouse",
+				"label": __("Warehouse"),
+				"fieldtype": "Link",
+				"options": "Warehouse",
+				"get_query": function() {
+					const company = frappe.query_report.get_filter_value('company');
+					return { 
+						filters: { 'company': company }
+					}
+				}
+			},
+
 		],
 		"tree": true,
 		"name_field": "item_group",
