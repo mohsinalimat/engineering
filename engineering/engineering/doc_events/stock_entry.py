@@ -18,7 +18,10 @@ def validate(self, method):
 	validate_additional_cost(self)
 	validate_transfer_item(self)
 	validate_item_packing(self)
-	
+
+	if self.purpose in ['Repack','Manufacture']:
+		self.calculate_rate_and_amount(force=True)
+
 def on_trash(self, method):
 	se_list = []
 	if self.se_ref:
