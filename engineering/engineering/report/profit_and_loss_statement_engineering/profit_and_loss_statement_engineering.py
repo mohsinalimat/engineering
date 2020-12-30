@@ -36,6 +36,7 @@ def execute(filters=None):
 			account_show_report = row['show_report']
 		except KeyError:
 			account_show_report = None
+
 		if account_show_report:
 			row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
 				target="_blank" company='{filters.get('company')}' account_show_report='{account_show_report}'
@@ -45,6 +46,8 @@ def execute(filters=None):
 				account_name = row['account']
 			except KeyError: 
 				account_name = None
+		if account_name.find('&') > 0:
+			account_name.replace('&',"%26")
 			if account_name:
 				row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
 					target="_blank" company='{filters.get('company')}' from_date='{year_start_date}' to_date='{year_end_date}' account='{account_name}'

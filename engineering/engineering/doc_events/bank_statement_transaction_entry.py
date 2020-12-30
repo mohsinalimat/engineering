@@ -1,5 +1,5 @@
 import frappe
-from erpnext.accounts.doctype.bank_statement_transaction_entry.bank_statement_transaction_entry import get_payments_matching_invoice
+from erpnext.accounts.doctype.bank_statement_transaction_entry.bank_statement_transaction_entry import get_payments_matching_invoice,get_matching_journal_entries
 
 def create_payment_entry(self, pe):
 	payment = frappe.new_doc("Payment Entry")
