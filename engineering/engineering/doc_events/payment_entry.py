@@ -421,19 +421,22 @@ def create_payment_enty_branch(self):
 		if not frappe.db.exists("Company", self.party):
 			pe = get_payment_entry_pay(self.name)
 			pe.branch_pe_ref = self.name
-			pe.save()
-			pe2 = get_payment_entry_receive(self.name)
-			pe2.branch_pe_ref = self.name
-			pe2.save()
-
-			pe.branch_receive_pe_ref = pe2.name
-			pe2.branch_pay_pe_ref = pe.name
 
 			pe.naming_series = 'A' + pe.naming_series
 			pe.series_value = self.series_value
 
+			pe.save()
+
+			pe2 = get_payment_entry_receive(self.name)
+			pe2.branch_pe_ref = self.name
+
 			pe2.naming_series = 'A' + pe2.naming_series
 			pe2.series_value = self.series_value
+			
+			pe2.save()
+
+			pe.branch_receive_pe_ref = pe2.name
+			pe2.branch_pay_pe_ref = pe.name
 
 			pe.save()
 			pe2.save()
