@@ -117,6 +117,12 @@ frappe.query_reports["Accounts Payable Engineering"] = {
 			"fieldtype": "Check",
 		},
 		{
+			"fieldname":"strictly_for_company",
+			"label": __("Strictly for Company"),
+			"fieldtype": "Check",
+			"default":1,
+		},
+		{
 			"fieldname":"tax_id",
 			"label": __("Tax Id"),
 			"fieldtype": "Data",

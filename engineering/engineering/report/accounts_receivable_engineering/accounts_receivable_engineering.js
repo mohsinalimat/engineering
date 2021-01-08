@@ -118,6 +118,7 @@ frappe.query_reports["Accounts Receivable Engineering"] = {
 			"fieldname":"show_future_payments",
 			"label": __("Show Future Payments"),
 			"fieldtype": "Check",
+			"hidden":1
 		},
 		{
 			"fieldname":"show_delivery_notes",
@@ -128,6 +129,13 @@ frappe.query_reports["Accounts Receivable Engineering"] = {
 			"fieldname":"show_sales_person",
 			"label": __("Show Sales Person"),
 			"fieldtype": "Check",
+			"hidden":1,
+		},
+		{
+			"fieldname":"strictly_for_company",
+			"label": __("Strictly for Company"),
+			"fieldtype": "Check",
+			"default":1,
 		},
 		{
 			"fieldname":"tax_id",

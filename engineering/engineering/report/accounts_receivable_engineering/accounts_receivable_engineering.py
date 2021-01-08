@@ -72,33 +72,44 @@ class ReceivablePayableReport(object):
 
 		for row in data:
 			if row.company not in self.filters.company:
-				row.billed_amount = row.invoiced
-				row.bank_paid = row.paid
-				row.bank_outstanding = row.outstanding
-
-				if row.reference_doc:
+				if self.filters.strictly_for_company and not row.reference_doc:
+					continue
+				elif self.filters.strictly_for_company:
 					try:
 						row_data = self.data_map[row.reference_doc][row.party]
-						row.invoiced = row_data.invoiced
-						row.paid = row_data.paid
-						row.outstanding = row_data.outstanding
-						covered_vouchers.append(row.reference_doc)
-					except KeyError:
-						row_data = ''
+						if row_data.company != self.filters.company:
+							continue
+					except:
+						continue
+				else:
+					row.billed_amount = row.invoiced
+					row.bank_paid = row.paid
+					row.bank_outstanding = row.outstanding
+
+					if row.reference_doc:
+						try:
+							row_data = self.data_map[row.reference_doc][row.party]
+
+							row.invoiced = row_data.invoiced
+							row.paid = row_data.paid
+							row.outstanding = row_data.outstanding
+							covered_vouchers.append(row.reference_doc)
+						except KeyError:
+							row_data = ''
+							row.invoiced = 0
+							row.paid = 0
+							row.outstanding = 0
+					else:
 						row.invoiced = 0
 						row.paid = 0
 						row.outstanding = 0
-				else:
-					row.invoiced = 0
-					row.paid = 0
-					row.outstanding = 0
-				
-				row.cash_amount = flt(row.invoiced) - flt(row.billed_amount)
-				row.cash_paid = flt(row.paid) - flt(row.bank_paid)
-				row.cash_outstanding = flt(row.outstanding) - flt(row.bank_outstanding)
+					
+					row.cash_amount = flt(row.invoiced) - flt(row.billed_amount)
+					row.cash_paid = flt(row.paid) - flt(row.bank_paid)
+					row.cash_outstanding = flt(row.outstanding) - flt(row.bank_outstanding)
 
-				if (row.outstanding or row.bank_outstanding or row.cash_outstanding):
-					self.data.append(row)
+					if (row.outstanding or row.bank_outstanding or row.cash_outstanding):
+						self.data.append(row)
 			elif row.company in self.filters.company and not row.reference_doc:
 				row.cash_amount = row.invoiced
 				row.cash_paid = row.paid
@@ -123,6 +134,7 @@ class ReceivablePayableReport(object):
 				row.bank_paid = 0
 				row.bank_outstanding = 0
 				self.data.append(row)
+
 		year_start_date = frappe.defaults.get_user_default("year_start_date")
 		year_end_date = frappe.defaults.get_user_default("year_end_date")
 		for row in data:
