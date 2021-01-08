@@ -140,10 +140,11 @@ def get_open_count(doctype, name, items=[]):
 			# get the fieldname for the current document
 			# we only need open documents related to the current document
 			filters[fieldname] = name
+			# Finbyz Changes Start: frappe.get_all replaced with frappe.get_list
 			total = len(frappe.get_list(d, fields="name",
 				filters=filters, limit=100, distinct=True, ignore_ifnull=True, user = frappe.session.user))
 			data["open_count"] = total
-
+		# Finbyz Changes Start: frappe.get_all replaced with frappe.get_list
 		total = len(frappe.get_list(d, fields="name",
 			filters={fieldname: name}, limit=100, distinct=True, ignore_ifnull=True, user = frappe.session.user))
 		data["count"] = total
