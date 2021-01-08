@@ -38,18 +38,24 @@ def execute(filters=None):
 			account_show_report = None
 
 		if account_show_report:
-			row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
-				target="_blank" company='{filters.get('company')}' account_show_report='{account_show_report}'
-				onClick=open_report(this.getAttribute('company'),this.getAttribute('account_show_report'))>View {account_show_report}</button>"""
+			url = frappe.utils.get_url()
+			url += f"/desk#query-report/{account_show_report}/?company={filters.get('company')}"
+			row['view_report'] = f"""<a href='{url}' target="_blank" style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'>View {account_show_report}</a>"""
+			# row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+			# 	target="_blank" company='{filters.get('company')}' account_show_report='{account_show_report}'
+			# 	onClick=open_report(this.getAttribute('company'),this.getAttribute('account_show_report'))>View {account_show_report}</button>"""
 		else:
 			try:
 				account_name = row['account']
 			except KeyError: 
 				account_name = None
 			if account_name:
-				row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
-					target="_blank" company='{filters.get('company')}' from_date='{year_start_date}' to_date='{year_end_date}' account='{account_name}'
-					onClick=open_daybook_engineering_report(this.getAttribute('company'),this.getAttribute('from_date'),this.getAttribute('to_date'),this.getAttribute('account'))>View Daybook Engineering</button>"""
+				url = frappe.utils.get_url()
+				url += f"/desk#query-report/Daybook Engineering/?company={filters.get('company')}&from_date={year_start_date}&to_date={year_end_date}&account={account_name}"
+				row['view_report'] = f"""<a href='{url}' target="_blank" style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'>View Daybook Engineering</a>"""
+				# row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+				# 	target="_blank" company='{filters.get('company')}' from_date='{year_start_date}' to_date='{year_end_date}' account='{account_name}'
+				# 	onClick=open_daybook_engineering_report(this.getAttribute('company'),this.getAttribute('from_date'),this.getAttribute('to_date'),this.getAttribute('account'))>View Daybook Engineering</button>"""
 	# Finbyz Changes END
 
 	if net_profit_loss:

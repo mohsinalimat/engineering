@@ -72,33 +72,44 @@ class ReceivablePayableReport(object):
 
 		for row in data:
 			if row.company not in self.filters.company:
-				row.billed_amount = row.invoiced
-				row.bank_paid = row.paid
-				row.bank_outstanding = row.outstanding
-
-				if row.reference_doc:
+				if self.filters.strictly_for_company and not row.reference_doc:
+					continue
+				elif self.filters.strictly_for_company:
 					try:
 						row_data = self.data_map[row.reference_doc][row.party]
-						row.invoiced = row_data.invoiced
-						row.paid = row_data.paid
-						row.outstanding = row_data.outstanding
-						covered_vouchers.append(row.reference_doc)
-					except KeyError:
-						row_data = ''
+						if row_data.company != self.filters.company:
+							continue
+					except:
+						continue
+				else:
+					row.billed_amount = row.invoiced
+					row.bank_paid = row.paid
+					row.bank_outstanding = row.outstanding
+
+					if row.reference_doc:
+						try:
+							row_data = self.data_map[row.reference_doc][row.party]
+
+							row.invoiced = row_data.invoiced
+							row.paid = row_data.paid
+							row.outstanding = row_data.outstanding
+							covered_vouchers.append(row.reference_doc)
+						except KeyError:
+							row_data = ''
+							row.invoiced = 0
+							row.paid = 0
+							row.outstanding = 0
+					else:
 						row.invoiced = 0
 						row.paid = 0
 						row.outstanding = 0
-				else:
-					row.invoiced = 0
-					row.paid = 0
-					row.outstanding = 0
-				
-				row.cash_amount = flt(row.invoiced) - flt(row.billed_amount)
-				row.cash_paid = flt(row.paid) - flt(row.bank_paid)
-				row.cash_outstanding = flt(row.outstanding) - flt(row.bank_outstanding)
+					
+					row.cash_amount = flt(row.invoiced) - flt(row.billed_amount)
+					row.cash_paid = flt(row.paid) - flt(row.bank_paid)
+					row.cash_outstanding = flt(row.outstanding) - flt(row.bank_outstanding)
 
-				if (row.outstanding or row.bank_outstanding or row.cash_outstanding):
-					self.data.append(row)
+					if (row.outstanding or row.bank_outstanding or row.cash_outstanding):
+						self.data.append(row)
 			elif row.company in self.filters.company and not row.reference_doc:
 				row.cash_amount = row.invoiced
 				row.cash_paid = row.paid
@@ -123,6 +134,18 @@ class ReceivablePayableReport(object):
 				row.bank_paid = 0
 				row.bank_outstanding = 0
 				self.data.append(row)
+
+		year_start_date = frappe.defaults.get_user_default("year_start_date")
+		year_end_date = frappe.defaults.get_user_default("year_end_date")
+		for row in data:
+			row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+				target="_blank" company='{row.company}' from_date='{year_start_date}' to_date='{year_end_date}' party_type='{row.party_type}' party='{row.party}'
+				onClick=open_daybook_engineering_report(this.getAttribute('company'),this.getAttribute('from_date'),this.getAttribute('to_date'),this.getAttribute('party_type'),this.getAttribute('party'))>View Daybook Engineering</button>"""
+
+			# url = frappe.utils.get_url()
+			# url += f"/desk#query-report/Daybook Engineering/?party_type={party_type}&company={row.company}&from_date={year_start_date}&to_date={year_end_date}&party={row.party}"
+			# row['view_report'] = f"""<a href='{url}' target="_blank" style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'>View Daybook Engineering</a>"""
+
 		
 	def difference(self, lst1, lst2): 
 		return (list(set(lst1) - set(lst2))) 
@@ -186,6 +209,7 @@ class ReceivablePayableReport(object):
 				self.voucher_balance[key] = frappe._dict(
 					voucher_type = gle.voucher_type,
 					voucher_no = gle.voucher_no,
+					party_type = gle.party_type,
 					party = gle.party,
 					posting_date = gle.posting_date,
 					remarks = gle.remarks,
@@ -912,6 +936,7 @@ class ReceivablePayableReport(object):
 		self.add_column(label=_('Remarks'), fieldname='remarks', fieldtype='Text', width=200)
 		self.add_column(label=_('Reference Document'), fieldname='reference_doc', fieldtype='Dynamic Link',
 			options='voucher_type', width=180)
+		self.add_column(label=_('View Report'), fieldname='view_report', fieldtype='button',width=140)
 
 	def add_column(self, label, fieldname=None, fieldtype='Currency', options=None, width=120):
 		if not fieldname: fieldname = scrub(label)

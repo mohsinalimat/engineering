@@ -118,6 +118,7 @@ frappe.query_reports["Accounts Receivable Engineering"] = {
 			"fieldname":"show_future_payments",
 			"label": __("Show Future Payments"),
 			"fieldtype": "Check",
+			"hidden":1
 		},
 		{
 			"fieldname":"show_delivery_notes",
@@ -128,6 +129,13 @@ frappe.query_reports["Accounts Receivable Engineering"] = {
 			"fieldname":"show_sales_person",
 			"label": __("Show Sales Person"),
 			"fieldtype": "Check",
+			"hidden":1,
+		},
+		{
+			"fieldname":"strictly_for_company",
+			"label": __("Strictly for Company"),
+			"fieldtype": "Check",
+			"default":1,
 		},
 		{
 			"fieldname":"tax_id",
@@ -180,3 +188,7 @@ erpnext.dimension_filters.forEach((dimension) => {
 		"options": dimension["document_type"]
 	});
 });
+
+function open_daybook_engineering_report(company,from_date,to_date,party_type,party) {
+	window.open(window.location.href.split("#")[0] + "#query-report/Daybook Engineering" + "/?" +"party_type="+party_type+ "&" +  "company="+company +"&" +  "from_date="+from_date +"&"+ "to_date="+to_date +"&"+ "party="+party,"_blank")	
+}

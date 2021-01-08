@@ -120,7 +120,13 @@ frappe.query_reports["Accounts Receivable Engineering Summary"] = {
 			"fieldname":"based_on_payment_terms",
 			"label": __("Based On Payment Terms"),
 			"fieldtype": "Check",
-		}
+		},
+		{
+			"fieldname":"strictly_for_company",
+			"label": __("Strictly for Company"),
+			"fieldtype": "Check",
+			"default":1,
+		},
 	],
 
 	onload: function(report) {
