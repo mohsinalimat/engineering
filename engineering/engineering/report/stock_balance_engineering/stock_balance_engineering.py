@@ -13,7 +13,7 @@ from erpnext.stock.report.stock_ageing.stock_ageing import get_fifo_queue, get_a
 from six import iteritems
 
 def execute(filters=None):
-	validate_filters(filters)
+	#validate_filters(filters)
 
 	if not filters: filters = {}
 

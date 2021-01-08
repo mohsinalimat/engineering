@@ -18,7 +18,6 @@ frappe.query_reports["Stock Balance Engineering"] = {
 			"width": "80",
 			"options": "Company",
 			"default": frappe.defaults.get_default("company"),
-			"reqd":1
 		},
 		{
 			"fieldname":"from_date",

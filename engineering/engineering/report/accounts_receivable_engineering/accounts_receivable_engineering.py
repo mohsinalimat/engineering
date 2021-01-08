@@ -123,6 +123,17 @@ class ReceivablePayableReport(object):
 				row.bank_paid = 0
 				row.bank_outstanding = 0
 				self.data.append(row)
+		year_start_date = frappe.defaults.get_user_default("year_start_date")
+		year_end_date = frappe.defaults.get_user_default("year_end_date")
+		for row in data:
+			row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+				target="_blank" company='{row.company}' from_date='{year_start_date}' to_date='{year_end_date}' party_type='{row.party_type}' party='{row.party}'
+				onClick=open_daybook_engineering_report(this.getAttribute('company'),this.getAttribute('from_date'),this.getAttribute('to_date'),this.getAttribute('party_type'),this.getAttribute('party'))>View Daybook Engineering</button>"""
+
+			# url = frappe.utils.get_url()
+			# url += f"/desk#query-report/Daybook Engineering/?party_type={party_type}&company={row.company}&from_date={year_start_date}&to_date={year_end_date}&party={row.party}"
+			# row['view_report'] = f"""<a href='{url}' target="_blank" style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'>View Daybook Engineering</a>"""
+
 		
 	def difference(self, lst1, lst2): 
 		return (list(set(lst1) - set(lst2))) 
@@ -186,6 +197,7 @@ class ReceivablePayableReport(object):
 				self.voucher_balance[key] = frappe._dict(
 					voucher_type = gle.voucher_type,
 					voucher_no = gle.voucher_no,
+					party_type = gle.party_type,
 					party = gle.party,
 					posting_date = gle.posting_date,
 					remarks = gle.remarks,
@@ -912,6 +924,7 @@ class ReceivablePayableReport(object):
 		self.add_column(label=_('Remarks'), fieldname='remarks', fieldtype='Text', width=200)
 		self.add_column(label=_('Reference Document'), fieldname='reference_doc', fieldtype='Dynamic Link',
 			options='voucher_type', width=180)
+		self.add_column(label=_('View Report'), fieldname='view_report', fieldtype='button',width=140)
 
 	def add_column(self, label, fieldname=None, fieldtype='Currency', options=None, width=120):
 		if not fieldname: fieldname = scrub(label)
