@@ -123,7 +123,7 @@ frappe.query_reports["Accounts Receivable Engineering Summary"] = {
 		},
 		{
 			"fieldname":"strictly_for_company",
-			"label": __("Strictly for Company"),
+			"label": __("Strictly for Selected Company"),
 			"fieldtype": "Check",
 			"default":1,
 		},
