@@ -38,6 +38,8 @@ class SerialNoGenerator(Document):
 		user = frappe.session.user
 		for item in range(cint(self.from_value), cint(self.to_value) + 1):
 			serial_no = self.serial_no_series + getseries(self.series, 8, item)
+			if serial_no.find(" ") != -1:
+				frappe.throw("Serial No Cannot Contain Spaces.")
 			qr_code_hash = frappe.generate_hash(length = 16)
 			sr_no = ''.join(filter(lambda i: i.isdigit(), serial_no))
 			sr_no_info = sr_no[-9:]

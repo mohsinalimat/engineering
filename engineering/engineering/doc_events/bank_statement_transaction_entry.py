@@ -6,6 +6,7 @@ def create_payment_entry(self, pe):
 	payment.posting_date = pe.transaction_date
 	payment.payment_type = "Receive" if pe.party_type == "Customer" else "Pay"
 	payment.company = self.company
+	payment.through_company = pe.through_company
 	payment.party_type = pe.party_type
 	payment.party = pe.party
 	payment.mode_of_payment = self.mode_of_payment

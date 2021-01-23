@@ -110,8 +110,7 @@ def create_payment_entry_pay(self):
 				"field_map": {
 					"name": "branch_receive_pe_ref",
 					"posting_date": "posting_date",
-					"posting_time": "posting_time",
-					"series_value":"series_value",
+					"posting_time": "posting_time"
 				},
 				"field_no_map": {
 					"party_balance",
@@ -158,7 +157,6 @@ def create_payment_entry_pay(self):
 			pe = get_payment_entry_pay(self.name)
 			# frappe.throw(str(pe.paid_from))
 			pe.naming_series = 'A' + pe.naming_series
-			pe.series_value = self.series_value
 			pe.save()
 			pe.submit()
 
@@ -253,7 +251,6 @@ def create_payment_entry_receive(self):
 		if not self.branch_receive_pe_ref and self.payment_type == "Pay":
 			pe = get_payment_entry_receive(self.name)
 			pe.naming_series = 'A' + pe.naming_series
-			pe.series_value = self.series_value
 			pe.save()
 			pe.submit()
 
@@ -423,7 +420,6 @@ def create_payment_enty_branch(self):
 			pe.branch_pe_ref = self.name
 
 			pe.naming_series = 'A' + pe.naming_series
-			pe.series_value = self.series_value
 
 			pe.save()
 
@@ -431,7 +427,6 @@ def create_payment_enty_branch(self):
 			pe2.branch_pe_ref = self.name
 
 			pe2.naming_series = 'A' + pe2.naming_series
-			pe2.series_value = self.series_value
 			
 			pe2.save()
 
@@ -647,7 +642,6 @@ def create_payment_entry(self):
 	if authority == "Authorized":
 		pe = get_payment_entry(self.name)
 		pe.naming_series = 'A' + pe.naming_series
-		pe.series_value = self.series_value
 		pe.save(ignore_permissions= True)
 		self.db_set('pe_ref', pe.name)
 		pe.submit()

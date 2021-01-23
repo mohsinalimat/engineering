@@ -177,6 +177,10 @@ def get_conditions(filters):
 
 	if filters.get("company"):
 		conditions += " and sle.company = %s" % frappe.db.escape(filters.get("company"))
+	else:
+		company_list = frappe.db.get_list("Company",{'authority':"Unauthorized"})
+		data = ', '.join(f"'{i.name}'" for i in company_list)
+		conditions += " and sle.company in (%s)" % data
 
 	if filters.get("warehouse"):
 		warehouse_details = frappe.db.get_value("Warehouse",
