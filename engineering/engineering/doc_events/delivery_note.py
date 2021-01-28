@@ -27,7 +27,7 @@ def before_validate(self, method):
 	validate_no_of_boxes(self)
 
 def validate(self, method):
-	if self._action in ['submit','cancel']:
+	if self._action in ['submit','cancel'] and not self.is_return:
 		serial_no_validate(self)
 
 def before_submit(self,method):
@@ -37,8 +37,9 @@ def before_submit(self,method):
 def on_submit(self, method):
 	validate_rate(self)
 	if not self.dont_replicate:
-		create_purchase_receipt(self)
-		create_delivery_note(self)
+		if not self.is_return:
+			create_purchase_receipt(self)
+			create_delivery_note(self)
 	update_real_delivered_qty(self, "submit")
 
 def before_cancel(self, method):
@@ -157,6 +158,7 @@ def create_delivery_note(self):
 					"posting_date": "posting_date",
 					"posting_time": "posting_time",
 					"ignore_pricing_rule": "ignore_pricing_rule",
+					"is_return":"is_return"
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -341,6 +343,7 @@ def create_purchase_receipt(self):
 					"shipping_address_name": "shipping_address",
 					"customer_gstin": "company_gstin",
 					"shipping_address": "shipping_address_display",
+					"is_return":"is_return"
 				},
 				"field_no_map": [
 					"taxes_and_charges",
