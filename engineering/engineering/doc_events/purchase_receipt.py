@@ -6,6 +6,7 @@ from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from frappe.utils import get_url_to_form
 from frappe.contacts.doctype.address.address import get_company_address
+from engineering.engineering.doc_events.serial_no import get_serial_nos
 
 def on_submit(self,method):
 	validate_rate(self)

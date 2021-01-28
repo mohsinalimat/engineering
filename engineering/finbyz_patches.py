@@ -186,3 +186,40 @@ for idx,sle in enumerate(sle_query):
 			frappe.db.commit()
 
 # Patch End
+
+# Patch Start: Calculate execution time of the function    
+
+def time_fun():
+    import time
+    import datetime 
+    start_time = time.time()
+	# function Code
+    end_time = time.time()
+    return str(datetime.timedelta(seconds = end_time) - (datetime.timedelta(seconds = start_time)))
+
+
+time_fun()
+
+# Create Index for Complex Queries
+# CREATE INDEX active_serial_index ON `tabSerial No` (status,company,warehouse,item_code)
+# CREATE INDEX warehouse_item_code_serial_index ON `tabSerial No` (warehouse,item_code,status,purchase_date)
+# CREATE INDEX company_warehouse_item_index ON `tabStock Ledger Entry` (company,warehouse,item_code,posting_date)
+# CREATE INDEX item_code_index ON `tabSerial No` (item_code)
+
+
+# Lexcru Slow Query:
+
+# SELECT `current` FROM `tabSeries` WHERE `name`='OSTE-2021F1-' FOR UPDATE\G
+
+
+# select company, warehouse, status
+#                         from `tabSerial No`
+#                         where `tabSerial No`.name = 'IFA03176344' and ((((coalesce(`tabSerial No`.`warehouse`, '')='' or `tabSerial No`.`warehouse` in
+# 						('Work In Progress - FAC-LWT', 'New Finished Goods - HO-LWT', 'New Work In Progress - FAC-LWT', 'New Work In Progress - SWHTT', 'New Jobwork In - SWHTT', $
+
+
+# SELECT /*!40001 SQL_NO_CACHE /  FROM `tabSerial No`\G
+					
+						
+# INSERT INTO `tabStock Ledger Entry` (`name`, `owner`, `creation`, `modified`, `modified_by`, `parent
+# 	-make_entry in make_sl_entries() in stock_ledger.py and called from stock_entry.py
