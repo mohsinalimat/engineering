@@ -24,6 +24,8 @@
   "net_wt",
   "gross_wt",
   "work_order_qty",
+  "configuration",
+  "mrp",
   "section_break_5",
   "add_serial_no",
   "serial_no",
@@ -253,10 +255,24 @@
    "fieldtype": "Float",
    "label": "Work Order Qty",
    "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.configuration",
+   "fieldname": "configuration",
+   "fieldtype": "Data",
+   "label": "Configuration",
+   "read_only": 1
+  },
+  {
+   "fetch_from": "item_code.mrp",
+   "fieldname": "mrp",
+   "fieldtype": "Currency",
+   "label": "MRP",
+   "read_only": 1
   }
  ],
  "is_submittable": 1,
- "modified": "2020-11-12 14:18:20.553029",
+ "modified": "2020-12-24 14:36:42.674654",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Item Packing",

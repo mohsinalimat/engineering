@@ -206,7 +206,6 @@ frappe.ui.form.on('Purchase Receipt Item', {
 			indicator: 'green',
 			message: __('Copied to clipboard.')
 		});
-		//frappe.utils.copy_to_clipboard(d.item_code)
 	}
 
 });
