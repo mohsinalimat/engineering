@@ -11,6 +11,9 @@ from six import itervalues
 from frappe.model.mapper import get_mapped_doc
 
 def validate(self, method):
+	if self.stock_entry_type == "Material Receipt":
+		if not "Local Admin" in frappe.get_roles(frappe.session.user):
+			frappe.throw("You are Not Allowed to Create Material Receipt Entry.")
 	if self._action in ['submit','cancel']:
 		serial_no_validate(self)
 	if self.purpose in ['Repack','Manufacture','Material Issue']:
@@ -18,7 +21,10 @@ def validate(self, method):
 	validate_additional_cost(self)
 	validate_transfer_item(self)
 	validate_item_packing(self)
-	
+
+	if self.purpose in ['Repack','Manufacture']:
+		self.calculate_rate_and_amount(force=True)
+
 def on_trash(self, method):
 	se_list = []
 	if self.se_ref:

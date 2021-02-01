@@ -56,7 +56,7 @@ class SerialNoGenerator(Document):
 				frappe.db.commit()
 				values =[]
 		if values != []:
-			values.append((123, time, time , user, user,123, 123,'18494526296'))
+			#values.append((123, time, time , user, user,123, 123,'18494526296'))
 			frappe.db.bulk_insert("Serial No", fields=['name', "creation", "modified", "modified_by", "owner", 'serial_no', 'sr_no_info','qr_code_hash'], values=values)
 			frappe.db.commit()
 

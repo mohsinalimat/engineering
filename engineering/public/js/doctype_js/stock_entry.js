@@ -173,7 +173,7 @@ erpnext.stock.StockController = erpnext.stock.StockController.extend({
 								frappe.model.set_value(item.doctype, item.name, 'serial_no', unique.join('\n'));
 								frappe.model.set_value(item.doctype, item.name, 'qty', unique.length);
 								flag = true
-								frappe.show_alert({message:__("{0} Pcs added for item {1}", [data.no_of_items,data.item_code]), indicator:'green'});
+								frappe.show_alert({message:__("Total Qty - {0} : {1} Pcs added for item {2}", [item.qty,data.no_of_items,data.item_code]), indicator:'green'});
 							}
 						});
 						if (flag == false){
@@ -181,7 +181,7 @@ erpnext.stock.StockController = erpnext.stock.StockController.extend({
 							frappe.model.set_value(d.doctype, d.name, 'item_code', data.item_code);
 							frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
 							frappe.model.set_value(d.doctype, d.name, 'qty', data.no_of_items);
-							frappe.show_alert({message:__("{0} Pcs added for item {1}", [data.no_of_items||1,data.item_code]), indicator:'green'});
+							frappe.show_alert({message:__("Total Qty - {0} : {1} Pcs added for item {2}", [item.qty,data.no_of_items||1,data.item_code]), indicator:'green'});
 							frm.refresh_field('items');
 						}
 

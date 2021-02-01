@@ -223,7 +223,6 @@ def create_payment_entry_receive(self):
 					"paid_from",
 					"paid_to",
 					"total_allocated_amount",
-					"series_value",
 					"pe_ref",
 					"branch_pay_pe_ref",
 					"branch_receive_pe_ref",
@@ -311,7 +310,6 @@ def create_payment_enty_branch(self):
 					"paid_from",
 					"paid_to",
 					"total_allocated_amount",
-					"series_value",
 					"pe_ref",
 					"branch_pay_pe_ref",
 					"branch_receive_pe_ref",
@@ -374,7 +372,6 @@ def create_payment_enty_branch(self):
 				"doctype": "Payment Entry",
 				"field_map": {},
 				"field_no_map": {
-					"series_value"
 					"party_balance",
 					"paid_to_account_balance",
 					"status",
@@ -595,7 +592,6 @@ def create_payment_entry(self):
 					"posting_time": "posting_time"
 				},
 				"field_no_map": {
-					"series_value"
 					"party_balance",
 					"paid_to_account_balance",
 					"status",

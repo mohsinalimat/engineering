@@ -223,3 +223,77 @@ time_fun()
 						
 # INSERT INTO `tabStock Ledger Entry` (`name`, `owner`, `creation`, `modified`, `modified_by`, `parent
 # 	-make_entry in make_sl_entries() in stock_ledger.py and called from stock_entry.py
+
+# Patch Start
+sle = frappe.get_doc("Stock Ledger Entry","MAT-SLE-2021-27294")
+def get_incoming_value_for_serial_nos(sle):
+	from frappe.utils import cint, flt, cstr, now
+	from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
+	serial_nos = get_serial_nos(sle.serial_no)
+	serial_nos.append("ifa")
+	print(sle.voucher_no)
+	all_serial_nos = frappe.db.sql(f"""
+		select purchase_rate,name,company
+		from `tabSerial No`
+		where item_code = '{sle.item_code}' and name in (%s)""" % ", ".join(["%s"] * len(serial_nos)),
+		tuple(serial_nos), as_dict=1)
+
+	incoming_values = sum([flt(d.purchase_rate) for d in all_serial_nos if d.company==sle.company])
+
+	# Get rate for serial nos which has been transferred to other company
+	invalid_serial_nos = [d.name for d in all_serial_nos if d.company!=sle.company]
+
+	invalid_serial_nos += [d.name for d in all_serial_nos if d.company==sle.company and not d.purchase_rate]
+
+	for serial_no in invalid_serial_nos:
+		incoming_rate = frappe.db.sql("""
+			select incoming_rate
+			from `tabStock Ledger Entry`
+			FORCE INDEX (company_warehouse_item_index)
+			where
+				company = %s
+				and warehouse = %s
+				and item_code = %s
+				and actual_qty > 0
+				and (serial_no = %s
+					or serial_no like %s
+					or serial_no like %s
+					or serial_no like %s
+				)
+			order by posting_date desc
+			limit 1
+		""", (sle.company,sle.warehouse, sle.item_code,serial_no, serial_no+'\n%', '%\n'+serial_no, '%\n'+serial_no+'\n%'))
+		print(incoming_rate)
+		if not incoming_rate[0][0]:
+			frappe.throw("Incoming Rate Not Found For Serial No : {}".format(serial_no))
+		incoming_values += flt(incoming_rate[0][0]) if incoming_rate else 0
+
+	return incoming_values
+# Patch End
+
+# Patch Start: get incoming_rate of serial no
+
+company = "Factory - Lexcru Water Tech Pvt. Ltd."
+warehouse = "Swaminarayan Godown - FAC-LWT"
+item_code = "IC-GOS-020"
+serial_no = "ifa01472335"
+
+incoming_rate = frappe.db.sql("""
+	select incoming_rate
+	from `tabStock Ledger Entry`
+	FORCE INDEX (company_warehouse_item_index)
+	where
+		company = %s
+		and warehouse = %s
+		and item_code = %s
+		and actual_qty > 0
+		and (serial_no = %s
+			or serial_no like %s
+			or serial_no like %s
+			or serial_no like %s
+		)
+	order by posting_date desc
+	limit 1
+""", (company,warehouse, item_code,serial_no, serial_no+'\n%', '%\n'+serial_no, '%\n'+serial_no+'\n%'))
+
+# Patch End
