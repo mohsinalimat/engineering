@@ -16,24 +16,24 @@ frappe.ui.form.on('Payment Entry', {
 			frm.trigger('company');
 		}
 	},
-	naming_series: function(frm) {
-		if (frm.doc.company && !frm.doc.amended_from && frm.doc.__islocal){
-			frappe.call({
-				method: "engineering.api.check_counter_series",
-				args: {
-					'name': frm.doc.naming_series,
-					'company_series': frm.doc.company_series,
-				},
-				callback: function(e) {
-					frm.set_value("series_value", e.message);
-				}
-			});
-		}
-	},
+	// naming_series: function(frm) {
+	// 	if (frm.doc.company && !frm.doc.amended_from && frm.doc.__islocal){
+	// 		frappe.call({
+	// 			method: "engineering.api.check_counter_series",
+	// 			args: {
+	// 				'name': frm.doc.naming_series,
+	// 				'company_series': frm.doc.company_series,
+	// 			},
+	// 			callback: function(e) {
+	// 				frm.set_value("series_value", e.message);
+	// 			}
+	// 		});
+	// 	}
+	// },
 	company: function(frm){
-		if (frm.doc.__islocal){
-			frm.trigger('naming_series');
-		};
+		// if (frm.doc.__islocal){
+		// 	frm.trigger('naming_series');
+		// };
 		frappe.db.get_value("Company",frm.doc.company,"through_company",function(r){
 			frm.set_value("through_company",r.through_company)
 		})
