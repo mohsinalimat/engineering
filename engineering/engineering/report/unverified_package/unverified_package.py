@@ -35,6 +35,8 @@ def get_conditions(filters):
 		condition += " and ip.item_group = '%s'" % filters.item_group
 	if filters.get("warehouse"):
 		condition += " and sno.warehouse = '%s'" % filters.warehouse
+	if filters.get('to_date'):
+		condition += " and ip.posting_date <= '%s'" % filters.to_date
 	return condition
 
 def get_columns(filters):

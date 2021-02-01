@@ -41,6 +41,11 @@ frappe.query_reports["Unverified Package"] = {
 			"fieldtype": "Link",
 			"options": "Item Group"
 		},
+		{
+			"fieldname":"to_date",
+			"label": __("To Date"),
+			"fieldtype": "Date",
+		},
 
 	]
 };
