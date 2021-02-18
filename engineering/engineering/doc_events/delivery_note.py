@@ -643,9 +643,17 @@ def serial_no_validate(self):
 			item_warehouse = item.s_warehouse
 		else:
 			item_warehouse = item.warehouse
+			
+		if item.serial_no:
+			if item.serial_no.find(" ") != -1:
+				item.serial_no = item.serial_no.replace(" ","")
+
 		if item.serial_no and item_warehouse:
+				
 			serial_nos = get_serial_nos(item.serial_no) if item.serial_no else []
 			item_det = get_item_details(item.item_code)
+
+
 
 			if item_det.has_serial_no==0:
 				if serial_nos:

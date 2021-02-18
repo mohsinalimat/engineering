@@ -23,6 +23,7 @@ class JobWorkReturn(Document):
 			row.basic_amount = flt(row.qty) * flt(row.basic_rate)
 
 	def on_submit(self):
+		# create_stock_entry(self)
 #		self.create_stock_entry()
 		# self.enqueue_send_jobwork_finish_entry()
 		# self.enqueue_jobwork_manufacturing_entry()
@@ -253,6 +254,7 @@ def enqueue_job_work_manufacturing_button(name):
 	else:
 		job_work_manufacturing_button(name= name)
 
+@frappe.whitelist()
 def job_work_manufacturing_button(name):
 	#create repack
 	doc = frappe.get_doc("Job Work Return",name)
@@ -311,7 +313,7 @@ def enqueue_send_jobwork_finish_entry_button(name):
 	else:
 		send_jobwork_finish_entry_button(name= name)
 		
-
+@frappe.whitelist()
 def send_jobwork_finish_entry_button(name):
 	# create material issue
 	doc = frappe.get_doc("Job Work Return",name)

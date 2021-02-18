@@ -31,6 +31,7 @@
   "serial_no",
   "remove_serial_no",
   "column_break_9",
+  "print_only_barcode",
   "include_for_manufacturing",
   "not_yet_manufactured",
   "warehouse",
@@ -269,10 +270,16 @@
    "fieldtype": "Currency",
    "label": "MRP",
    "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "print_only_barcode",
+   "fieldtype": "Check",
+   "label": "Print Only Barcode"
   }
  ],
  "is_submittable": 1,
- "modified": "2020-12-24 14:36:42.674654",
+ "modified": "2021-02-12 13:58:10.698954",
  "modified_by": "Administrator",
  "module": "Engineering",
  "name": "Item Packing",

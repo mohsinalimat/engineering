@@ -5,6 +5,16 @@ this.frm.cscript.onload = function (frm) {
 			filters: { 'is_stock_item': 1, 'authority': doc.authority }
 		}
 	});
+	this.frm.set_query("item_code", "required_items", function (doc) {
+		return {
+			query: "erpnext.controllers.queries.item_query",
+			filters: [
+
+				['is_stock_item', '=', 1],
+				['authority', 'in', ['', doc.authority]]
+			]
+		}
+	});
 }
 frappe.ui.form.on('Work Order', {
 	setup: function(frm){

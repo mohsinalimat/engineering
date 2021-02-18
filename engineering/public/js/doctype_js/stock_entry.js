@@ -56,17 +56,8 @@ cur_frm.fields_dict.items.grid.get_field("t_warehouse").get_query = function (do
 		}
 	}
 };
-this.frm.cscript.onload = function (frm) {
-	this.frm.set_query("item_code", "items", function (doc) {
-		return {
-			query: "erpnext.controllers.queries.item_query",
-			filters: [
-				['authority', 'in', ['', doc.authority]]
-			]
-		}
-	});
-	
-}
+
+
 function removeFromArray(original, remove) {
 	return original.filter(value => !remove.includes(value));
 } 

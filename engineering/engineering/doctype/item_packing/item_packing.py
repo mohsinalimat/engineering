@@ -198,6 +198,7 @@ def enqueue_stock_entry(work_order, posting_date, posting_time):
 	else:
 		frappe.msgprint(_(" Stock Entry Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Stock Entry creation job is Already in Queue '),indicator="green")			
 
+@frappe.whitelist()
 def make_stock_entry(work_order = None, posting_date = None, posting_time = None):
 	from erpnext.manufacturing.doctype.work_order.work_order import make_stock_entry
 	filters = {'include_for_manufacturing': 1, 'not_yet_manufactured': 1, 'docstatus': 1}
@@ -255,6 +256,7 @@ def enqueue_material_receipt(warehouse, item_code, company, posting_date, postin
 	else:
 		frappe.msgprint(_(" Material Receipt Creation is already in queue it may take 15-20 minutes to complete. Please don't re-create check it after 20 minute, if not created call finbyz "),title=_(' Material Receipt creation job is Already in Queue '),indicator="green")			
 
+@frappe.whitelist()
 def make_material_receipt(warehouse, item_code, company, posting_date = None, posting_time = None):
 	serial_no_list = []
 	no_of_items = 0

@@ -297,3 +297,133 @@ incoming_rate = frappe.db.sql("""
 """, (company,warehouse, item_code,serial_no, serial_no+'\n%', '%\n'+serial_no, '%\n'+serial_no+'\n%'))
 
 # Patch End
+
+# Patch Start: Serial No is inactive but in sle it is delivered or in stock
+sr_query = frappe.db.sql("""
+	select name,item_code from `tabSerial No`
+	where status="Inactive" and (company != '' or company IS NOT NULL) and (box_serial_no IS NOT NULL and box_serial_no!='')
+	order by creation desc
+""",as_dict=1)
+
+lst = []
+counter = 0
+
+for idx,sr in enumerate(sr_query):
+	f = open('lst_details','r')
+	if sr.name not in f.read():
+		f.close()
+		counter += 1
+		print(sr.name)
+		print(counter)
+		sle_query = frappe.db.sql("""
+			select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
+			from `tabStock Ledger Entry`
+			where item_code = %s and actual_qty > 0 and (serial_no = %s or serial_no like %s or serial_no like %s or serial_no like %s)
+			order by timestamp(posting_date,posting_time) desc
+			limit 1
+		""",(sr.item_code,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
+
+		doc = frappe.get_doc("Serial No",sr.name)
+
+		if sle_query:
+			for sle in sle_query:
+				doc.db_set('company',sle.company,update_modified=False)
+				doc.db_set('warehouse',sle.warehouse,update_modified=False)
+				doc.db_set('purchase_document_type',sle.voucher_type,update_modified=False)
+				doc.db_set('purchase_document_no',sle.voucher_no,update_modified=False)
+				doc.db_set('purchase_date',sle.posting_date,update_modified=False)
+				doc.db_set('purchase_time',sle.posting_time,update_modified=False)
+				doc.db_set('status',"Active",update_modified=False)
+
+
+			sle_actual_qty_negative_query = frappe.db.sql("""
+				select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
+				from `tabStock Ledger Entry`
+				where item_code = %s and actual_qty < 0 and company = %s and warehouse = %s and (serial_no = %s or serial_no like %s or serial_no like %s or serial_no like %s)
+				order by timestamp(posting_date,posting_time) desc
+				limit 1
+			""",(sr.item_code,doc.company,doc.warehouse,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
+
+			if sle_actual_qty_negative_query:
+				for sle in sle_actual_qty_negative_query:
+					doc.db_set('delivery_document_type',sle.voucher_type,update_modified=False)
+					doc.db_set('delivery_document_no',sle.voucher_no,update_modified=False)
+					doc.db_set('delivery_date',sle.posting_date,update_modified=False)
+					doc.db_set('delivery_time',sle.posting_time,update_modified=False)
+					doc.db_set('status',"Delivered",update_modified=False)
+
+			lst.append((str(sr.name)))
+			if idx%30 == 0:
+				frappe.db.commit()
+				f = open('lst_details','a')
+				f.write(str(lst) + "\n")
+				f.close()
+				lst = []
+
+# Patch END
+
+
+
+# Patch Start: in serial_no, if Warehouse is exists but status is not changed
+
+sr_query = frappe.db.sql("""
+	select name from `tabSerial No`
+	where status="Inactive" and (company != '' or company IS NOT NULL)
+	and (warehouse IS NOT NULL and warehouse != '')
+	order by creation desc
+""",as_dict=1)
+
+list_set_status = []
+for idx,sr in enumerate(sr_query):
+	fr = open('set_status','r')
+	if sr.name not in fr.read():
+		fr.close()
+		print(sr.name)
+		doc = frappe.get_doc("Serial No",sr.name)
+		doc.set_status()
+		doc.save()
+		list_set_status.append((str(sr.name)))
+		if idx%30==0:
+			frappe.db.commit()
+			f = open('set_status','a')
+			f.write(str(list_set_status) + "\n")
+			f.close()
+			list_set_status = []
+
+# Patch END
+
+frappe.db.sql("""
+	update `tabSerial No` set status="Delivered" where (delivery_document_type IS NOT NULL and delivery_document_type!='')
+""")
+
+frappe.db.set_value("Stock Entry","OSTE-2021F1-23107","docstatus",2)
+frappe.db.set_value("Stock Entry Detail",{"parent":"OSTE-2021F1-23107"},"docstatus",2)
+frappe.db.sql("delete from `tabGL Entry` where voucher_no = 'OSTE-2021F1-23107'")
+frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no = 'OSTE-2021F1-23107'")
+
+
+
+frappe.db.set_value("Stock Entry","OSTE-2021F1-23108","docstatus",2)
+frappe.db.set_value("Stock Entry Detail",{"parent":"OSTE-2021F1-23108"},"docstatus",2)
+frappe.db.sql("delete from `tabGL Entry` where voucher_no = 'OSTE-2021F1-23108'")
+frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no = 'OSTE-2021F1-23108'")
+
+
+from erpnext.stock.stock_ledger import update_entries_after
+
+args = {
+    "item_code": "HS-L2L-353",
+    "warehouse": "New Finished Goods - FAC-LWT",
+    "posting_date": "2020-10-22",
+    "posting_time": "0:02:30"
+}
+
+args1 = {
+    "item_code": "HS-L2L-353",
+    "warehouse": "Swaminarayan Godown - FAC-LWT",
+    "posting_date": "2020-10-22",
+    "posting_time": "0:02:35"
+}
+
+update_entries_after(args)
+update_entries_after(args1)
