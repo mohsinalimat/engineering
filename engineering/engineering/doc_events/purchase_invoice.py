@@ -200,7 +200,7 @@ def create_purchase_invoice(self):
 def cancel_purchase_invoice(self):
 	if not self.si_ref:
 		pi = None
-		if self.pi_ref:
+		if self.pi_ref and not self.is_return:
 			pi = frappe.get_doc("Purchase Invoice", {'pi_ref':self.name})
 		
 		if pi:
@@ -209,7 +209,7 @@ def cancel_purchase_invoice(self):
 				pi.cancel()
 
 def delete_purchase_invoice(self):
-	if self.pi_ref:
+	if self.pi_ref and not self.is_return:
 		
 		frappe.db.set_value("Purchase Invoice", self.name, 'pi_ref', '')
 		frappe.db.set_value("Purchase Invoice", self.pi_ref, 'pi_ref', '')
