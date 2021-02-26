@@ -97,9 +97,10 @@ def execute(filters=None):
 	for row in data:
 		item_code = row['item_code']
 		company = row['company']
+		warehouse = row['warehouse']
 		row['stock_ledger'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
-			target="_blank" item_code='{item_code}' company='{company}' from_date='{from_date}' to_date='{to_date}'
-			onClick=view_stock_leder_report(this.getAttribute('item_code'),this.getAttribute('company'),this.getAttribute('from_date'),this.getAttribute('to_date'))>View Stock Ledger</button>"""
+			target="_blank" item_code='{item_code}' company='{company}' warehouse='{warehouse}' from_date='{from_date}' to_date='{to_date}'
+			onClick=view_stock_leder_report(this.getAttribute('item_code'),this.getAttribute('company'),this.getAttribute('warehouse'),this.getAttribute('from_date'),this.getAttribute('to_date'))>View Stock Ledger</button>"""
 
 	return columns, data
 

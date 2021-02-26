@@ -113,7 +113,7 @@ query = frappe.db.sql("""
 	select sle.item_code,sle.warehouse
 	from `tabStock Ledger Entry` as sle
 	JOIN `tabCompany` as com on sle.company = com.name
-	where com.authority = 'Unauthorized' and sle.serial_no IS NOT NULL and sle.posting_date > "2020-08-20"
+	where com.authority = 'Unauthorized' and sle.serial_no IS NULL and sle.posting_date > "2020-08-20"
 	and incoming_rate = 0
 	group by sle.item_code,sle.warehouse
 """,as_dict=1)
