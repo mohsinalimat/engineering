@@ -216,7 +216,7 @@ def create_delivery_note(self):
 	if self.final_customer:
 		dn = get_delivery_note_entry(self.name)
 		dn.save(ignore_permissions = True)
-		dn.submit()
+		#dn.submit()
 
 		self.db_set("dn_ref", dn.name)
 		dn.db_set("through_company", self.company)
@@ -426,7 +426,7 @@ def create_purchase_receipt(self):
 			pr.db_set('supplier_delivery_note', self.name)
 			pr.db_set('dn_ref', self.name)
 
-			pr.submit()
+			#pr.submit()
 
 			url = get_url_to_form("Purchase Receipt", pr.name)
 			frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been created successfully!".format(url=url, name=frappe.bold(pr.name))), title="Purchase Receipt Created", indicator="green")
