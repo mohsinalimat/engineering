@@ -47,6 +47,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 								delete unique[i];
 								unique  = unique.filter(item => item);
 								frappe.db.get_value("Serial No",data.serial_no.split('\n')[0],'warehouse', function(r){
+									console.log(r.warehouse)
 									if (r.warehouse != item.warehouse){
 										frappe.msgprint("Row: " + item.idx + " Warehouse is Different in this Serial No: " + data.serial_no.split('\n')[0])
 									}
