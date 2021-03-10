@@ -1,6 +1,6 @@
 import frappe
 from frappe import _, ValidationError
-from frappe.utils import cint, flt, formatdate, format_time
+from frappe.utils import cint, flt, formatdate, format_time, cstr
 from erpnext.stock.stock_ledger import get_previous_sle, NegativeStockError
 from frappe.model.naming import parse_naming_series
 from frappe.permissions import get_doctypes_with_read
@@ -16,11 +16,14 @@ def search_serial_or_batch_or_barcode_number(search_value):
 	# search package no
 	package_no_data = frappe.db.get_value('Item Packing', {'name': search_value, 'docstatus': 1}, ['serial_no as serial_no', 'item_code','no_of_items'], as_dict=True)
 	if package_no_data:
+		serial_no = [s.strip() for s in cstr(package_no_data['serial_no']).strip().upper().replace(',', '\n').split('\n')
+		if s.strip()][0]
+		package_no_data.update({'warehouse':frappe.db.get_value("Serial No",serial_no,'warehouse')})
 		return package_no_data
 	# FinByz Changes End
 
 	# search serial no
-	serial_no_data = frappe.db.get_value('Serial No', search_value, ['name as serial_no', 'item_code'], as_dict=True)
+	serial_no_data = frappe.db.get_value('Serial No', search_value, ['name as serial_no', 'item_code','warehouse'], as_dict=True)
 	if serial_no_data:
 		return serial_no_data
 
