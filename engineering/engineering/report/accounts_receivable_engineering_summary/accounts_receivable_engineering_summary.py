@@ -46,6 +46,16 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			
 			self.data.append(row)
 			self.data = sorted(self.data, key = lambda i: i['party'])
+		for row in self.data:
+			if self.party_type == "Customer":
+				row['view_acc_rec_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+					target="_blank" company='{row.company}' ageing_based_on='{self.filters.ageing_based_on}' report_date='{self.filters.report_date}' party='{row.party}'
+					onClick=open_acc_receivabale_engineering_report(this.getAttribute('company'),this.getAttribute('ageing_based_on'),this.getAttribute('report_date'),this.getAttribute('party'))>Accounts Receivable Engineering</button>"""
+			elif self.party_type == "Supplier":
+				row['view_acc_rec_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+					target="_blank" company='{row.company}' ageing_based_on='{self.filters.ageing_based_on}' report_date='{self.filters.report_date}' party='{row.party}'
+					onClick=open_acc_payable_engineering_report(this.getAttribute('company'),this.getAttribute('ageing_based_on'),this.getAttribute('report_date'),this.getAttribute('party'))>Accounts Payable Engineering</button>"""
+			
 
 	def get_party_total(self, args):
 		self.party_total = frappe._dict()
@@ -55,7 +65,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 
 			# Add all amount columns
 			for k in list(self.party_total[d.party]):
-				if k not in ["currency", "sales_person", "party"]:
+				if k not in ["currency", "sales_person", "party","company"]:
 
 					self.party_total[d.party][k] += d.get(k, 0.0)
 
@@ -65,6 +75,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 	def init_party_total(self, row):
 		self.party_total.setdefault(row.party, frappe._dict({
 			"party": row.party,
+			"company":row.company,
 			"invoiced": 0.0,
 			"billed_amount": 0.0,
 			"cash_amount": 0.0,
@@ -135,6 +146,8 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 
 		self.add_column(label=_('Currency'), fieldname='currency', fieldtype='Link',
 			options='Currency', width=80)
+		self.add_column(label=_('View Report'), fieldname='view_acc_rec_report', fieldtype='button',width=140)
+
 
 	def setup_ageing_columns(self):
 		for i, label in enumerate(["0-{range1}".format(range1=self.filters["range1"]),

@@ -18,17 +18,17 @@ frappe.query_reports["Accounts Payable Engineering Summary"] = {
 			}
 		},
 		{
-			"fieldname":"report_date",
-			"label": __("Posting Date"),
-			"fieldtype": "Date",
-			"default": frappe.datetime.get_today()
-		},
-		{
 			"fieldname":"ageing_based_on",
 			"label": __("Ageing Based On"),
 			"fieldtype": "Select",
 			"options": 'Posting Date\nDue Date',
 			"default": "Due Date"
+		},
+		{
+			"fieldname":"report_date",
+			"label": __("Posting Date"),
+			"fieldtype": "Date",
+			"default": frappe.datetime.get_today()
 		},
 		{
 			"fieldname":"range1",
@@ -118,3 +118,7 @@ frappe.query_reports["Accounts Payable Engineering Summary"] = {
 }
 
 erpnext.utils.add_dimensions('Accounts Payable Engineering Summary', 9);
+
+function open_acc_payable_engineering_report(company,ageing_based_on,report_date,party) {
+	window.open(window.location.href.split("#")[0] + "#query-report/Accounts Payable Engineering" + "/?" +"company="+company +"&" + "ageing_based_on="+ageing_based_on +"&"+ "report_date="+report_date +"&"+ "supplier="+party,"_blank")	
+}
