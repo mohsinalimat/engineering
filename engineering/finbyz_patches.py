@@ -300,21 +300,18 @@ incoming_rate = frappe.db.sql("""
 
 # Patch Start: Serial No is inactive but in sle it is delivered or in stock
 sr_query = frappe.db.sql("""
-	select name,item_code from `tabSerial No`
-	where status="Inactive" and (company != '' or company IS NOT NULL) and (box_serial_no IS NOT NULL and box_serial_no!='')
+	select name,item_code,patch_executed from `tabSerial No`
+	where status="Inactive" and (company != '' or company IS NOT NULL)
 	order by creation desc
 """,as_dict=1)
 
-lst = []
 counter = 0
 
 for idx,sr in enumerate(sr_query):
-	f = open('lst_details','r')
-	if sr.name not in f.read():
-		f.close()
-		counter += 1
+	if sr.patch_executed == 0:
 		print(sr.name)
 		print(counter)
+		counter+=1
 		sle_query = frappe.db.sql("""
 			select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
 			from `tabStock Ledger Entry`
@@ -324,7 +321,6 @@ for idx,sr in enumerate(sr_query):
 		""",(sr.item_code,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
 
 		doc = frappe.get_doc("Serial No",sr.name)
-
 		if sle_query:
 			for sle in sle_query:
 				doc.db_set('company',sle.company,update_modified=False)
@@ -352,17 +348,10 @@ for idx,sr in enumerate(sr_query):
 					doc.db_set('delivery_time',sle.posting_time,update_modified=False)
 					doc.db_set('status',"Delivered",update_modified=False)
 
-			lst.append((str(sr.name)))
+			doc.db_set('patch_executed',1,update_modified=False)
 			if idx%30 == 0:
 				frappe.db.commit()
-				f = open('lst_details','a')
-				f.write(str(lst) + "\n")
-				f.close()
-				lst = []
-
 # Patch END
-
-
 
 # Patch Start: in serial_no, if Warehouse is exists but status is not changed
 

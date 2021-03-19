@@ -135,6 +135,7 @@ def make_purchase_invoice(source_name, target_doc=None):
 				"parent": "purchase_receipt_docname",
 				"name":"purchase_receipt_childname",
 				"purchase_order_item": "pr_childname",
+				"name":"pr_detail",
 				"purchase_order": "pr_doctype",
 				"is_fixed_asset": "is_fixed_asset",
 				"asset_location": "asset_location",

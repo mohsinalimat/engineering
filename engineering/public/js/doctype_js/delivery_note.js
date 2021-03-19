@@ -56,12 +56,12 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 										var i = unique.indexOf("undefined")
 										delete unique[i];
 										unique  = unique.filter(item => item);
-									},
-									() =>{
 										frappe.model.set_value(item.doctype, item.name, 'serial_no', unique.join('\n'));
 										frappe.model.set_value(item.doctype, item.name, 'qty', unique.length);
 										frappe.show_alert({message:__("Total Qty - {0} : {1} Pcs added for item {2}", [item.qty,data.no_of_items,data.item_code]), indicator:'green'});
+									
 									}
+									
 								])
 							}
 						});

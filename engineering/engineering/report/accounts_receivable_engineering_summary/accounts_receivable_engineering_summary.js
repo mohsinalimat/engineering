@@ -127,6 +127,11 @@ frappe.query_reports["Accounts Receivable Engineering Summary"] = {
 			"fieldtype": "Check",
 			"default":1,
 		},
+		{
+			"fieldname":"show_future_payments",
+			"label": __("Show Future Payments"),
+			"fieldtype": "Check",
+		},
 	],
 
 	onload: function(report) {
