@@ -617,24 +617,12 @@ class ReceivablePayableReport(object):
 		if not self.filters.show_future_payments:
 			return
 
-		row.remaining_balance = row.outstanding
 		row.future_amount = 0.0
 		for future in self.future_payments.get((row.voucher_no, row.party), []):
-			if row.remaining_balance > 0 and future.future_amount:
-				if future.future_amount > row.outstanding:
-					row.future_amount = row.outstanding
-					future.future_amount = future.future_amount - row.outstanding
-					row.remaining_balance = 0
-				else:
-					row.future_amount += future.future_amount
-					future.future_amount = 0
-					row.remaining_balance = row.outstanding - row.future_amount
-
-				row.setdefault('future_ref', []).append(cstr(future.future_ref) + '/' + cstr(future.future_date))
-
-		if row.future_ref:
-			row.future_ref = ', '.join(row.future_ref)
-
+			if future.future_amount:
+				row.future_amount = future.future_amount
+			else:
+				row.future_amount = 0
 	def get_return_entries(self):
 		doctype = "Sales Invoice" if self.party_type == "Customer" else "Purchase Invoice"
 		filters={
@@ -689,6 +677,14 @@ class ReceivablePayableReport(object):
 		conditions, values = self.prepare_conditions()
 		order_by = self.get_order_by_condition()
 
+		if self.filters.show_future_payments:
+			values.insert(2, self.filters.report_date)
+
+			date_condition = """AND (gle.posting_date <= %s
+				OR (gle.against_voucher IS NULL AND DATE(gle.creation) <= %s))"""
+		else:
+			date_condition = "AND gle.posting_date <=%s"
+
 		if self.filters.get(scrub(self.party_type)):
 			select_fields = "gle.debit_in_account_currency as debit, gle.credit_in_account_currency as credit"
 		else:
@@ -709,9 +705,8 @@ class ReceivablePayableReport(object):
 				gle.docstatus < 2
 				and gle.party_type=%s
 				and (gle.party is not null and gle.party != '')
-				and gle.posting_date <= %s
-				{1} {2} """
-			.format(select_fields, conditions, order_by), values, as_dict=True)
+				{1} {2} {3}"""
+			.format(select_fields, date_condition,conditions, order_by), values, as_dict=True)
 
 	def get_sales_invoices_or_customers_based_on_sales_person(self):
 		if self.filters.get("sales_person"):
@@ -900,6 +895,8 @@ class ReceivablePayableReport(object):
 		self.add_column(_('Bank Paid Amount'), fieldname='bank_paid')
 		self.add_column(_('Cash Paid Amount'), fieldname='cash_paid')
 		self.add_column(_('Total Paid Amount'), fieldname='paid')
+		if self.filters.show_future_payments:
+			self.add_column(label=_('Future Payment Amount'), fieldname='future_amount')
 
 		self.setup_ageing_columns()
 
@@ -911,10 +908,6 @@ class ReceivablePayableReport(object):
 		self.add_column(label=_('Voucher No'), fieldname='voucher_no', fieldtype='Dynamic Link',
 			options='voucher_type', width=180)
 
-		if self.filters.show_future_payments:
-			self.add_column(label=_('Future Payment Ref'), fieldname='future_ref', fieldtype='Data')
-			self.add_column(label=_('Future Payment Amount'), fieldname='future_amount')
-			self.add_column(label=_('Remaining Balance'), fieldname='remaining_balance')
 
 		if self.filters.party_type == 'Customer':
 			self.add_column(label=_('Customer LPO'), fieldname='po_no', fieldtype='Data')

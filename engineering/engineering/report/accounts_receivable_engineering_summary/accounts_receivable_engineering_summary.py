@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 import frappe
 from frappe import _, scrub
 from frappe.utils import flt, cint
-#from erpnext.accounts.party import get_partywise_advanced_payment_amount
 from engineering.engineering.report.accounts_receivable_engineering.accounts_receivable_engineering import ReceivablePayableReport
 from six import iteritems
 
@@ -32,7 +31,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 		self.receivables = ReceivablePayableReport(self.filters).run(args)[1]
 
 		self.get_party_total(args)
-
+				
 		for party, party_dict in iteritems(self.party_total):
 			if party_dict.outstanding == 0 and party_dict.bank_outstanding == 0 and party_dict.cash_outstanding ==0:
 				continue
@@ -43,7 +42,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 				row.party_name = frappe.get_cached_value(self.party_type, party, scrub(self.party_type) + "_name")
 
 			row.update(party_dict)
-			
+
 			self.data.append(row)
 			self.data = sorted(self.data, key = lambda i: i['party'])
 		for row in self.data:
@@ -77,6 +76,7 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 			"party": row.party,
 			"company":row.company,
 			"invoiced": 0.0,
+			"future_amount":0.0,
 			"billed_amount": 0.0,
 			"cash_amount": 0.0,
 			"paid": 0.0,
@@ -122,6 +122,8 @@ class AccountsReceivableSummary(ReceivablePayableReport):
 		self.add_column(_('Bank Paid Amount'), fieldname='bank_paid')
 		self.add_column(_('Cash Paid Amount'), fieldname='cash_paid')
 		self.add_column(_('Total Paid Amount'), fieldname='paid')
+		if self.filters.show_future_payments:
+			self.add_column(_('Future Payment Amount'), fieldname='future_amount')
 
 		if self.party_naming_by == "Naming Series":
 			self.add_column(_('{0} Name').format(self.party_type),
