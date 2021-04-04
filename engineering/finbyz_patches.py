@@ -401,9 +401,9 @@ frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no = 'OSTE-2021
 from erpnext.stock.stock_ledger import update_entries_after
 
 args = {
-    "item_code": "HS-L2L-353",
-    "warehouse": "New Finished Goods - FAC-LWT",
-    "posting_date": "2020-10-22",
+    "item_code": "SC-CRB-057",
+    "warehouse": "New Finished Goods - SYS-LWT",
+    "posting_date": "2019-01-22",
     "posting_time": "0:02:30"
 }
 
@@ -416,3 +416,79 @@ args1 = {
 
 update_entries_after(args)
 update_entries_after(args1)
+
+# Changed purchase details and changed status active to inactive of following serial_nos
+
+# IFA04451259 - OSTE-2122SYS1-0004
+# IFA04451261 - OSTE-2122SYS1-0004
+# IFA04451257
+# IFA04451255
+# IFA04451254
+# IFA04451252
+# IFA04451251
+
+# Changed item_code of below listed serials nos as its item code changed from item packing 
+
+['IFA00670694',
+'IFA00670695',
+'IFA00670696',
+'IFA00670697',
+'IFA00670698',
+'IFA00670699',
+'IFA00670700',
+'IFA00670701',
+'IFA00670702',
+'IFA00670703',
+'IFA00670704',
+'IFA00670705',
+'IFA00670706',
+'IFA00670707',
+'IFA00670708']
+
+
+sr_no_list = frappe.db.get_value("Stock Entry Detail","9d587cc396","serial_no")
+from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
+serial_nos = get_serial_nos(sr_no_list)
+
+diff_item_code_sr=[]
+for sr in serial_nos:
+    item_code = frappe.db.get_value("Serial No",sr,'item_code')
+    if item_code != "SC-PAA-160":
+        diff_item_code_sr.append(sr)
+
+for sr in diff_item_code_sr:
+    doc = frappe.get_doc("Serial No","IFA04451261")
+    doc.db_set("item_code","SC-CRB-057",update_modified=False)
+    doc.db_set("item_name","1 C.T CRUZE CROWN BLACK SYSTEM",update_modified=False)
+    doc.db_set("description","CROWN - -",update_modified=False)
+
+lst = ["IFA04451257"
+,"IFA04451255"
+,"IFA04451254"
+,"IFA04451252"
+,"IFA04451251"]
+for sr in lst:
+    doc = frappe.get_doc("Serial No",sr)
+    doc.db_set("warehouse",None,update_modified=False)
+    doc.db_set("purchase_document_type",None,update_modified=False)
+    doc.db_set("purchase_document_no",None,update_modified=False)
+    doc.db_set("purchase_rate",0,update_modified=False)
+    doc.db_set("purchase_date",None,update_modified=False)
+    doc.db_set("purchase_time",None,update_modified=False)
+    doc.db_set("status","Inactive",update_modified=False)
+
+
+
+sr_no_list = frappe.db.get_value("Stock Entry Detail","c3d6aa20a6","serial_no")
+from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
+serial_nos = get_serial_nos(sr_no_list)
+
+delivery_sr = []
+for sr_no in serial_nos:
+	status = frappe.db.get_value("Serial No",sr_no,"status")
+	if status != "Inactive":
+		delivery_sr.append(sr_no)
+
+voucher_no = []
+for sr_no in delivery_sr:
+	voucher_no.append(frappe.db.get_value("Serial No",sr_no,"delivery_document_no"))

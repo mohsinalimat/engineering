@@ -21,11 +21,12 @@ def validate(self, method):
 	calculate_full_amount(self)
 
 def on_submit(self, method):
-	if not self.dont_replicate:
-		create_purchase_invoice(self)
-		create_branch_company_sales_invoice(self)
-		create_sales_invoice(self)
-		self.db_set('inter_company_invoice_reference', self.pi_ref)
+	pass
+	# if not self.dont_replicate:
+	# 	create_purchase_invoice(self)
+	# 	create_branch_company_sales_invoice(self)
+	# 	create_sales_invoice(self)
+	# 	self.db_set('inter_company_invoice_reference', self.pi_ref)
 
 def on_trash(self, method):
 	delete_all(self)
@@ -266,7 +267,7 @@ def create_branch_company_sales_invoice(self):
 		return doclist
 	
 	if self.through_company and self.authority == "Unauthorized":
-		si = get_sales_invoice_entry(self.name)		
+		si = get_sales_invoice_entry(self.name)	
 		si.save(ignore_permissions = True)
 		si.submit()
 		self.db_set("branch_invoice_ref", si.name)

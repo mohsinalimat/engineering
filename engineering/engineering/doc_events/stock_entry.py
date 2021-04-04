@@ -18,7 +18,7 @@ def validate(self, method):
 		serial_no_validate(self)
 	if self.purpose in ['Repack','Manufacture','Material Issue']:
 		self.get_stock_and_rate()
-	validate_additional_cost(self)
+	#validate_additional_cost(self)
 	validate_transfer_item(self)
 	validate_item_packing(self)
 

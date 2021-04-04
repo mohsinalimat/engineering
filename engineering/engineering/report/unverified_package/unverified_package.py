@@ -14,19 +14,22 @@ def execute(filters=None):
 
 
 def get_data(filters):
+
 	query = frappe.db.sql("""
 	select
-		ip.name as package_no, ip.item_code, ip.item_group,sno.warehouse, ip.no_of_items, sno.company, sno.status, ip.serial_no, ip.item_name
+		ip.name as package_no, ip.item_code, ip.item_group,sno.warehouse,ip.no_of_items, sno.company, sno.status, ip.serial_no, ip.item_name
 	from
 		`tabItem Packing` as ip JOIN
 		`tabSerial No` as sno on sno.name = SUBSTRING_INDEX(ip.serial_no,'\n',1)
 	where
-		ip.package_verification = 0 and sno.status = 'Active' and ip.docstatus = 1{}
+		sno.status = 'Active' and ip.docstatus = 1{}
 	""".format(get_conditions(filters)))
 	return query
 
 def get_conditions(filters):
 	condition = ""
+	condition += " and ip.package_verification = '%s'" % filters.verified
+
 	if filters.get("company"):
 		condition += " and sno.company = '%s'" % filters.company
 	if filters.get("item_code"):

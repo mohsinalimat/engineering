@@ -46,6 +46,12 @@ frappe.query_reports["Unverified Package"] = {
 			"label": __("To Date"),
 			"fieldtype": "Date",
 		},
+		{
+			"fieldname":"verified",
+			"label": __("Verified"),
+			"fieldtype": "Check",
+			"default":0
+		},
 
 	]
 };

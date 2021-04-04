@@ -162,7 +162,8 @@ class ItemPacking(Document):
 def make_serial_no(self, serial_no, args):
 	if frappe.db.exists("Serial No", serial_no):
 		sr = frappe.get_doc("Serial No", serial_no)
-
+		if sr.item_code and sr.item_code != self.item_code:
+			frappe.throw("Serial No exists with different Item code")
 		if sr.box_serial_no:
 			frappe.throw("Serial No {} is already in box {}".format(frappe.bold(serial_no), frappe.bold(sr.box_serial_no)))
 	else:
