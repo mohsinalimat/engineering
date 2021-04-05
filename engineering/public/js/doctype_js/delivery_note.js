@@ -185,7 +185,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 				return item.against_sales_invoice ? true : false;
 			});
 
-			if(!from_sales_invoice && !doc.final_customer) {
+			if(!from_sales_invoice) {
 				this.frm.add_custom_button(__('Sales Invoice'), function() {me.make_sales_invoice()}, 
 					__('Create'));
 				this.frm.add_custom_button(__('Sales Invoice Test'), function() { me.make_sales_invoice_test() },

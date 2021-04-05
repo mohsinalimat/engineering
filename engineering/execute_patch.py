@@ -3,7 +3,7 @@ def execute():
     # Patch Start: Serial No is inactive but in sle it is delivered or in stock
     sr_query = frappe.db.sql("""
         select name,item_code from `tabSerial No`
-        where item_code="SC-CRB-057"
+        where item_code="IC-GOS-020" and status="Inactive"
         order by creation desc
     """,as_dict=1)
 

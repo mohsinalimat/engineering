@@ -130,7 +130,8 @@ def create_delivery_note(self):
 				target_doc.sales_order_item = source_doc.so_detail
 
 			if source_doc.warehouse:
-				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
+				target_doc.warehouse = source_parent.set_target_warehouse
+				# target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 			
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
