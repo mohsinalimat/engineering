@@ -2,8 +2,8 @@ def execute():
     import frappe
     # Patch Start: Serial No is inactive but in sle it is delivered or in stock
     sr_query = frappe.db.sql("""
-        select name,item_code from `tabSerial No`
-        where item_code="IC-GOS-020" and status="Inactive"
+        select name,item_code,patch_executed from `tabSerial No`
+        where status="Delivered" and item_code = "SL-CPL-302"
         order by creation desc
     """,as_dict=1)
 
@@ -13,7 +13,6 @@ def execute():
         sle_query = frappe.db.sql("""
             select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
             from `tabStock Ledger Entry`
-            FORCE INDEX (item_actual_qty)
             where item_code = %s and actual_qty > 0 and (serial_no = %s or serial_no like %s or serial_no like %s or serial_no like %s)
             order by timestamp(posting_date,posting_time) desc
             limit 1
@@ -49,17 +48,23 @@ def execute():
 
             if sle_actual_qty_negative_query:
                 for sle in sle_actual_qty_negative_query:
-                    if doc.delivery_document_type != sle.voucher_type:
-                        doc.db_set('delivery_document_type',sle.voucher_type,update_modified=False)
-                    if doc.delivery_document_no != sle.voucher_no:
-                        doc.db_set('delivery_document_no',sle.voucher_no,update_modified=False)
-                    if doc.delivery_date != sle.posting_date:
-                        doc.db_set('delivery_date',sle.posting_date,update_modified=False)
-                    if doc.delivery_time != sle.posting_time:
-                        doc.db_set('delivery_time',sle.posting_time,update_modified=False)
-                    if doc.status != "Delivered":
-                        doc.db_set('status',"Delivered",update_modified=False)
-
+                    if doc.purchase_date <= sle.posting_date and doc.purchase_time <= sle.posting_time:
+                        if doc.delivery_document_type != sle.voucher_type:
+                            doc.db_set('delivery_document_type',sle.voucher_type,update_modified=False)
+                        if doc.delivery_document_no != sle.voucher_no:
+                            doc.db_set('delivery_document_no',sle.voucher_no,update_modified=False)
+                        if doc.delivery_date != sle.posting_date:
+                            doc.db_set('delivery_date',sle.posting_date,update_modified=False)
+                        if doc.delivery_time != sle.posting_time:
+                            doc.db_set('delivery_time',sle.posting_time,update_modified=False)
+                        if doc.status != "Delivered":
+                            doc.db_set('status',"Delivered",update_modified=False)
+                        doc.db_set("warehouse",None,update_modified=False)
+                    else:
+                        doc.db_set('delivery_document_type',None,update_modified=False)
+                        doc.db_set('delivery_document_no',None,update_modified=False)
+                        doc.db_set('delivery_date',None,update_modified=False)
+                        doc.db_set('delivery_time',None,update_modified=False)
             if idx%100 == 0:
                 frappe.db.commit()
     # Patch END

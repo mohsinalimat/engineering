@@ -205,7 +205,7 @@ time_fun()
 # CREATE INDEX warehouse_item_code_serial_index ON `tabSerial No` (warehouse,item_code,status,purchase_date)
 # CREATE INDEX company_warehouse_item_index ON `tabStock Ledger Entry` (company,warehouse,item_code,posting_date)
 # CREATE INDEX item_code_index ON `tabSerial No` (item_code)
-
+# CREATE INDEX company_item_posting_index ON `tabStock Ledger Entry` (company,item_code,posting_date)
 
 # Lexcru Slow Query:
 
@@ -381,6 +381,37 @@ for idx,sr in enumerate(sr_query):
 
 # Patch END
 
+# Patch Start: set warehouse null where dellivery_document_no is present or status is delivered
+frappe.db.sql("""
+	update `tabSerial No` as sr
+	set sr.warehouse=null where sr.delivery_document_no IS NOT NULL
+""")
+
+# Patch End
+
+# Patch Start: update serial no status to delivered where company and package is exists but not warehouse and status inactive
+
+frappe.db.sql("""
+	update `tabSerial No`
+	set status='Delivered' where (company IS NOT NULL or company != '')
+	and (box_serial_no IS NOT NULL or box_serial_no != '')
+	and status="Inactive" and (warehouse IS NULL or warehouse = '')
+""")
+
+frappe.db.sql("""
+	update `tabSerial No`
+	set status='Delivered' where (company IS NOT NULL or company != '')
+	and status="Inactive" and (warehouse IS NULL or warehouse = '')
+""")
+
+frappe.db.sql("""
+	select count(name) from `tabSerial No`
+	where (company IS NOT NULL or company != '')
+	and status="Inactive" and (warehouse IS NULL or warehouse = '')
+""")
+
+# Patch End
+
 frappe.db.sql("""
 	update `tabSerial No` set status="Delivered" where (delivery_document_type IS NOT NULL and delivery_document_type!='')
 """)
@@ -401,10 +432,10 @@ frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no = 'OSTE-2021
 from erpnext.stock.stock_ledger import update_entries_after
 
 args = {
-    "item_code": "SC-CRB-057",
-    "warehouse": "New Finished Goods - SYS-LWT",
-    "posting_date": "2019-01-22",
-    "posting_time": "0:02:30"
+    "item_code": "RBX-2637",
+    "warehouse": "New Finished Goods - FAC-LWT",
+    "posting_date": "2019-01-09",
+    "posting_time": "10:00:00"
 }
 
 args1 = {
@@ -492,3 +523,4 @@ for sr_no in serial_nos:
 voucher_no = []
 for sr_no in delivery_sr:
 	voucher_no.append(frappe.db.get_value("Serial No",sr_no,"delivery_document_no"))
+

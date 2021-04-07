@@ -42,9 +42,9 @@ def set_actual_qty_in_wo(wo_number):
 	for d in wo.get('required_items'):
 		data = frappe.db.sql("""
 			select sum(actual_qty) 
-				from `tabStock Ledger Entry` 
+				from `tabBin` 
 			where 
-				item_code = '{0}' and warehouse = '{1}' 
+				item_code = '{0}' and warehouse = '{1}'
 		""".format(d.item_code,d.source_warehouse))
 		if data:
 			for qty in data:

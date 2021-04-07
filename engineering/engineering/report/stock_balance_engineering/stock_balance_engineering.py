@@ -282,7 +282,7 @@ def get_item_warehouse_map(filters, sle):
 def filter_items_with_no_transactions(iwb_map, float_precision):
 	for (company, item, warehouse) in sorted(iwb_map):
 		qty_dict = iwb_map[(company, item, warehouse)]
-
+			
 		no_transactions = True
 		for key, val in iteritems(qty_dict):
 			val = flt(val, float_precision)
