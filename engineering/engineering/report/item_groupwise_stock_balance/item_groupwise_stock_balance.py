@@ -39,9 +39,15 @@ def execute(filters=None):
 		},
 		{
 			"fieldname": "view_sle",
-			"label": "View Details",
+			"label": "Stock Ledger",
 			"fieldtype": "Data",
-			"width": 100
+			"width": 150
+		},
+		{
+			"fieldname": "view_stock_balance",
+			"label": "Stock Balance",
+			"fieldtype": "Data",
+			"width": 150
 		},
 	]
 	data = get_data(filters)
@@ -95,13 +101,22 @@ def get_final_out (filters, out):
 			row.view_sle = f"""
 				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
 					type='button' company='{filters.company}' item-group='{row.item_group}'
-					onClick='route_to_sbe(this.getAttribute("company"),this.getAttribute("item-group"))'>View</button>"""
+					onClick='route_to_sle(this.getAttribute("company"),this.getAttribute("item-group"))'>View Stock Ledger</button>"""
+
+			row.view_stock_balance = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
+					type='button' company='{filters.company}' item-group='{row.item_group}'
+					onClick='route_to_stock_balance(this.getAttribute("company"),this.getAttribute("item-group"))'>View Stock Balance</button>"""
 
 		if not row.is_group:
 			row.view_sle = f"""
 				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
 					type='button' company='{filters.company}' item-name='{row.item_code}'
-					onClick='route_to_sle_item(this.getAttribute("company"),this.getAttribute("item-name"))'>View</button>"""
+					onClick='route_to_sle_item(this.getAttribute("company"),this.getAttribute("item-name"))'>View Stock Ledger</button>"""
+
+			row.view_stock_balance = f"""
+				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
+					type='button' company='{filters.company}' item-name='{row.item_code}'
+					onClick='route_to_stock_balance_item(this.getAttribute("company"),this.getAttribute("item-name"))'>View Stock Balance</button>"""
 
 	return data
 		
@@ -113,15 +128,20 @@ def get_item_group(filters):
 		from
 			`tabItem Group`
 		order by lft""", as_dict=True)
+	cond = ''
+	if filters.get('authorized') and not filters.get('unauthorized'):
+		cond += " and authority = 'Authorized'"
+	if filters.get('unauthorized') and not filters.get('authorized'):
+		cond += " and authority = 'Unauthorized'"
 
-	item = frappe.db.sql(f"""
+	item = frappe.db.sql("""
 		select 
 			name, item_code, item_name, item_group as parent_item_group, 0 as is_group
 		from
 			`tabItem`
 		where
-			authority = '{frappe.db.get_value("Company", filters.company, 'authority')}'	
-		""", as_dict=True)
+			ifnull(disabled,0) = 0{}	
+		""".format(cond), as_dict=True)
 	
 	item_map = get_item_map(filters)
 	for data in item:

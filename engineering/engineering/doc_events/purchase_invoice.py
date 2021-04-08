@@ -37,6 +37,7 @@ def before_cancel(self, method):
 	pass
 
 def on_submit(self, method):
+	# change_purchase_receipt_rate(self)
 	create_purchase_invoice(self)
 	self.db_set('inter_company_invoice_reference', self.si_ref)
 
@@ -215,3 +216,27 @@ def delete_purchase_invoice(self):
 		frappe.db.set_value("Purchase Invoice", self.pi_ref, 'pi_ref', '')
 
 		frappe.delete_doc("Purchase Invoice", self.pi_ref, force = 1, ignore_permissions=True)
+
+def change_purchase_receipt_rate(self):
+	change_item_details = {}
+	for item in self.items:
+		if item.purchase_receipt and item.pr_detail:
+			pr_item_doc = frappe.get_doc("Purchase Receipt Item",item.pr_detail)
+			if item.item_code == pr_item_doc.item_code and item.rate != pr_item_doc.rate:
+				change_item_details.setdefault(pr_item_doc.item_code + pr_item_doc.name,item.rate)
+
+	if change_item_details:
+		pr_doc = frappe.get_doc("Purchase Receipt",self.items[0].purchase_receipt)
+		pr_doc.db_set('docstatus',0)
+
+		for item in pr_doc.items:
+			if change_item_details.get(item.item_code + item.name) and not item.serial_no:
+				item.rate = change_item_details.get(item.item_code + item.name)
+		pr_doc.save(ignore_permissions = True)
+		pr_doc.db_set('docstatus',1)
+
+		frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no='{}'".format(pr_doc.name))
+		frappe.db.sql("delete from `tabGL Entry` where voucher_no='{}'".format(pr_doc.name))
+
+		pr_doc.update_stock_ledger()
+		pr_doc.make_gl_entries()

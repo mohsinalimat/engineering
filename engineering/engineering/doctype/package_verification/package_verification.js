@@ -19,7 +19,6 @@ frappe.ui.form.on('Package Verification', {
 	},
 	validate: function(frm){
 		frm.doc.packages_detail.forEach(function(row){
-			console.log('called')
 			frappe.call({
 				method:"engineering.engineering.doctype.package_verification.package_verification.get_serial_nos",
 				args:{
@@ -94,7 +93,6 @@ frappe.ui.form.on('Package Verification', {
 });
 frappe.ui.form.on('Package Verification Detail', {
 	serial_no: function(frm,cdt,cdn){
-		console.log('called in serial')
 		var d = locals[cdt][cdn]
 		frappe.call({
 			method:"engineering.engineering.doctype.package_verification.package_verification.get_serial_nos",

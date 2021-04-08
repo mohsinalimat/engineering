@@ -205,7 +205,7 @@ time_fun()
 # CREATE INDEX warehouse_item_code_serial_index ON `tabSerial No` (warehouse,item_code,status,purchase_date)
 # CREATE INDEX company_warehouse_item_index ON `tabStock Ledger Entry` (company,warehouse,item_code,posting_date)
 # CREATE INDEX item_code_index ON `tabSerial No` (item_code)
-
+# CREATE INDEX company_item_posting_index ON `tabStock Ledger Entry` (company,item_code,posting_date)
 
 # Lexcru Slow Query:
 
@@ -299,58 +299,80 @@ incoming_rate = frappe.db.sql("""
 # Patch End
 
 # Patch Start: Serial No is inactive but in sle it is delivered or in stock
+		
 sr_query = frappe.db.sql("""
-	select name,item_code,patch_executed from `tabSerial No`
-	where status="Inactive" and (company != '' or company IS NOT NULL)
+	select name,item_code from `tabSerial No`
+	where item_code = "PB-DE-252" and status="Delivered" and (warehouse != '' or warehouse IS NOT NULL)
 	order by creation desc
 """,as_dict=1)
 
-counter = 0
-
 for idx,sr in enumerate(sr_query):
-	if sr.patch_executed == 0:
-		print(sr.name)
-		print(counter)
-		counter+=1
-		sle_query = frappe.db.sql("""
-			select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
-			from `tabStock Ledger Entry`
-			where item_code = %s and actual_qty > 0 and (serial_no = %s or serial_no like %s or serial_no like %s or serial_no like %s)
-			order by timestamp(posting_date,posting_time) desc
-			limit 1
-		""",(sr.item_code,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
+	print(sr.name)
+	print(idx)
+	sle_query = frappe.db.sql("""
+		select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
+		from `tabStock Ledger Entry`
+		where item_code = %s and actual_qty > 0 and (serial_no = %s or serial_no like %s or serial_no like %s or serial_no like %s)
+		order by timestamp(posting_date,posting_time) desc
+		limit 1
+	""",(sr.item_code,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
 
-		doc = frappe.get_doc("Serial No",sr.name)
-		if sle_query:
-			for sle in sle_query:
+	doc = frappe.get_doc("Serial No",sr.name)
+	if sle_query:
+		for sle in sle_query:
+			if doc.company != sle.company:
 				doc.db_set('company',sle.company,update_modified=False)
+			if doc.warehouse != sle.warehouse:
 				doc.db_set('warehouse',sle.warehouse,update_modified=False)
+			if doc.purchase_document_type != sle.voucher_type:
 				doc.db_set('purchase_document_type',sle.voucher_type,update_modified=False)
+			if doc.purchase_document_no != sle.voucher_no:
 				doc.db_set('purchase_document_no',sle.voucher_no,update_modified=False)
+			if doc.purchase_date != sle.posting_date:
 				doc.db_set('purchase_date',sle.posting_date,update_modified=False)
+			if doc.purchase_time != sle.posting_time:
 				doc.db_set('purchase_time',sle.posting_time,update_modified=False)
+			if doc.status != "Active":
 				doc.db_set('status',"Active",update_modified=False)
 
 
-			sle_actual_qty_negative_query = frappe.db.sql("""
-				select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
-				from `tabStock Ledger Entry`
-				where item_code = %s and actual_qty < 0 and company = %s and warehouse = %s and (serial_no = %s or serial_no like %s or serial_no like %s or serial_no like %s)
-				order by timestamp(posting_date,posting_time) desc
-				limit 1
-			""",(sr.item_code,doc.company,doc.warehouse,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
+		sle_actual_qty_negative_query = frappe.db.sql("""
+			select voucher_type,voucher_no,warehouse,company,posting_date,posting_time
+			from `tabStock Ledger Entry`
+			FORCE INDEX (company_warehouse_item_index)
+			where company = %s and warehouse = %s and item_code = %s and actual_qty < 0 and (serial_no = %s or serial_no like %s or serial_no like %s or serial_no like %s) 
+			order by timestamp(posting_date,posting_time) desc
+			limit 1
+		""",(doc.company,doc.warehouse,sr.item_code,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
 
-			if sle_actual_qty_negative_query:
-				for sle in sle_actual_qty_negative_query:
-					doc.db_set('delivery_document_type',sle.voucher_type,update_modified=False)
-					doc.db_set('delivery_document_no',sle.voucher_no,update_modified=False)
-					doc.db_set('delivery_date',sle.posting_date,update_modified=False)
-					doc.db_set('delivery_time',sle.posting_time,update_modified=False)
-					doc.db_set('status',"Delivered",update_modified=False)
-
-			doc.db_set('patch_executed',1,update_modified=False)
-			if idx%30 == 0:
-				frappe.db.commit()
+		if sle_actual_qty_negative_query:
+			for sle in sle_actual_qty_negative_query:
+				if doc.purchase_date < sle.posting_date:
+					set_delivery_values = True
+				elif doc.purchase_date == sle.posting_date and doc.purchase_time <= sle.posting_time:
+					set_delivery_values = True
+				else:
+					set_delivery_values = False
+				
+				if set_delivery_values:
+					if doc.delivery_document_type != sle.voucher_type:
+						doc.db_set('delivery_document_type',sle.voucher_type,update_modified=False)
+					if doc.delivery_document_no != sle.voucher_no:
+						doc.db_set('delivery_document_no',sle.voucher_no,update_modified=False)
+					if doc.delivery_date != sle.posting_date:
+						doc.db_set('delivery_date',sle.posting_date,update_modified=False)
+					if doc.delivery_time != sle.posting_time:
+						doc.db_set('delivery_time',sle.posting_time,update_modified=False)
+					if doc.status != "Delivered":
+						doc.db_set('status',"Delivered",update_modified=False)
+					doc.db_set("warehouse",None,update_modified=False)
+				else:
+					doc.db_set('delivery_document_type',None,update_modified=False)
+					doc.db_set('delivery_document_no',None,update_modified=False)
+					doc.db_set('delivery_date',None,update_modified=False)
+					doc.db_set('delivery_time',None,update_modified=False)
+		if idx%100 == 0:
+			frappe.db.commit()
 # Patch END
 
 # Patch Start: in serial_no, if Warehouse is exists but status is not changed
@@ -381,6 +403,137 @@ for idx,sr in enumerate(sr_query):
 
 # Patch END
 
+# Patch Start: set warehouse null where dellivery_document_no is present or status is delivered
+frappe.db.sql("""
+	update `tabSerial No` as sr
+	set sr.warehouse=null where sr.delivery_document_no IS NOT NULL
+""")
+
+# Patch End
+
+# Patch Start: update serial no status to delivered where company and package is exists but not warehouse and status inactive
+
+frappe.db.sql("""
+	update `tabSerial No`
+	set status='Delivered' where (company IS NOT NULL or company != '')
+	and (box_serial_no IS NOT NULL or box_serial_no != '')
+	and status="Inactive" and (warehouse IS NULL or warehouse = '')
+""")
+
+frappe.db.sql("""
+	update `tabSerial No`
+	set status='Delivered' where (company IS NOT NULL or company != '')
+	and status="Inactive" and (warehouse IS NULL or warehouse = '')
+""")
+
+frappe.db.sql("""
+	select count(name) from `tabSerial No`
+	where (company IS NOT NULL or company != '')
+	and status="Inactive" and (warehouse IS NULL or warehouse = '')
+""")
+
+# Patch End
+
+
+# Patch Start: Correct Difference between stock balance and item_groupwise_stock_balance report:
+	#solution: run update_entries_after function where there is difference between stock ledger and bin
+
+
+item_warehouse_list = [{'item_code': 'MBX014', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MBX026', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MBX036', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MBX048', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MCR001', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MCT019', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MGE001', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MMS007', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MMS010', 'warehouse': 'Finished Goods - CWTT'},
+{'item_code': 'MMS010', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MPB005', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MPV003', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MRO002', 'warehouse': 'Finished Goods - CWTT'},
+{'item_code': 'MRO002', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MSP010', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MSP018', 'warehouse': 'Finished Goods - CWTT'},
+{'item_code': 'MTP012', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'MTP016', 'warehouse': 'Work In Progress - CWTT'},
+{'item_code': 'BP-0025W', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'CL-0251', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'CP-0241', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'DR-0141', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'HC-0064W', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'HC-0066', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'HC-0073W', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'HL-0162', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'IC-0698', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'IC-0699', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'IC-0699', 'warehouse': 'New Finished Goods - FAC-LWT'},
+{'item_code': 'IC-0699', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'IL-ECO-012', 'warehouse': 'Swaminarayan Godown - FAC-LWT'},
+{'item_code': 'IP-0808', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'MB-1192', 'warehouse': 'New Finished Goods - FAC-LWT'},
+{'item_code': 'MHP-1273', 'warehouse': 'New Finished Goods - FAC-LWT'},
+{'item_code': 'MJ-1172', 'warehouse': 'New Finished Goods - FAC-LWT'},
+{'item_code': 'MR-1151', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'PL-SL-263', 'warehouse': 'Shivalik Godown - FAC-LWT'},
+{'item_code': 'Pump Accentory Nylon', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RBB-1571', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RBC-1612', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'RBC-1616', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RBR-1552', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RC-0211', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RCB-1701', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RFC-1651', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RGR-1861', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RLB-1721', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RMC-1741', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RMG-1681', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RPB-3569', 'warehouse': 'Inline Finished - FAC-LWT'},
+{'item_code': 'RPB-3575', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RPB-3578', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'RPG-3462', 'warehouse': 'Jobwork Out - FAC-LWT'},
+{'item_code': 'RPP-3131', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'RPT-3136', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'RPW-1801', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RSC-1957', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'RSC-1959', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RSC-1967', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RSC-1968', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'RSP-2311', 'warehouse': 'New Work In Progress - FAC-LWT'},
+{'item_code': 'RST-2931', 'warehouse': 'Inline WIP - FAC-LWT'},
+{'item_code': 'TR-0191', 'warehouse': 'Work In Progress - FAC-LWT'},
+{'item_code': 'mb-1193', 'warehouse': 'New Finished Goods - FAC-LWT'},
+{'item_code': 'HS-L3C-354', 'warehouse': 'New Finished Goods - HO-LWT'},
+{'item_code': 'IL-SLO-048', 'warehouse': 'New Finished Goods - HO-LWT'},
+{'item_code': 'RPG-3455', 'warehouse': 'Work In Progress - LWTIT'},
+{'item_code': 'RPG-3464', 'warehouse': 'Jobwork In - LWTIT'},
+{'item_code': 'RPG-3464', 'warehouse': 'Work In Progress - LWTIT'},
+{'item_code': 'FC-8MC-168', 'warehouse': 'Jobwork In - SWHTT'},
+{'item_code': 'FL-8MC-169', 'warehouse': 'Jobwork In - SWHTT'},
+{'item_code': 'FO-8MC-170', 'warehouse': 'Jobwork In - SWHTT'},
+{'item_code': 'IB-DPS-011', 'warehouse': 'Jobwork In - SWHTT'},
+{'item_code': 'IC-GOS-020', 'warehouse': 'Jobwork In - SWHTT'},
+{'item_code': 'IL-SLO-048', 'warehouse': 'Jobwork In - SWHTT'},
+{'item_code': 'IO-MAR-022', 'warehouse': 'Jobwork In - SWHTT'}]
+
+from erpnext.stock.stock_ledger import update_entries_after
+for item in item_warehouse_list:
+	args = {
+		"item_code": item['item_code'],
+		"warehouse": item['warehouse'],
+		"posting_date": "2019-01-01",
+		"posting_time": "01:00:00"
+	}
+	try:
+		update_entries_after(args)
+	except:
+		f = open('item_warehouse_list','a+')
+		f.write("\n\n\n\n\n\n")
+		f.write(str(item))
+		f.close()
+# Patch End
+
+
 frappe.db.sql("""
 	update `tabSerial No` set status="Delivered" where (delivery_document_type IS NOT NULL and delivery_document_type!='')
 """)
@@ -401,10 +554,10 @@ frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no = 'OSTE-2021
 from erpnext.stock.stock_ledger import update_entries_after
 
 args = {
-    "item_code": "SC-CRB-057",
-    "warehouse": "New Finished Goods - SYS-LWT",
-    "posting_date": "2019-01-22",
-    "posting_time": "0:02:30"
+    "item_code": "RBX-2637",
+    "warehouse": "New Finished Goods - FAC-LWT",
+    "posting_date": "2019-01-09",
+    "posting_time": "10:00:00"
 }
 
 args1 = {
@@ -492,3 +645,4 @@ for sr_no in serial_nos:
 voucher_no = []
 for sr_no in delivery_sr:
 	voucher_no.append(frappe.db.get_value("Serial No",sr_no,"delivery_document_no"))
+

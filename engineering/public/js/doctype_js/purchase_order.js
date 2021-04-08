@@ -152,14 +152,12 @@ frappe.ui.form.on('Purchase Order', {
 	},
 	
 	select_billing_address: function(frm) {
-		console.log("enter")
 		// var me = this;
 		if(frm.doc.select_billing_address) {
 			frappe.call({
 				method: "frappe.contacts.doctype.address.address.get_address_display",
 				args: {"address_dict": frm.doc.select_billing_address },
 				callback: function(r) {
-					console.log(r.message)
 					if(r.message) {
 						frm.set_value("billing_address", r.message)
 					}

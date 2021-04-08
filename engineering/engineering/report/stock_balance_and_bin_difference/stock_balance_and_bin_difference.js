@@ -3,7 +3,7 @@
 /* eslint-disable */
 var d = new Date();
 var dt = new Date(d.getFullYear(),d.getMonth(),1);
-frappe.query_reports["Stock Balance Engineering"] = {
+frappe.query_reports["Stock Balance and Bin Difference"] = {
 	onload: function(report){
 		frappe.call({
 			method:"engineering.engineering.report.stock_balance_engineering.stock_balance_engineering.validate_filters",
@@ -98,11 +98,6 @@ frappe.query_reports["Stock Balance Engineering"] = {
 		{
 			"fieldname": 'show_reorder_details',
 			"label": __('Show Reorder Details'),
-			"fieldtype": 'Check'
-		},
-		{
-			"fieldname": 'show_0_qty_inventory',
-			"label": __('Show 0 Qty Inventory'),
 			"fieldtype": 'Check'
 		},
 	],

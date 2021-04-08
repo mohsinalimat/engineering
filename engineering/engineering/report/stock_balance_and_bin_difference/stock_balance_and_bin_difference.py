@@ -30,7 +30,6 @@ def execute(filters=None):
 	columns = get_columns(filters)
 	items = get_items(filters)
 	sle = get_stock_ledger_entries(filters, items)
-
 	if filters.get('show_stock_ageing_data'):
 		filters['show_warehouse_wise_stock'] = True
 		item_wise_fifo_queue = get_fifo_queue(filters, sle)
@@ -102,6 +101,22 @@ def execute(filters=None):
 			target="_blank" item_code='{item_code}' company='{company}' warehouse='{warehouse}' from_date='{from_date}' to_date='{to_date}'
 			onClick=view_stock_leder_report(this.getAttribute('item_code'),this.getAttribute('company'),this.getAttribute('warehouse'),this.getAttribute('from_date'),this.getAttribute('to_date'))>View Stock Ledger</button>"""
 
+		bin_qty, bin_value = frappe.db.get_value("Bin",{"item_code":row['item_code'],"warehouse":row['warehouse']},['sum(actual_qty)','sum(stock_value)'])
+		row['bin_qty'] = bin_qty
+		row['bin_value'] = bin_value
+		row['diff_qty'] = row['bal_qty'] - row['bin_qty']
+		row['diff_value'] = row['bal_val'] - row['bin_value']
+		# if row['diff_qty'] != 0:
+		# 	f = open('item_warehouse_list','a+')
+		# 	f.write("\n")
+		# 	f.write(str({"item_code":row["item_code"],"warehouse":row["warehouse"]}))
+		# 	f.close()
+		# if row['diff_value'] != 0:
+		# 	f = open('item_warehouse_list','a+')
+		# 	f.write("\n")
+		# 	f.write(str({"item_code":row["item_code"],"warehouse":row["warehouse"]}))
+		# 	f.close()
+
 	return columns, data
 
 def get_columns(filters):
@@ -133,11 +148,15 @@ def get_columns(filters):
 		]
 	columns +=[
 			{"label": _("Balance Qty"), "fieldname": "bal_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
+			{"label": _("Bin Qty"), "fieldname": "bin_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
+			{"label": _("Diff Qty"), "fieldname": "diff_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
 	]
 	if filters.get('show_rate_value'):
 		columns +=[
 			{"label": _("Balance Rate"), "fieldname": "bal_rate", "fieldtype": "Float", "width": 80},
 			{"label": _("Balance Value"), "fieldname": "bal_val", "fieldtype": "Currency", "width": 100, "options": "currency"},
+			{"label": _("Bin Value"), "fieldname": "bin_value", "fieldtype": "Currency", "width": 100, "options": "currency"},
+			{"label": _("Diff Value"), "fieldname": "diff_value", "fieldtype": "Currency", "width": 100, "options": "currency"},
 		]
 	columns += [
 			{"label": _("Valuation Rate"), "fieldname": "val_rate", "fieldtype": "Currency", "width": 90, "convertible": "rate", "options": "currency"},
@@ -274,8 +293,8 @@ def get_item_warehouse_map(filters, sle):
 			qty_dict.bal_rate = flt(qty_dict.bal_val) / flt(qty_dict.bal_qty)
 		else:
 			qty_dict.bal_rate = 0.0
-	if not filters.get('show_0_qty_inventory'):
-		iwb_map = filter_items_with_no_transactions(iwb_map, float_precision)
+
+	iwb_map = filter_items_with_no_transactions(iwb_map, float_precision)
 
 	return iwb_map
 

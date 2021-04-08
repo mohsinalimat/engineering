@@ -156,3 +156,7 @@ erpnext.dimension_filters.forEach((dimension) => {
 	});
 });
 
+
+function open_daybook_engineering_report(company,from_date,to_date,party_type,party) {
+	window.open(window.location.href.split("#")[0] + "#query-report/Daybook Engineering" + "/?" +"party_type="+party_type+ "&" +  "company="+company +"&" +  "from_date="+from_date +"&"+ "to_date="+to_date +"&"+ "party="+party,"_blank")	
+}

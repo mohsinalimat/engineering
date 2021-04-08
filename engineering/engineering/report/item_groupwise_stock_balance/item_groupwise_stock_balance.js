@@ -21,6 +21,16 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 					}
 				}
 			},
+			{
+				"fieldname":"authorized",
+				"label": __("Authorized"),
+				"fieldtype": "Check",				
+			},
+			{
+				"fieldname":"unauthorized",
+				"label": __("Unauthorized"),
+				"fieldtype": "Check",				
+			}
 
 		],
 		"tree": true,
@@ -72,10 +82,19 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 // 		"item_code": item_name
 // 	}); "item_code=" + item_name
 // }
-function route_to_sle_item(company, item_name) {
-	window.open(window.location.href.split("#")[0] + "#query-report/Stock Ledger Engineering" + "/?" + "company="+company + "&" + "item_code=" + item_name,"_blank")	
+
+function route_to_sle(company, item_group) {
+	window.open(window.location.href.split("#")[0] + "#query-report/Stock Ledger Engineering" + "/?" + "company=" + company + "&" +  "item_group="+item_group,"_blank")	
 }
-function route_to_sbe(company, item_group) {
+
+function route_to_stock_balance(company, item_group) {
 	window.open(window.location.href.split("#")[0] + "#query-report/Stock Balance Engineering" + "/?" + "company=" + company + "&" +  "item_group="+item_group,"_blank")	
 }
 
+function route_to_sle_item(company, item_name) {
+	window.open(window.location.href.split("#")[0] + "#query-report/Stock Ledger Engineering" + "/?" + "company="+company + "&" + "item_code=" + item_name,"_blank")	
+}
+
+function route_to_stock_balance_item(company, item_name) {
+	window.open(window.location.href.split("#")[0] + "#query-report/Stock Balance Engineering" + "/?" + "company="+company + "&" + "item_code=" + item_name,"_blank")	
+}
