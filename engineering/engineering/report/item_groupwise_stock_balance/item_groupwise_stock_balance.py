@@ -113,15 +113,20 @@ def get_item_group(filters):
 		from
 			`tabItem Group`
 		order by lft""", as_dict=True)
+	cond = ''
+	if filters.get('authorized') and not filters.get('unauthorized'):
+		cond += " and authority = 'Authorized'"
+	if filters.get('unauthorized') and not filters.get('authorized'):
+		cond += " and authority = 'Unauthorized'"
 
-	item = frappe.db.sql(f"""
+	item = frappe.db.sql("""
 		select 
 			name, item_code, item_name, item_group as parent_item_group, 0 as is_group
 		from
 			`tabItem`
 		where
-			authority = '{frappe.db.get_value("Company", filters.company, 'authority')}'	
-		""", as_dict=True)
+			ifnull(disabled,0) = 0{}	
+		""".format(cond), as_dict=True)
 	
 	item_map = get_item_map(filters)
 	for data in item:

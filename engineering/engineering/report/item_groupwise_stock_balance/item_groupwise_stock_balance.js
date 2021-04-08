@@ -21,6 +21,16 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 					}
 				}
 			},
+			{
+				"fieldname":"authorized",
+				"label": __("Authorized"),
+				"fieldtype": "Check",				
+			},
+			{
+				"fieldname":"unauthorized",
+				"label": __("Unauthorized"),
+				"fieldtype": "Check",				
+			}
 
 		],
 		"tree": true,

@@ -44,7 +44,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 								frappe.run_serially([
 									() =>{
 										if (data.warehouse != item.warehouse){
-											frappe.throw("Row: " + item.idx + " Warehouse is Different in this Serial No: " + data.serial_no.split('\n')[0] + "in " + data.warehouse)	
+											frappe.throw("Row: " + item.idx + " Warehouse is Different in this Serial No: " + data.serial_no.split('\n')[0] + " in " + data.warehouse)	
 										}
 									},
 									() =>{
