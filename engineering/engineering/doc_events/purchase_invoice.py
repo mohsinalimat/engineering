@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 
 import frappe
 from frappe import _
-
+from frappe.utils import flt
 from frappe.model.mapper import get_mapped_doc
 from frappe.model.document import Document
 from engineering.api import make_inter_company_transaction
@@ -23,6 +23,8 @@ def before_validate(self, method):
 	if not self.alternate_company and self.branch and self.authority == "Authorized":
 		self.alternate_company = self.branch
 
+	update_discounted_net_total(self)
+
 def before_naming(self, method):
 	if self.is_opening == "Yes":
 		if not self.get('name'):
@@ -38,8 +40,10 @@ def before_cancel(self, method):
 	pass
 
 def on_submit(self, method):
+	if self.authority == "Unauthorized":
+		self.db_set("pay_amount_left", self.real_difference_amount)
 	change_purchase_receipt_rate(self)
-	# create_purchase_invoice(self)
+	create_purchase_invoice(self)
 	self.db_set('inter_company_invoice_reference', self.si_ref)
 
 def on_cancel(self, method):
@@ -51,6 +55,20 @@ def on_trash(self, method):
 def cal_full_amount(self):
 	for item in self.items:
 		item.full_amount = max((item.full_rate * item.full_qty), (item.rate * item.qty))
+
+def update_discounted_net_total(self):
+	self.discounted_total = sum(x.discounted_amount for x in self.items)
+	self.discounted_net_total = sum(x.discounted_net_amount for x in self.items)
+	testing_only_tax = 0
+	
+	for tax in self.taxes:
+		if tax.testing_only:
+			testing_only_tax += tax.tax_amount
+	
+	self.discounted_grand_total = flt(self.discounted_net_total) + flt(self.total_taxes_and_charges) - flt(testing_only_tax)
+	if self.rounded_total:
+		self.discounted_rounded_total = round(self.discounted_grand_total)
+	self.real_difference_amount = flt(self.rounded_total or self.grand_total) - (flt(self.discounted_rounded_total) or flt(self.discounted_grand_total))
 
 def create_purchase_invoice(self):
 	authority = frappe.db.get_value("Company", self.company, "authority")
@@ -189,10 +207,10 @@ def create_purchase_invoice(self):
 
 		pi.save(ignore_permissions= True)
 
-		if self.disable_rounded_total:
-			pi.real_difference_amount = pi.rounded_total - self.rounded_total
-		else:
-			pi.real_difference_amount = pi.grand_total - self.grand_total
+		# if self.disable_rounded_total:
+		# 	pi.real_difference_amount = pi.rounded_total - self.rounded_total
+		# else:
+		# 	pi.real_difference_amount = pi.grand_total - self.grand_total
 		
 		pi.save(ignore_permissions= True)
 		pi.submit()

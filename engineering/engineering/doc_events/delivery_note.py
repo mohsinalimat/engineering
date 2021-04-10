@@ -25,6 +25,7 @@ class SerialNoDuplicateError(ValidationError): pass
 def before_validate(self, method):
 	update_discounted_amount(self)
 	validate_no_of_boxes(self)
+	update_discounted_net_total(self)
 
 def validate(self, method):
 	if self._action in ['submit','cancel'] and not self.is_return:
@@ -50,6 +51,19 @@ def on_cancel(self, method):
 
 def on_trash(self, method):
 	delete_all(self)
+
+def update_discounted_net_total(self):
+	self.discounted_total = sum(x.discounted_amount for x in self.items)
+	self.discounted_net_total = sum(x.discounted_net_amount for x in self.items)
+	testing_only_tax = 0
+	
+	for tax in self.taxes:
+		if tax.testing_only:
+			testing_only_tax += tax.tax_amount
+	
+	self.discounted_grand_total = self.discounted_net_total + self.total_taxes_and_charges - testing_only_tax
+	self.discounted_rounded_total = round(self.discounted_grand_total)
+	self.real_difference_amount = self.rounded_total - self.discounted_rounded_total
 
 def cancel_all(self):
 	if self.dn_ref:

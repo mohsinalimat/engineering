@@ -13,6 +13,7 @@ from engineering.api import update_discounted_amount
 def before_validate(self, method):
 	update_discounted_amount(self)
 	reseting_thorugh_company(self)
+	update_discounted_net_total(self)
 
 def on_submit(self, method):
 	create_purchase_order(self)
@@ -29,6 +30,18 @@ def reseting_thorugh_company(self):
 	if self.through_company == self.company:
 		self.through_company == None
 
+def update_discounted_net_total(self):
+	self.discounted_total = sum(x.discounted_amount for x in self.items)
+	self.discounted_net_total = sum(x.discounted_net_amount for x in self.items)
+	testing_only_tax = 0
+	
+	for tax in self.taxes:
+		if tax.testing_only:
+			testing_only_tax += tax.tax_amount
+	
+	self.discounted_grand_total = self.discounted_net_total + self.total_taxes_and_charges - testing_only_tax
+	self.discounted_rounded_total = round(self.discounted_grand_total)
+	self.real_difference_amount = self.rounded_total - self.discounted_rounded_total
 
 def create_purchase_order(self):
 	""" This function is use to create purchase order on submit of sales order in inter company invoice """

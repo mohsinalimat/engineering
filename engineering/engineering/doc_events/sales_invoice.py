@@ -16,6 +16,7 @@ def before_naming(self, method):
 
 def before_validate(self, method):
 	setting_amount_and_rate(self)
+	update_discounted_net_total(self)
 
 def validate(self, method):
 	setting_alternate_company_as_branch(self)
@@ -34,6 +35,19 @@ def on_trash(self, method):
 
 def on_cancel(self, method):
 	cancel_all(self)
+
+def update_discounted_net_total(self):
+	self.discounted_total = sum(x.discounted_amount for x in self.items)
+	self.discounted_net_total = sum(x.discounted_net_amount for x in self.items)
+	testing_only_tax = 0
+	
+	for tax in self.taxes:
+		if tax.testing_only:
+			testing_only_tax += tax.tax_amount
+	
+	self.discounted_grand_total = self.discounted_net_total + self.total_taxes_and_charges - testing_only_tax
+	self.discounted_rounded_total = round(self.discounted_grand_total)
+	self.real_difference_amount = self.rounded_total - self.discounted_rounded_total
 
 def naming_opening_invoice(self):
 	if self.is_opening == "Yes":
@@ -274,7 +288,7 @@ def create_branch_company_sales_invoice(self):
 		self.db_set("branch_invoice_ref", si.name)
 
 	if self.authority == "Unauthorized" and not self.si_ref:
-		frappe.db.set_value('Sales Invoice', self.name, 'real_difference_amount', self.rounded_total)
+		self.db_set('pay_amount_left', self.rounded_total)
 
 def create_sales_invoice(self):
 	authority = frappe.db.get_value("Company", self.company, "authority")
@@ -402,7 +416,6 @@ def create_sales_invoice(self):
 			si.taxes = doc.taxes
 		si.series_value = self.series_value
 		si.save(ignore_permissions = True)
-		si.real_difference_amount = si.rounded_total - self.rounded_total
 		si.save(ignore_permissions = True)
 		si.submit()
 		self.db_set('branch_invoice_ref', frappe.db.get_value("Sales Invoice", si.name, 'branch_invoice_ref'))

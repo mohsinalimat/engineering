@@ -95,6 +95,7 @@ doc_events = {
 	},
 	"Purchase Invoice": {
 		"before_naming": ["engineering.engineering.doc_events.purchase_invoice.before_naming", "engineering.api.before_naming"],
+		"before_validate":"engineering.engineering.doc_events.purchase_invoice.before_validate",
 		"validate": "engineering.controllers.item_validation.validate_item_authority",
 		"on_submit": "engineering.engineering.doc_events.purchase_invoice.on_submit",
 		"on_cancel": "engineering.engineering.doc_events.purchase_invoice.on_cancel",

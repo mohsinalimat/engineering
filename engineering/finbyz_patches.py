@@ -206,6 +206,7 @@ time_fun()
 # CREATE INDEX company_warehouse_item_index ON `tabStock Ledger Entry` (company,warehouse,item_code,posting_date)
 # CREATE INDEX item_code_index ON `tabSerial No` (item_code)
 # CREATE INDEX company_item_posting_index ON `tabStock Ledger Entry` (company,item_code,posting_date)
+# CREATE INDEX item_posting_creation_index ON `tabStock Ledger Entry` (item_code,posting_date,posting_time,creation)
 
 # Lexcru Slow Query:
 
@@ -435,140 +436,19 @@ frappe.db.sql("""
 # Patch End
 
 
-# Patch Start: Correct Difference between stock balance and item_groupwise_stock_balance report:
-	#solution: run update_entries_after function where there is difference between stock ledger and bin
+# Patch Start: update particular serial_no details
 
+serial_no_doc = frappe.get_doc("Serial No","IFA04451932")
+serial_no_doc.old_warehouse = serial_no_doc.warehouse
+serial_no = serial_no_doc.name
+serial_no_doc.update_serial_no_reference(serial_no)
+serial_no_doc.save()
 
-item_warehouse_list = [{'item_code': 'MBX014', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MBX026', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MBX036', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MBX048', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MCR001', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MCT019', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MGE001', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MMS007', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MMS010', 'warehouse': 'Finished Goods - CWTT'},
-{'item_code': 'MMS010', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MPB005', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MPV003', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MRO002', 'warehouse': 'Finished Goods - CWTT'},
-{'item_code': 'MRO002', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MSP010', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MSP018', 'warehouse': 'Finished Goods - CWTT'},
-{'item_code': 'MTP012', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'MTP016', 'warehouse': 'Work In Progress - CWTT'},
-{'item_code': 'BP-0025W', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'CL-0251', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'CP-0241', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'DR-0141', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'HC-0064W', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'HC-0066', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'HC-0073W', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'HL-0162', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'IC-0698', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'IC-0699', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'IC-0699', 'warehouse': 'New Finished Goods - FAC-LWT'},
-{'item_code': 'IC-0699', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'IL-ECO-012', 'warehouse': 'Swaminarayan Godown - FAC-LWT'},
-{'item_code': 'IP-0808', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'MB-1192', 'warehouse': 'New Finished Goods - FAC-LWT'},
-{'item_code': 'MHP-1273', 'warehouse': 'New Finished Goods - FAC-LWT'},
-{'item_code': 'MJ-1172', 'warehouse': 'New Finished Goods - FAC-LWT'},
-{'item_code': 'MR-1151', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'PL-SL-263', 'warehouse': 'Shivalik Godown - FAC-LWT'},
-{'item_code': 'Pump Accentory Nylon', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RBB-1571', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RBC-1612', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'RBC-1616', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RBR-1552', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RC-0211', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RCB-1701', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RFC-1651', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RGR-1861', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RLB-1721', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RMC-1741', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RMG-1681', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RPB-3569', 'warehouse': 'Inline Finished - FAC-LWT'},
-{'item_code': 'RPB-3575', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RPB-3578', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'RPG-3462', 'warehouse': 'Jobwork Out - FAC-LWT'},
-{'item_code': 'RPP-3131', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'RPT-3136', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'RPW-1801', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RSC-1957', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'RSC-1959', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RSC-1967', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RSC-1968', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'RSP-2311', 'warehouse': 'New Work In Progress - FAC-LWT'},
-{'item_code': 'RST-2931', 'warehouse': 'Inline WIP - FAC-LWT'},
-{'item_code': 'TR-0191', 'warehouse': 'Work In Progress - FAC-LWT'},
-{'item_code': 'mb-1193', 'warehouse': 'New Finished Goods - FAC-LWT'},
-{'item_code': 'HS-L3C-354', 'warehouse': 'New Finished Goods - HO-LWT'},
-{'item_code': 'IL-SLO-048', 'warehouse': 'New Finished Goods - HO-LWT'},
-{'item_code': 'RPG-3455', 'warehouse': 'Work In Progress - LWTIT'},
-{'item_code': 'RPG-3464', 'warehouse': 'Jobwork In - LWTIT'},
-{'item_code': 'RPG-3464', 'warehouse': 'Work In Progress - LWTIT'},
-{'item_code': 'FC-8MC-168', 'warehouse': 'Jobwork In - SWHTT'},
-{'item_code': 'FL-8MC-169', 'warehouse': 'Jobwork In - SWHTT'},
-{'item_code': 'FO-8MC-170', 'warehouse': 'Jobwork In - SWHTT'},
-{'item_code': 'IB-DPS-011', 'warehouse': 'Jobwork In - SWHTT'},
-{'item_code': 'IC-GOS-020', 'warehouse': 'Jobwork In - SWHTT'},
-{'item_code': 'IL-SLO-048', 'warehouse': 'Jobwork In - SWHTT'},
-{'item_code': 'IO-MAR-022', 'warehouse': 'Jobwork In - SWHTT'}]
-
-from erpnext.stock.stock_ledger import update_entries_after
-for item in item_warehouse_list:
-	args = {
-		"item_code": item['item_code'],
-		"warehouse": item['warehouse'],
-		"posting_date": "2019-01-01",
-		"posting_time": "01:00:00"
-	}
-	try:
-		update_entries_after(args)
-	except:
-		f = open('item_warehouse_list','a+')
-		f.write("\n\n\n\n\n\n")
-		f.write(str(item))
-		f.close()
 # Patch End
-
 
 frappe.db.sql("""
 	update `tabSerial No` set status="Delivered" where (delivery_document_type IS NOT NULL and delivery_document_type!='')
 """)
-
-frappe.db.set_value("Stock Entry","OSTE-2021F1-23107","docstatus",2)
-frappe.db.set_value("Stock Entry Detail",{"parent":"OSTE-2021F1-23107"},"docstatus",2)
-frappe.db.sql("delete from `tabGL Entry` where voucher_no = 'OSTE-2021F1-23107'")
-frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no = 'OSTE-2021F1-23107'")
-
-
-
-frappe.db.set_value("Stock Entry","OSTE-2021F1-23108","docstatus",2)
-frappe.db.set_value("Stock Entry Detail",{"parent":"OSTE-2021F1-23108"},"docstatus",2)
-frappe.db.sql("delete from `tabGL Entry` where voucher_no = 'OSTE-2021F1-23108'")
-frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no = 'OSTE-2021F1-23108'")
-
-
-from erpnext.stock.stock_ledger import update_entries_after
-
-args = {
-    "item_code": "RBX-2637",
-    "warehouse": "New Finished Goods - FAC-LWT",
-    "posting_date": "2019-01-09",
-    "posting_time": "10:00:00"
-}
-
-args1 = {
-    "item_code": "HS-L2L-353",
-    "warehouse": "Swaminarayan Godown - FAC-LWT",
-    "posting_date": "2020-10-22",
-    "posting_time": "0:02:35"
-}
-
-update_entries_after(args)
-update_entries_after(args1)
 
 # Changed purchase details and changed status active to inactive of following serial_nos
 
