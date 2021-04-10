@@ -283,10 +283,38 @@ def make_inter_company_transaction(self, doctype, target_doctype, link_field, ta
 
 @frappe.whitelist()
 def restrict_access():
+	unauthorized_companies_all = frappe.get_all("Company",{'authority':'Unauthorized'})
+	unauthorized_companies = [row.name for row in unauthorized_companies_all]
 	role_permission_list = frappe.get_all("User Permission", filters = {
 		"allow": "Authority", "for_value": "Unauthorized"
-	}, fields = ['name', 'system_genrated'])
-	for item in role_permission_list:
+	}, fields = ['name', 'system_genrated'], ignore_permissions = True)
+
+	unauthorized_companies_permission_list = frappe.get_all("User Permission", filters = {
+		"allow": "Company", "for_value":('IN',unauthorized_companies)
+	}, fields = ['name', 'system_genrated'], ignore_permissions = True)
+	final_list = role_permission_list + unauthorized_companies_permission_list
+
+	report_list=[]
+	data = frappe.get_all("Testing Report Detail",filters={'parent':'Testing Report'},fields=['report'])
+	for d in data:
+		report_list.append(d['report'])
+	if report_list:
+		for report in report_list:
+			if frappe.db.exists("Custom Role",{'report': report}):
+				doc = get_mapped_doc("Custom Role", {'report': report}, {
+					"Custom Role": {
+						"doctype": "Backup Custom Role",
+					}
+				}, ignore_permissions = True)
+
+				try:
+					doc.save(ignore_permissions = True)
+				except:
+					pass
+				doc_name = frappe.get_all("Custom Role",{'report': report})
+				frappe.delete_doc("Custom Role", doc_name[0].name, ignore_permissions = True)
+
+	for item in final_list:
 		if not item['system_genrated']:
 			doc = get_mapped_doc("User Permission", item['name'], {
 				"User Permission": {
@@ -294,28 +322,39 @@ def restrict_access():
 				}
 			}, ignore_permissions = True)
 
-			doc.save(ignore_permissions = True)
-		
-		frappe.delete_doc("User Permission", item['name'], ignore_permissions = True)
-	
-	user_list = frappe.get_all("User", filters = {'enabled': 1}, fields = ['email', 'username'])
-	for user in user_list:
-		if user['username'] != 'administrator' and user['email'] != 'guest@example.com':
-			doc = frappe.new_doc("User Permission")
-
-			doc.user = user['email']
-			doc.allow = 'Authority'
-			doc.for_value = 'Authorized'
-			doc.apply_to_all_doctypes = 1
-			doc.system_genrated = 1
-
 			try:
 				doc.save(ignore_permissions = True)
 			except:
 				pass
-	frappe.set_value("Global Defaults", "Global Defaults", "restricted_access", 1)
+		frappe.delete_doc("User Permission", item['name'], ignore_permissions = True)
+	
+	user_list = frappe.get_all("User", filters = {'enabled': 1}, fields = ['name', 'username'], ignore_permissions = True)
+	for user in user_list:
+		if user['username'] != 'administrator' and user['name'] != 'guest@example.com':
+			
+			if not frappe.db.exists({
+				'doctype': 'User Permission',
+				'user': user['name'],
+				'allow': 'Authority',
+				'for_value': 'Authorized',
+				'apply_to_all_doctypes': 1
+			}):
+				doc = frappe.new_doc("User Permission")
+
+				doc.user = user['name']
+				doc.allow = 'Authority'
+				doc.for_value = 'Authorized'
+				doc.apply_to_all_doctypes = 1
+				doc.system_genrated = 1
+
+				try:
+					doc.save(ignore_permissions = True)
+				except:
+					pass
+	frappe.db.set_value("Global Defaults", "Global Defaults", "restricted_access", 1)
 	frappe.db.commit()
-	frappe.msgprint("Restricted Access")
+	# frappe.msgprint("Restricted Access")
+	return "success"
 
 @frappe.whitelist()
 def reverse_restrict_access():
@@ -328,9 +367,22 @@ def reverse_restrict_access():
 			}
 		})
 
-		doc.save()
+		doc.save(ignore_permissions = True)
 		
 		frappe.delete_doc("Backup User Permission", item['name'], ignore_permissions = True)
+
+	report_permission_list = frappe.get_all("Backup Custom Role")
+	for row in report_permission_list:
+		doc = get_mapped_doc("Backup Custom Role", row['name'], {
+			"Backup Custom Role": {
+				"doctype": "Custom Role",
+			}
+		})
+
+		doc.save(ignore_permissions = True)
+		
+		frappe.delete_doc("Backup Custom Role", row['name'], ignore_permissions = True)
+
 	
 	user_permission_list = frappe.get_all("User Permission", filters = {'system_genrated': 1})
 
@@ -341,7 +393,6 @@ def reverse_restrict_access():
 	frappe.db.commit()
 
 	frappe.msgprint("All Permission Reversed")
-
 
 @frappe.whitelist()
 def get_serial_no_series(name, posting_date):

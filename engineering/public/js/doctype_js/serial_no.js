@@ -20,7 +20,7 @@ frappe.ui.form.on('Serial No', {
                     "fieldname": "year_start_date"
                 },
                 callback:function(r){
-                     window.open(window.location.href.split("#")[0] + "#query-report/Stock Ledger Engineering" + "/?" + "serial_no="+frm.doc.name + "&" + "from_date=" + r.message['year_start_date'] + "&" + "to_date=" + today,"_blank")
+                     window.open(window.location.href.split("#")[0] + "#query-report/Stock Ledger Engineering" + "/?" + "serial_no="+frm.doc.name + "&" + "item_code="+frm.doc.item_code + "&" +  "from_date=" + r.message['year_start_date'] + "&" + "to_date=" + today,"_blank")
                     }
             })
         })
