@@ -216,3 +216,21 @@ SerialNo.process_serial_no = process_serial_no
 calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
 calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate
 calculate_taxes_and_totals.calculate_taxes = calculate_taxes
+
+
+# Override for Change rate of purchase_receipt from purchase_invoice
+from erpnext.controllers.buying_controller import BuyingController
+from engineering.engineering.override.buying_controller import update_stock_ledger
+BuyingController.update_stock_ledger = update_stock_ledger
+
+from erpnext.stock.doctype.stock_ledger_entry.stock_ledger_entry import StockLedgerEntry
+from engineering.engineering.override.stock_ledger_entry import on_submit
+StockLedgerEntry.on_submit = on_submit
+
+from erpnext.stock.doctype.bin.bin import Bin
+from engineering.engineering.override.bin import update_stock
+Bin.update_stock = update_stock
+
+from erpnext.stock import stock_ledger
+from engineering.engineering.override.stock_ledger import make_sl_entries
+stock_ledger.make_sl_entries = make_sl_entries

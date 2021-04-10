@@ -9,6 +9,7 @@ from frappe import _
 from frappe.model.mapper import get_mapped_doc
 from engineering.api import check_counter_series, validate_inter_company_transaction, get_inter_company_details
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
+from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
 
 def before_naming(self, method):
 	naming_opening_invoice(self)
@@ -21,7 +22,7 @@ def validate(self, method):
 	calculate_full_amount(self)
 
 def on_submit(self, method):
-	pass
+	change_delivery_note_rate(self)
 	# if not self.dont_replicate:
 	# 	create_purchase_invoice(self)
 	# 	create_branch_company_sales_invoice(self)
@@ -552,3 +553,82 @@ def make_inter_company_transaction(self, target_doc=None):
 	}, target_doc, set_missing_values)
 
 	return doclist
+
+def change_delivery_note_rate(self):
+	change_item_details = {}
+	for item in self.items:
+		if item.delivery_note and item.dn_detail:
+			dn_item_doc = frappe.get_doc("Delivery Note Item",item.dn_detail)
+			if item.item_code == dn_item_doc.item_code and item.rate != dn_item_doc.rate:
+				change_item_details.setdefault(dn_item_doc.name,item.rate)
+
+	if change_item_details:
+		dn_doc = frappe.get_doc("Delivery Note",self.items[0].delivery_note)
+		dn_doc.db_set('docstatus',0,update_modified=False)
+
+		for item in dn_doc.items:
+			if change_item_details.get(item.name):
+				item.rate = change_item_details.get(item.name)
+
+		dn_doc.save(ignore_permissions = True)
+		dn_doc.db_set('docstatus',1,update_modified=False)
+
+		for item in dn_doc.items:
+			item.db_set('docstatus',1,update_modified=False)
+
+		if dn_doc.taxes:
+			for tax in dn_doc.taxes:
+				tax.db_set('docstatus',1,update_modified=False)
+
+		if dn_doc.sales_team:
+			for sales in dn_doc.sales_team:
+				sales.db_set('docstatus',1,update_modified=False)
+
+		frappe.db.sql("delete from `tabGL Entry` where voucher_type = 'Delivery Note' and voucher_no='{}'".format(dn_doc.name))
+		
+		dn_doc.make_gl_entries()
+
+		if dn_doc.pr_ref:
+			change_ref_purchase_receipt_rate(dn_doc,change_item_details)
+
+def change_ref_purchase_receipt_rate(dn_doc,change_item_details):
+	pr_doc = frappe.get_doc("Purchase Receipt",dn_doc.pr_ref)
+
+	if pr_doc.docstatus == 0:
+		for item in pr_doc.items:
+			if change_item_details.get(item.delivery_note_item):
+				item.rate = change_item_details.get(item.delivery_note_item)
+
+		pr_doc.save(ignore_permissions = True)
+
+	elif pr_doc.docstatus == 1:
+		change_serial_no_rate = []
+		pr_doc.db_set('docstatus',0,update_modified=False)
+		for item in pr_doc.items:
+			if change_item_details.get(item.delivery_note_item):
+				item.rate = change_item_details.get(item.delivery_note_item)
+				if item.serial_no:
+					change_serial_no_rate.append({"rate":item.rate,"serial_no":item.serial_no,"company":pr_doc.company})
+
+		pr_doc.save(ignore_permissions = True)
+
+		pr_doc.db_set('docstatus',1,update_modified=False)
+		for item in pr_doc.items:
+			item.db_set('docstatus',1,update_modified=False)
+
+		if pr_doc.taxes:
+			for item in pr_doc.taxes:
+				item.db_set('docstatus',1,update_modified=False)
+
+		frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_type = 'Purchase Receipt' and voucher_no='{}'".format(pr_doc.name))
+		frappe.db.sql("delete from `tabGL Entry` where voucher_type = 'Purchase Receipt' and voucher_no='{}'".format(pr_doc.name))
+		
+		if change_serial_no_rate:
+			for sr_detail in change_serial_no_rate:
+				serial_no_list = get_serial_nos(sr_detail['serial_no'])
+				for sr in serial_no_list:
+					frappe.db.set_value('Serial No', {"name":sr,"company":sr_detail['company']}, 'purchase_rate', sr_detail['rate'], update_modified=False)
+
+		pr_doc.change_rate = True
+		pr_doc.update_stock_ledger()
+		pr_doc.make_gl_entries()
