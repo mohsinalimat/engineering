@@ -60,7 +60,6 @@ def set_actual_qty(self):
 
 
 def make_sl_entries(sl_entries, is_amended=None, allow_negative_stock=False, via_landed_cost_voucher=False,change_rate=False):
-	frappe.msgprint("called from stock_ledger override")
 	if sl_entries:
 		from erpnext.stock.utils import update_bin
 

@@ -4,7 +4,6 @@ from frappe.utils import flt,cint, cstr, getdate
 from frappe import _, msgprint
 
 def update_stock_ledger(self, allow_negative_stock=False, via_landed_cost_voucher=False):
-    frappe.msgprint('called from buying_controller override')
     self.update_ordered_and_reserved_qty()
 
     sl_entries = []

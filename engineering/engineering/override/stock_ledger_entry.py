@@ -4,7 +4,6 @@ from frappe import _
 from frappe.utils import flt, getdate, add_days, formatdate
 
 def on_submit(self):
-    frappe.msgprint("stock_ledger_entry override called")
     self.check_stock_frozen_date()
     self.actual_amt_check()
     # Finbyz Changes: change_rate of purchase_receipt from purchase_invoice
