@@ -8,9 +8,9 @@ from frappe import _
 from frappe.utils import flt
 from frappe.model.mapper import get_mapped_doc
 
-from engineering.api import update_discounted_amount	
 
 def before_validate(self, method):
+	setting_real_qty(self)
 	update_discounted_amount(self)
 	reseting_thorugh_company(self)
 	update_discounted_net_total(self)
@@ -29,6 +29,23 @@ def reseting_thorugh_company(self):
 
 	if self.through_company == self.company:
 		self.through_company == None
+
+def setting_real_qty(self):
+	""" This function is use to set real qty on save """
+
+	for item in self.items:
+		if not item.real_qty:
+			item.real_qty = item.qty
+
+def update_discounted_amount(self):
+	""" This function is use to update discounted amonunt and net amount in sales order item """
+
+	for item in self.items:
+		item.discounted_rate = item.discounted_rate if item.discounted_rate else 0
+		item.real_qty = item.real_qty if item.real_qty else 0
+
+		item.discounted_amount = item.discounted_rate * flt(item.real_qty)
+		item.discounted_net_amount = item.discounted_amount
 
 def update_discounted_net_total(self):
 	self.discounted_total = sum(x.discounted_amount for x in self.items)

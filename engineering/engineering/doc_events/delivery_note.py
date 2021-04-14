@@ -13,7 +13,6 @@ from erpnext.stock.doctype.serial_no.serial_no import get_item_details, get_seri
 from erpnext.stock.get_item_details import get_reserved_qty_for_so
 
 from engineering.api import make_inter_company_transaction
-from engineering.api import update_discounted_amount
 
 class SerialNoRequiredError(ValidationError): pass
 class SerialNoNotRequiredError(ValidationError): pass
@@ -51,6 +50,22 @@ def on_cancel(self, method):
 
 def on_trash(self, method):
 	delete_all(self)
+
+def update_discounted_amount(self):
+	for item in self.items:
+		item.discounted_amount = (item.discounted_rate or 0.0) * (item.real_qty or 0.0)
+		item.discounted_net_amount = item.discounted_amount
+
+		# try:
+		# 	item.discounted_net_rate = item.discounted_net_amount / item.real_qty
+		# except:
+		# 	item.discounted_net_rate = 0.0
+
+		if (not item.rate) and (item.so_detail):
+			item.rate = frappe.db.get_value("Sales Order Item", item.so_detail, 'rate')
+		
+		if (not item.discounted_rate) and (item.so_detail):
+			item.discounted_rate = frappe.db.get_value("Sales Order Item", item.so_detail, 'discounted_rate')
 
 def update_discounted_net_total(self):
 	self.discounted_total = sum(x.discounted_amount for x in self.items)

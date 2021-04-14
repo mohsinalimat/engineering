@@ -9,11 +9,12 @@ from frappe import _
 from frappe.utils import get_url_to_form
 from frappe.model.mapper import get_mapped_doc
 
-from engineering.api import update_discounted_amount
 from frappe.contacts.doctype.address.address import get_company_address
 
 def before_validate(self, method):
-	update_discounted_amount(self)
+	for item in self.items:
+		item.discounted_amount = (item.discounted_rate or 0.0) * (item.real_qty or 0.0)
+		item.discounted_net_amount = item.discounted_amount
 
 def on_submit(self, method):
 	create_sales_order(self)

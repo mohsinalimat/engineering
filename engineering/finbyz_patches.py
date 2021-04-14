@@ -446,6 +446,46 @@ serial_no_doc.save()
 
 # Patch End
 
+# Patch Start: update real_difference_amount and pay_amount_left in purchase and sales invoice
+pi_list = frappe.db.sql("select name from `tabPurchase Invoice` WHERE authority = 'Unauthorized' and docstatus=1")
+
+for idx,pi in enumerate(pi_list):
+	print(idx)
+	print(pi[0])
+	pi_doc = frappe.get_doc("Purchase Invoice", pi[0])
+
+	if pi_doc.authority == "Unauthorized" and not pi_doc.pi_ref:
+		for item in pi_doc.items:
+			item.db_set('discounted_rate',0,update_modified=False)
+			item.db_set('real_qty',0,update_modified=False)
+
+	for item in pi_doc.items:
+		item.db_set('discounted_amount',(item.discounted_rate or 0)  * (item.real_qty or 0),update_modified=False)
+		item.db_set('discounted_net_amount',item.discounted_amount,update_modified=False)
+
+	pi_doc.db_set('discounted_total',sum(x.discounted_amount for x in pi_doc.items),update_modified=False)
+	pi_doc.db_set('discounted_net_total',sum(x.discounted_net_amount for x in pi_doc.items),update_modified=False)
+
+	testing_only_tax = 0
+	
+	for tax in pi_doc.taxes:
+		if tax.testing_only:
+			testing_only_tax += tax.tax_amount
+
+	pi_doc.db_set('discounted_grand_total',pi_doc.discounted_net_total + pi_doc.total_taxes_and_charges - testing_only_tax,update_modified=False)
+
+	if pi_doc.rounded_total:
+		pi_doc.db_set('discounted_rounded_total',round(pi_doc.discounted_grand_total),update_modified=False)
+	pi_doc.db_set('real_difference_amount',(pi_doc.rounded_total or pi_doc.grand_total) - (pi_doc.discounted_rounded_total or pi_doc.discounted_grand_total),update_modified=False)
+	pi_doc.db_set('pay_amount_left',pi_doc.real_difference_amount,update_modified=False)
+
+	if idx%300 == 0:
+		frappe.db.commit()
+
+frappe.db.commit()
+
+# Patch End
+
 frappe.db.sql("""
 	update `tabSerial No` set status="Delivered" where (delivery_document_type IS NOT NULL and delivery_document_type!='')
 """)
@@ -526,3 +566,43 @@ voucher_no = []
 for sr_no in delivery_sr:
 	voucher_no.append(frappe.db.get_value("Serial No",sr_no,"delivery_document_no"))
 
+
+
+from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
+serial_no = frappe.db.get_value("Stock Entry Detail",{"parent":"OSTE-2021F1-9913"},"serial_no")
+serial_no_list = get_serial_nos(serial_no)
+
+item_code_changes = []
+same_item = []
+for sr in serial_no_list:
+	if frappe.db.get_value("Serial No",sr,"item_code") != "PL-EC-211":
+		item_code_changes.append(sr)
+	else:
+		same_item.append(sr)
+
+doc = frappe.get_doc("Stock Entry","OSTE-2021F1-9913")
+doc.db_set("docstatus",0,update_modified=False)
+
+frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_no='OSTE-2021F1-9913'")
+
+from erpnext.stock.stock_ledger import update_entries_after
+
+args = {
+	"item_code": "PL-EC-211",
+	"warehouse": "New Finished Goods - FAC-LWT",
+	"posting_date": "2019-01-01",
+	"posting_time": "01:01:00"
+}
+update_entries_after(args)
+
+from erpnext.stock.stock_ledger import update_entries_after
+
+args = {
+	"item_code": "PL-EC-211",
+	"warehouse": "New Finished Goods - FAC-LWT",
+	"posting_date": "2019-01-01",
+	"posting_time": "01:01:00"
+}
+update_entries_after(args)
+
+frappe.db.commit()

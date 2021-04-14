@@ -22,7 +22,9 @@ def validate(self, method):
 	calculate_full_amount(self)
 
 def on_submit(self, method):
-	pass
+	if self.authority == "Unauthorized" and not self.si_ref:
+		self.db_set('pay_amount_left', self.rounded_total)
+
 	# if not self.dont_replicate:
 	# 	create_purchase_invoice(self)
 	# 	create_branch_company_sales_invoice(self)
@@ -55,14 +57,38 @@ def naming_opening_invoice(self):
 
 def setting_amount_and_rate(self):
 	for item in self.items:
-		item.discounted_amount = (item.discounted_rate or 0) * (item.real_qty or 0)
+		if not item.rate and item.delivery_childname:
+			item.rate = frappe.db.get_value("Delivery Note Item", item.delivery_childname, 'discounted_rate')
+		
+		if not item.qty and item.delivery_childname:
+			item.qty = frappe.db.get_value("Delivery Note Item", item.delivery_childname, 'real_qty')
+		
+		item.discounted_amount = (item.discounted_rate or 0)  * (item.real_qty or 0)
 		item.discounted_net_amount = item.discounted_amount
 	
-	if self.authority != "Authorized":
-		if not self.si_ref:
-			for item in self.items:
-				item.full_qty = item.qty
-				item.full_rate = item.rate
+	if self.authority == "Unauthorized":
+		for item in self.items:
+			item.full_rate = 0
+			item.full_qty = 0
+		
+	if self.authority == "Authorized":
+		for item in self.items:
+			if not item.delivery_docname:
+				if not item.full_rate:
+					item.full_rate = item.rate
+
+				if not item.full_qty:
+					item.full_qty = item.qty
+
+	# for item in self.items:
+	# 	item.discounted_amount = (item.discounted_rate or 0) * (item.real_qty or 0)
+	# 	item.discounted_net_amount = item.discounted_amount
+	
+	# if self.authority != "Authorized":
+	# 	if not self.si_ref:
+	# 		for item in self.items:
+	# 			item.full_qty = item.qty
+	# 			item.full_rate = item.rate
 
 def setting_alternate_company_as_branch(self):
 	if self.authority == "Authorized":

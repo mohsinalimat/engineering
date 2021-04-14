@@ -11,16 +11,35 @@ from engineering.api import make_inter_company_transaction
 
 
 def before_validate(self, method):
+	if self.authority == "Authorized":
+		for item in self.items:
+			if not item.po_docname:
+				if not item.full_rate:
+					item.full_rate = item.rate
+
+				if not item.full_qty:
+					item.full_qty = item.qty
+	
+	if self.authority == "Unauthorized" and not self.pi_ref:
+		for item in self.items:
+			item.discounted_rate = 0
+			item.real_qty = 0
+
 	for item in self.items:
-		item.discounted_amount = (item.discounted_rate or 0.0) * (item.real_qty or 0.0)
+		item.discounted_amount = (item.discounted_rate or 0)  * (item.real_qty or 0)
 		item.discounted_net_amount = item.discounted_amount
 	
-	if self.amended_from and self.authority == "Unauthorized" and not self.pi_ref:
-		if frappe.db.exists("Purchase Invoice", {"pi_ref": self.amended_from}):
-			frappe.throw("You Can not save this Invoice!")
+	if self.authority == "Unauthorized":
+		for item in self.items:
+			item.full_rate = 0
+			item.full_qty = 0
+	
+	# if self.amended_from and self.authority == "Unauthorized" and not self.pi_ref:
+	# 	if frappe.db.exists("Purchase Invoice", {"pi_ref": self.amended_from}):
+	# 		frappe.throw("You Can not save this Invoice!")
 
-	if not self.alternate_company and self.branch and self.authority == "Authorized":
-		self.alternate_company = self.branch
+	# if not self.alternate_company and self.branch and self.authority == "Authorized":
+	# 	self.alternate_company = self.branch
 
 	update_discounted_net_total(self)
 

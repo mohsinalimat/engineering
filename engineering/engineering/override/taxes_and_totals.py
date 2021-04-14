@@ -54,14 +54,17 @@ def determine_exclusive_rate(self):
 			# Finbyz Changes for Tax Calculation on Real Rate
 			if self.doc.authority == "Unauthorized":
 				amount_diff = item.amount - item.discounted_amount
-				item.discounted_net_amount = flt((item.amount - amount_diff) / (1 + cumulated_tax_fraction))
+				if tax.tax_exclusive == 1:
+					item.discounted_net_amount = flt(item.amount - amount_diff)
+					item.net_amount = item.amount - ((flt(item.amount - amount_diff)) * cumulated_tax_fraction)
+				else:
+					item.discounted_net_amount = flt((item.amount - amount_diff) / (1 + cumulated_tax_fraction))
+					item.net_amount = item.amount - (item.discounted_amount - item.discounted_net_amount)
 				
 				try:
 					item.discounted_net_rate = flt(item.discounted_net_amount / item.real_qty)
 				except:
 					item.discounted_net_rate = 0
-								
-				item.net_amount = item.amount - (item.discounted_amount - item.discounted_net_amount)
 				item.net_rate = flt(item.net_amount / item.qty, item.precision("net_rate"))
 			# Finbyz Changes end here.
 			else:
