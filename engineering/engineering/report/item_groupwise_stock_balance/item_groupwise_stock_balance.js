@@ -30,7 +30,12 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 				"fieldname":"unauthorized",
 				"label": __("Unauthorized"),
 				"fieldtype": "Check",				
-			}
+			},
+			{
+				"fieldname":"show_0_qty_inventory",
+				"label": __("Show 0 Qty Inventory"),
+				"fieldtype": "Check",				
+			},
 
 		],
 		"tree": true,

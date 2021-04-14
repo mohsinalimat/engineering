@@ -88,15 +88,22 @@ def get_group_map(out):
 def get_final_out (filters, out):
 	data = []
 	item_group_map = get_group_map(out)
-	#frappe.msgprint(str(item_group_map))
 	for row in out:
 		if row.is_group and item_group_map.get(row.item_group):
 			row.balance_qty = item_group_map.get(row.item_group).balance_qty
 			row.balance_value = item_group_map.get(row.item_group).balance_value
 		
-		if row.balance_qty > 0:
-			row.valuation = flt(row.balance_value)/flt(row.balance_qty)
+		if filters.get('show_0_qty_inventory'):
+			if row.balance_qty > 0:
+				row.valuation = flt(row.balance_value)/flt(row.balance_qty)
+			else:
+				row.valuation = 0
 			data.append(row)
+		else:
+			if row.balance_qty > 0:
+				row.valuation = flt(row.balance_value)/flt(row.balance_qty)
+				data.append(row)
+
 		if row.is_group:
 			row.view_sle = f"""
 				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
@@ -221,19 +228,3 @@ def prepare_data(filters,item_group):
 		})
 		data.append(row)
 	return data
-
-def filter_out_zero_value_rows(data, parent_children_map, show_zero_values=False):
-	data_with_value = []
-	for d in data:
-		if show_zero_values or d.get("has_value"):
-			data_with_value.append(d)
-		else:
-			# show group with zero balance, if there are balances against child
-			children = [child.name for child in parent_children_map.get(d.get("item_group")) or []]
-			if children:
-				for row in data:
-					if row.get("account") in children and row.get("has_value"):
-						data_with_value.append(d)
-						break
-
-	return data_with_value
