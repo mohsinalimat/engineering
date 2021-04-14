@@ -3,7 +3,7 @@
 
 from __future__ import unicode_literals
 
-import frappe
+import frappe, datetime
 from frappe import _, ValidationError
 from frappe.model.mapper import get_mapped_doc
 from frappe.contacts.doctype.address.address import get_company_address
@@ -83,7 +83,9 @@ def update_discounted_net_total(self):
 def cancel_all(self):
 	if self.dn_ref:
 		doc = frappe.get_doc("Delivery Note", self.dn_ref)
-
+		doc.db_set('pr_ref',None)
+		doc.db_set('dn_ref',None)
+		self.db_set('dn_ref',None)
 		if doc.docstatus == 1:
 			doc.cancel()
 	if self.inter_company_receipt_reference:
@@ -143,9 +145,14 @@ def create_delivery_note(self):
 				, 'selling_price_list')
 	
 			target.set_posting_time = 1
+			target.posting_time = source.posting_time + datetime.timedelta(0,10)
 
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value("Delivery Note", {'dn_ref': self.amended_from}, "name")
+			if source.set_target_warehouse:
+				target.set_warehouse = source.set_target_warehouse
+			else:
+				target.set_warehouse = source.set_warehouse.replace(source_company_abbr, target_company_abbr)
 
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
@@ -158,9 +165,10 @@ def create_delivery_note(self):
 				target_doc.against_sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
 				target_doc.sales_order_item = source_doc.so_detail
 
-			if source_doc.warehouse:
+			if source_parent.set_target_warehouse:
 				target_doc.warehouse = source_parent.set_target_warehouse
-				# target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
+			else:
+				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 			
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
@@ -188,7 +196,7 @@ def create_delivery_note(self):
 					"posting_date": "posting_date",
 					"posting_time": "posting_time",
 					"ignore_pricing_rule": "ignore_pricing_rule",
-					"is_return":"is_return"
+					"is_return":"is_return",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -204,7 +212,8 @@ def create_delivery_note(self):
 					"customer_address",
 					"company_address_display",
 					"company_address",
-					"final_customer"
+					"final_customer",
+					"set_target_warehouse"
 				]
 			},
 			"Delivery Note Item": {
@@ -337,7 +346,11 @@ def create_purchase_receipt(self):
 				target.amended_from = name
 			
 			target.set_posting_time = 1
-
+			target.posting_time = source.posting_time + datetime.timedelta(0,5)
+			if source.set_target_warehouse:
+				target.set_warehouse = source.set_target_warehouse
+			else:
+				target.set_warehouse = source.set_warehouse.replace(source_company_abbr, target_company_abbr)
 			target.run_method("set_missing_values")
 			target.run_method("calculate_taxes_and_charges")
 
@@ -345,9 +358,11 @@ def create_purchase_receipt(self):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			target_company_abbr = frappe.db.get_value("Company", source_parent.customer, "abbr")
 
-			if source_doc.warehouse:
-				target_doc.warehouse = self.set_target_warehouse
-			
+			if source_parent.set_target_warehouse:
+				target_doc.warehouse = source_parent.set_target_warehouse
+			else:
+				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
+
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 
@@ -361,6 +376,7 @@ def create_purchase_receipt(self):
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 
+			target_doc.delivery_note = source_parent.name
 		fields = {
 			"Delivery Note": {
 				"doctype": "Purchase Receipt",
@@ -373,7 +389,7 @@ def create_purchase_receipt(self):
 					"shipping_address_name": "shipping_address",
 					"customer_gstin": "company_gstin",
 					"shipping_address": "shipping_address_display",
-					"is_return":"is_return"
+					"is_return":"is_return",
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -386,6 +402,7 @@ def create_purchase_receipt(self):
 					"purchase_order_item": "purchase_order_item",
 					"serial_no": "serial_no",
 					"batch_no": "batch_no",
+					"name":"delivery_note_item"
 				},
 				"field_no_map": [
 					"warehouse",
