@@ -5,7 +5,7 @@ def execute():
         select name,item_code from `tabSerial No`
         where item_code IS NOT NULL and patch_executed != 1
         order by modified desc
-        limit 100000
+        limit 1000000
     """,as_dict=1)
 
     for idx,sr in enumerate(sr_query):
@@ -47,6 +47,8 @@ def execute():
                 limit 1
             """,(doc.company,doc.warehouse,sr.item_code,sr.name, sr.name+'\n%', '%\n'+sr.name, '%\n'+sr.name+'\n%'),as_dict=1)
 
+            set_delivery_values = False
+
             if sle_actual_qty_negative_query:
                 for sle in sle_actual_qty_negative_query:
                     if doc.purchase_date < sle.posting_date:
@@ -69,12 +71,13 @@ def execute():
                             doc.db_set('delivery_time',sle.posting_time,update_modified=False)
                         if doc.status != "Delivered":
                             doc.db_set('status',"Delivered",update_modified=False)
-                        doc.db_set("warehouse",None,update_modified=False)
-                    else:
-                        doc.db_set('delivery_document_type',None,update_modified=False)
-                        doc.db_set('delivery_document_no',None,update_modified=False)
-                        doc.db_set('delivery_date',None,update_modified=False)
-                        doc.db_set('delivery_time',None,update_modified=False)
+
+            if not set_delivery_values:
+                doc.db_set('delivery_document_type',None,update_modified=False)
+                doc.db_set('delivery_document_no',None,update_modified=False)
+                doc.db_set('delivery_date',None,update_modified=False)
+                doc.db_set('delivery_time',None,update_modified=False)
+
         doc.db_set('patch_executed',1,update_modified=False)
         if idx%100 == 0:
             frappe.db.commit()
@@ -141,79 +144,79 @@ def execute():
 #         }
 #         update_entries_after(args)
 
-def execute_pi_patch():
-    import frappe
-    pi_list = frappe.db.sql("select name from `tabPurchase Invoice` WHERE authority = 'Unauthorized' and docstatus=1")
+# def execute_pi_patch():
+#     import frappe
+#     pi_list = frappe.db.sql("select name from `tabPurchase Invoice` WHERE authority = 'Unauthorized' and docstatus=1")
 
-    for idx,pi in enumerate(pi_list):
-        print(idx)
-        print(pi[0])
-        pi_doc = frappe.get_doc("Purchase Invoice", pi[0])
+#     for idx,pi in enumerate(pi_list):
+#         print(idx)
+#         print(pi[0])
+#         pi_doc = frappe.get_doc("Purchase Invoice", pi[0])
 
-        if pi_doc.authority == "Unauthorized" and not pi_doc.pi_ref:
-            for item in pi_doc.items:
-                item.db_set('discounted_rate',0,update_modified=False)
-                item.db_set('real_qty',0,update_modified=False)
+#         if pi_doc.authority == "Unauthorized" and not pi_doc.pi_ref:
+#             for item in pi_doc.items:
+#                 item.db_set('discounted_rate',0,update_modified=False)
+#                 item.db_set('real_qty',0,update_modified=False)
 
-        for item in pi_doc.items:
-            item.db_set('discounted_amount',(item.discounted_rate or 0)  * (item.real_qty or 0),update_modified=False)
-            item.db_set('discounted_net_amount',item.discounted_amount,update_modified=False)
+#         for item in pi_doc.items:
+#             item.db_set('discounted_amount',(item.discounted_rate or 0)  * (item.real_qty or 0),update_modified=False)
+#             item.db_set('discounted_net_amount',item.discounted_amount,update_modified=False)
 	
-        pi_doc.db_set('discounted_total',sum(x.discounted_amount for x in pi_doc.items),update_modified=False)
-        pi_doc.db_set('discounted_net_total',sum(x.discounted_net_amount for x in pi_doc.items),update_modified=False)
+#         pi_doc.db_set('discounted_total',sum(x.discounted_amount for x in pi_doc.items),update_modified=False)
+#         pi_doc.db_set('discounted_net_total',sum(x.discounted_net_amount for x in pi_doc.items),update_modified=False)
 
-        testing_only_tax = 0
+#         testing_only_tax = 0
         
-        for tax in pi_doc.taxes:
-            if tax.testing_only:
-                testing_only_tax += tax.tax_amount
+#         for tax in pi_doc.taxes:
+#             if tax.testing_only:
+#                 testing_only_tax += tax.tax_amount
 
-        pi_doc.db_set('discounted_grand_total',pi_doc.discounted_net_total + pi_doc.total_taxes_and_charges - testing_only_tax,update_modified=False)
+#         pi_doc.db_set('discounted_grand_total',pi_doc.discounted_net_total + pi_doc.total_taxes_and_charges - testing_only_tax,update_modified=False)
 
-        if pi_doc.rounded_total:
-            pi_doc.db_set('discounted_rounded_total',round(pi_doc.discounted_grand_total),update_modified=False)
-        pi_doc.db_set('real_difference_amount',(pi_doc.rounded_total or pi_doc.grand_total) - (pi_doc.discounted_rounded_total or pi_doc.discounted_grand_total),update_modified=False)
-        pi_doc.db_set('pay_amount_left',pi_doc.real_difference_amount,update_modified=False)
+#         if pi_doc.rounded_total:
+#             pi_doc.db_set('discounted_rounded_total',round(pi_doc.discounted_grand_total),update_modified=False)
+#         pi_doc.db_set('real_difference_amount',(pi_doc.rounded_total or pi_doc.grand_total) - (pi_doc.discounted_rounded_total or pi_doc.discounted_grand_total),update_modified=False)
+#         pi_doc.db_set('pay_amount_left',pi_doc.real_difference_amount,update_modified=False)
 
-        if idx%300 == 0:
-            frappe.db.commit()
+#         if idx%300 == 0:
+#             frappe.db.commit()
 
-    frappe.db.commit()
+#     frappe.db.commit()
 
-def execute_si_patch():
-    import frappe
-    si_list = frappe.db.sql("select name from `tabSales Invoice` WHERE authority = 'Unauthorized' and docstatus=1")
+# def execute_si_patch():
+#     import frappe
+#     si_list = frappe.db.sql("select name from `tabSales Invoice` WHERE authority = 'Unauthorized' and docstatus=1")
 
-    for idx,si in enumerate(si_list):
-        print(idx)
-        print(si[0])
-        si_doc = frappe.get_doc("Sales Invoice", si[0])
+#     for idx,si in enumerate(si_list):
+#         print(idx)
+#         print(si[0])
+#         si_doc = frappe.get_doc("Sales Invoice", si[0])
 
-        if si_doc.authority == "Unauthorized" and not si_doc.si_ref:
-            for item in si_doc.items:
-                item.db_set('discounted_rate',0,update_modified=False)
-                item.db_set('real_qty',0,update_modified=False)
+#         if si_doc.authority == "Unauthorized" and not si_doc.si_ref:
+#             for item in si_doc.items:
+#                 item.db_set('discounted_rate',0,update_modified=False)
+#                 item.db_set('real_qty',0,update_modified=False)
 
-        for item in si_doc.items:
-            item.db_set('discounted_amount',(item.discounted_rate or 0)  * (item.real_qty or 0),update_modified=False)
-            item.db_set('discounted_net_amount',item.discounted_amount,update_modified=False)
+#         for item in si_doc.items:
+#             item.db_set('discounted_amount',(item.discounted_rate or 0)  * (item.real_qty or 0),update_modified=False)
+#             item.db_set('discounted_net_amount',item.discounted_amount,update_modified=False)
 	
-        si_doc.db_set('discounted_total',sum(x.discounted_amount for x in si_doc.items),update_modified=False)
-        si_doc.db_set('discounted_net_total',sum(x.discounted_net_amount for x in si_doc.items),update_modified=False)
+#         si_doc.db_set('discounted_total',sum(x.discounted_amount for x in si_doc.items),update_modified=False)
+#         si_doc.db_set('discounted_net_total',sum(x.discounted_net_amount for x in si_doc.items),update_modified=False)
 
-        testing_only_tax = 0
+#         testing_only_tax = 0
         
-        for tax in si_doc.taxes:
-            if tax.testing_only:
-                testing_only_tax += tax.tax_amount
+#         for tax in si_doc.taxes:
+#             if tax.testing_only:
+#                 testing_only_tax += tax.tax_amount
 
-        si_doc.db_set('discounted_grand_total',si_doc.discounted_net_total + si_doc.total_taxes_and_charges - testing_only_tax,update_modified=False)
+#         si_doc.db_set('discounted_grand_total',si_doc.discounted_net_total + si_doc.total_taxes_and_charges - testing_only_tax,update_modified=False)
 
-        si_doc.db_set('discounted_rounded_total',round(si_doc.discounted_grand_total),update_modified=False)
-        si_doc.db_set('real_difference_amount',(si_doc.rounded_total) - (si_doc.discounted_rounded_total),update_modified=False)
-        si_doc.db_set('pay_amount_left',si_doc.real_difference_amount,update_modified=False)
+#         si_doc.db_set('discounted_rounded_total',round(si_doc.discounted_grand_total),update_modified=False)
+#         si_doc.db_set('real_difference_amount',(si_doc.rounded_total) - (si_doc.discounted_rounded_total),update_modified=False)
+#         si_doc.db_set('pay_amount_left',si_doc.real_difference_amount,update_modified=False)
 
-        if idx%300 == 0:
-            frappe.db.commit()
+#         if idx%300 == 0:
+#             frappe.db.commit()
 
-    frappe.db.commit()
+#     frappe.db.commit()

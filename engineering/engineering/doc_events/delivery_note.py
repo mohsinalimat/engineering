@@ -144,9 +144,7 @@ def create_delivery_note(self):
 				frappe.db.get_value("Sales Order Item", source.items[0].sales_order_item, 'parent')
 				, 'selling_price_list')
 	
-			target.set_posting_time = 1
 			target.posting_time = source.posting_time + datetime.timedelta(0,10)
-
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value("Delivery Note", {'dn_ref': self.amended_from}, "name")
 			if source.set_target_warehouse:
@@ -345,7 +343,6 @@ def create_purchase_receipt(self):
 				name = frappe.db.get_value("Purchase Receipt", {'dn_ref': self.amended_from}, "name")
 				target.amended_from = name
 			
-			target.set_posting_time = 1
 			target.posting_time = source.posting_time + datetime.timedelta(0,5)
 			if source.set_target_warehouse:
 				target.set_warehouse = source.set_target_warehouse

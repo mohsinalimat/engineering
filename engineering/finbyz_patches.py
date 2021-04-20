@@ -606,3 +606,19 @@ args = {
 update_entries_after(args)
 
 frappe.db.commit()
+
+
+frappe.db.sql("""
+	update `tabSerial No` as sr
+	set sr.purchase_document_type = sle.voucher_type, sr.purchase_document_no = sle.voucher_no, sr.purchase_date = sle.posting_date,
+	sr.purchase_time = sle.posting_time, sr.company = sle.company, sr.warehouse = sle.warehouse, sr.status="Active"
+	from
+	(
+		    select item_code,serial_no,voucher_type,voucher_no,posting_date,posting_time,company,warehouse
+            from `tabStock Ledger Entry` as sle
+			where sle.actual_qty > 0
+            order by posting_date desc, posting_time desc, creation desc
+            limit 1
+	) sle
+	where sle.item_code = sr.item_code and (sle.serial_no = sr.name or sle.serial_no like sr.name\n% or serial_no like %\nsr.name or serial_no like  %\nsr.name\n%)
+""")

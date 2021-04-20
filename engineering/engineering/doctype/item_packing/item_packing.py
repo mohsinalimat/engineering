@@ -146,7 +146,6 @@ class ItemPacking(Document):
 	def create_serial_no(self, serial_no):
 		for item in serial_no:
 			args = {
-				"warehouse": self.warehouse,
 				"item_code": self.item_code,
 				"company": self.company,
 				"box_serial_no": self.name
