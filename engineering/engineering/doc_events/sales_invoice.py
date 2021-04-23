@@ -606,10 +606,9 @@ def change_delivery_note_rate(self):
 		for item in dn_doc.items:
 			if change_item_details.get(item.name):
 				item.rate = change_item_details.get(item.name)
-
+		dn_doc.set_posting_time = 1
 		dn_doc.save(ignore_permissions = True)
 		dn_doc.db_set('docstatus',1,update_modified=False)
-
 		for item in dn_doc.items:
 			item.db_set('docstatus',1,update_modified=False)
 
@@ -620,6 +619,8 @@ def change_delivery_note_rate(self):
 		if dn_doc.sales_team:
 			for sales in dn_doc.sales_team:
 				sales.db_set('docstatus',1,update_modified=False)
+				
+		dn_doc.set_status(update=True)
 
 		frappe.db.sql("delete from `tabGL Entry` where voucher_type = 'Delivery Note' and voucher_no='{}'".format(dn_doc.name))
 		
@@ -646,7 +647,7 @@ def change_ref_purchase_receipt_rate(dn_doc,change_item_details):
 				item.rate = change_item_details.get(item.delivery_note_item)
 				if item.serial_no:
 					change_serial_no_rate.append({"rate":item.rate,"serial_no":item.serial_no,"company":pr_doc.company})
-
+		pr_doc.set_posting_time = 1
 		pr_doc.save(ignore_permissions = True)
 
 		pr_doc.db_set('docstatus',1,update_modified=False)
@@ -656,6 +657,7 @@ def change_ref_purchase_receipt_rate(dn_doc,change_item_details):
 		if pr_doc.taxes:
 			for item in pr_doc.taxes:
 				item.db_set('docstatus',1,update_modified=False)
+		pr_doc.set_status(update=True)
 
 		frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_type = 'Purchase Receipt' and voucher_no='{}'".format(pr_doc.name))
 		frappe.db.sql("delete from `tabGL Entry` where voucher_type = 'Purchase Receipt' and voucher_no='{}'".format(pr_doc.name))

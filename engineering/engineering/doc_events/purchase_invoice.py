@@ -273,7 +273,7 @@ def change_purchase_receipt_rate(self):
 				item.rate = change_item_details.get(item.name)
 				if item.serial_no:
 					change_serial_no_rate.append({"rate":item.rate,"serial_no":item.serial_no,"company":pr_doc.company})
-
+		pr_doc.set_posting_time = 1
 		pr_doc.save(ignore_permissions = True)
 
 		pr_doc.db_set('docstatus',1,update_modified=False)
@@ -283,7 +283,7 @@ def change_purchase_receipt_rate(self):
 		if pr_doc.taxes:
 			for tax in pr_doc.taxes:
 				tax.db_set('docstatus',1,update_modified=False)
-
+		pr_doc.set_status(update=True)
 		frappe.db.sql("delete from `tabStock Ledger Entry` where voucher_type = 'Purchase Receipt' and voucher_no='{}'".format(pr_doc.name))
 		frappe.db.sql("delete from `tabGL Entry` where voucher_type = 'Purchase Receipt' and voucher_no='{}'".format(pr_doc.name))
 		
