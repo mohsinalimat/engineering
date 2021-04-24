@@ -1,5 +1,6 @@
 import frappe
 from frappe import _
+from frappe.utils import flt
 from frappe.model.mapper import get_mapped_doc
 from erpnext.accounts.doctype.sales_invoice.sales_invoice import get_bank_cash_account
 from erpnext.accounts.doctype.payment_entry.payment_entry import get_party_details
@@ -38,7 +39,7 @@ def update_payment_entries(self):
 			if item.reference_doctype == "Sales Invoice":
 				pay_amount_left = real_difference_amount = frappe.db.get_value("Sales Invoice", item.reference_name, 'real_difference_amount')
 				allocated_amount = frappe.get_value("Payment Entry References", {'reference_name': item.reference_name, 'docstatus': 1}, "sum(allocated_amount)")
-				diff_value = pay_amount_left - allocated_amount
+				diff_value = flt(pay_amount_left) - flt(allocated_amount)
 				if diff_value > real_difference_amount:
 					frappe.throw("Allocated Amount Cannot be Greater Than Difference Amount {}".format(diff_value))
 				else:
@@ -47,9 +48,9 @@ def update_payment_entries(self):
 			if item.reference_doctype == "Purchase Invoice":
 				pay_amount_left = real_difference_amount = frappe.db.get_value("Purchase Invoice", item.reference_name, 'real_difference_amount')
 				allocated_amount = frappe.get_value("Payment Entry References", {'reference_name': item.reference_name, 'docstatus': 1}, "sum(allocated_amount)")
-				diff_value = pay_amount_left - allocated_amount
+				diff_value = flt(pay_amount_left) - flt(allocated_amount)
 				
-				if diff_value > real_difference_amount:
+				if diff_value > flt(real_difference_amount):
 					frappe.throw("Allocated Amount Cannot be Greater Than Difference Amount {}".format(diff_value))
 				else:
 					frappe.db.set_value("Purchase Invoice", item.reference_name, 'pay_amount_left', diff_value)
