@@ -77,5 +77,11 @@ frappe.query_reports["Stock Ledger Engineering"] = {
 			"label": __("Serial No"),
 			"fieldtype": "Data",
 		},
+		{
+			"fieldname":"particular",
+			"label": __("Stock Entry Type"),
+			"fieldtype": "Link",
+			"options":"Stock Entry Type"
+		},
 	]
 }

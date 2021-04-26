@@ -2,7 +2,7 @@ this.frm.cscript.onload = function (frm) {
 	this.frm.set_query("production_item", function (doc) {
 		return {
 			query: "erpnext.controllers.queries.item_query",
-			filters: { 'is_stock_item': 1, 'authority': doc.authority }
+			filters: { 'is_stock_item': 1, 'authority': doc.authority,'production_item':1 }
 		}
 	});
 	this.frm.set_query("item_code", "required_items", function (doc) {
