@@ -19,6 +19,7 @@ class SerialNoNotRequiredError(ValidationError): pass
 class SerialNoQtyError(ValidationError): pass
 class SerialNoWarehouseError(ValidationError): pass
 class SerialNoItemError(ValidationError): pass
+class SerialNoNotExistsError(ValidationError): pass
 class SerialNoDuplicateError(ValidationError): pass
 
 def before_validate(self, method):
@@ -143,7 +144,7 @@ def create_delivery_note(self):
 				target.selling_price_list = frappe.db.get_value("Sales Order", 
 				frappe.db.get_value("Sales Order Item", source.items[0].sales_order_item, 'parent')
 				, 'selling_price_list')
-	
+			target.set_posting_time = 1
 			target.posting_time = source.posting_time + datetime.timedelta(0,10)
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value("Delivery Note", {'dn_ref': self.amended_from}, "name")
@@ -342,7 +343,7 @@ def create_purchase_receipt(self):
 			if self.amended_from:
 				name = frappe.db.get_value("Purchase Receipt", {'dn_ref': self.amended_from}, "name")
 				target.amended_from = name
-			
+			target.set_posting_time = 1
 			target.posting_time = source.posting_time + datetime.timedelta(0,5)
 			if source.set_target_warehouse:
 				target.set_warehouse = source.set_target_warehouse
