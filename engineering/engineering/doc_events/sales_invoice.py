@@ -620,12 +620,15 @@ def change_delivery_note_rate(self):
 			for sales in dn_doc.sales_team:
 				sales.db_set('docstatus',1,update_modified=False)
 				
-		dn_doc.set_status(update=True)
 
 		frappe.db.sql("delete from `tabGL Entry` where voucher_type = 'Delivery Note' and voucher_no='{}'".format(dn_doc.name))
 		
 		dn_doc.make_gl_entries()
 
+		self.update_status_updater_args()
+		self.update_prevdoc_status()
+		self.update_billing_status_in_dn()
+		
 		if dn_doc.pr_ref:
 			change_ref_purchase_receipt_rate(dn_doc,change_item_details)
 
