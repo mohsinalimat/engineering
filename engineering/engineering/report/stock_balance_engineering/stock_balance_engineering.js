@@ -105,6 +105,16 @@ frappe.query_reports["Stock Balance Engineering"] = {
 			"label": __('Show 0 Qty Inventory'),
 			"fieldtype": 'Check'
 		},
+		{
+			"fieldname":"show_internal_transfers",
+			"label": __("Show Internal Transfers"),
+			"fieldtype": "Check",
+		},
+		{
+			"fieldname":"show_warehouse_wise_balance",
+			"label": __("Show Warehouse Wise Balance"),
+			"fieldtype": "Check",
+		},
 	],
 
 	"formatter": function (value, row, column, data, default_formatter) {

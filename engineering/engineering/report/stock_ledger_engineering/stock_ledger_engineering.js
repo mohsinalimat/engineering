@@ -78,10 +78,9 @@ frappe.query_reports["Stock Ledger Engineering"] = {
 			"fieldtype": "Data",
 		},
 		{
-			"fieldname":"particular",
-			"label": __("Stock Entry Type"),
-			"fieldtype": "Link",
-			"options":"Stock Entry Type"
+			"fieldname":"show_internal_transfers",
+			"label": __("Show Internal Transfers"),
+			"fieldtype": "Check",
 		},
 	]
 }

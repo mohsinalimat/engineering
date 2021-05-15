@@ -52,10 +52,11 @@ def execute(filters=None):
 			sle.inward_value = 0
 			sle.outward_rate = abs(sle.stock_value_difference / sle.outward_qty)
 			sle.outward_amt = abs(sle.stock_value_difference)
-
-
+# # Below changes for remove internal transfer entries Start:(removed material transfer entries)
+		if not filters.get('show_internal_transfers') and sle.particular in ["Material Transfer","Material Transfer for Manufacture","Material Transfer for Manufacturing"]:
+			continue
+# # End
 		data.append(sle)
-
 		if include_uom:
 			conversion_factors.append(item_detail.conversion_factor)
 
@@ -114,10 +115,6 @@ def get_stock_ledger_entries(filters, items):
 	if filters.get('serial_no'):
 		serial_no_condition = "and instr(sle.serial_no,'%s') > 0" % filters.serial_no
 
-	particular_cond=''
-	if filters.get('particular'):
-		particular_cond = " and se.stock_entry_type = '{}'".format(filters.get('particular'))
-
 	return frappe.db.sql("""select concat_ws(" ", sle.posting_date, sle.posting_time) as date,
 			sle.item_code, sle.warehouse, sle.actual_qty, sle.qty_after_transaction, sle.incoming_rate, sle.valuation_rate,
 			sle.stock_value, sle.voucher_type, sle.voucher_no, sle.batch_no, sle.serial_no, sle.company, sle.project, sle.stock_value_difference,
@@ -133,13 +130,11 @@ def get_stock_ledger_entries(filters, items):
 			{sle_conditions}
 			{item_conditions_sql}
 			{serial_no_condition}
-			{particular_cond}
 			order by sle.posting_date asc, sle.posting_time asc, sle.creation asc"""\
 		.format(
 			sle_conditions=get_sle_conditions(filters),
 			item_conditions_sql = item_conditions_sql,
-			serial_no_condition = serial_no_condition,
-			particular_cond=particular_cond
+			serial_no_condition = serial_no_condition
 		), filters, as_dict=1)
 
 def get_items(filters):

@@ -11,6 +11,7 @@ from erpnext.stock.report.stock_ledger.stock_ledger import get_item_group_condit
 from erpnext.stock.report.stock_ageing.stock_ageing import get_fifo_queue, get_average_age
 
 from six import iteritems
+import collections
 
 def execute(filters=None):
 	#validate_filters(filters)
@@ -44,8 +45,8 @@ def execute(filters=None):
 	if filters.get('show_reorder_details'):
 		item_reorder_detail_map = get_item_reorder_details(item_map.keys())
 
-	data = []
-	conversion_factors = {}
+	data, new_data = [], []
+	item_company, conversion_factors = {}, {}
 
 	_func = lambda x: x[1]
 
@@ -90,18 +91,62 @@ def execute(filters=None):
 					stock_ageing_data['latest_age'] = date_diff(to_date, fifo_queue[-1][1])
 
 				report_data.update(stock_ageing_data)
-
-			data.append(report_data)
+			item_code = report_data['item_code']
+			company = report_data['company']
+			warehouse = report_data['warehouse']
+			report_data['stock_ledger'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+				target="_blank" item_code='{item_code}' company='{company}' warehouse='{warehouse}' from_date='{from_date}' to_date='{to_date}'
+				onClick=view_stock_leder_report(this.getAttribute('item_code'),this.getAttribute('company'),this.getAttribute('warehouse'),this.getAttribute('from_date'),this.getAttribute('to_date'))>View Stock Ledger</button>"""
+				
+			if not filters.get('show_warehouse_wise_balance'):
+				key = (report_data['company'],report_data['item_code'])
+				if key not in item_company:
+					item_company[key] = report_data
+					new_data.append(item_company[key])
+				else:
+					for k,v in item_company[key].items():
+						if (isinstance(v, float) or isinstance(v, int)):
+							if(k=='opening_rate') and item_company[key]['opening_qty']:
+								item_company[key].update({k:flt(item_company[key]['opening_val'])/flt(item_company[key]['opening_qty'])})
+							elif(k=='in_rate') and item_company[key]['in_qty']:
+								item_company[key].update({k:flt(item_company[key]['in_val'])/flt(item_company[key]['in_qty'])})
+							elif(k=='out_rate') and item_company[key]['out_qty']:
+								item_company[key].update({k:flt(item_company[key]['out_val'])/flt(item_company[key]['out_qty'])})
+							elif(k=='bal_rate') and item_company[key]['bal_qty']:
+								item_company[key].update({k:flt(item_company[key]['bal_val'])/flt(item_company[key]['bal_qty'])})
+							else:
+								item_company[key].update({k:flt(v)+flt(report_data[k])})
+			else:
+				data.append(report_data)
+	data = new_data if new_data else data
 
 	add_additional_uom_columns(columns, data, include_uom, conversion_factors)
-	for row in data:
-		item_code = row['item_code']
-		company = row['company']
-		warehouse = row['warehouse']
-		row['stock_ledger'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
-			target="_blank" item_code='{item_code}' company='{company}' warehouse='{warehouse}' from_date='{from_date}' to_date='{to_date}'
-			onClick=view_stock_leder_report(this.getAttribute('item_code'),this.getAttribute('company'),this.getAttribute('warehouse'),this.getAttribute('from_date'),this.getAttribute('to_date'))>View Stock Ledger</button>"""
-
+	# for row in data:
+	# 	item_code = row['item_code']
+	# 	company = row['company']
+	# 	warehouse = row['warehouse']
+	# 	row['stock_ledger'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
+	# 		target="_blank" item_code='{item_code}' company='{company}' warehouse='{warehouse}' from_date='{from_date}' to_date='{to_date}'
+	# 		onClick=view_stock_leder_report(this.getAttribute('item_code'),this.getAttribute('company'),this.getAttribute('warehouse'),this.getAttribute('from_date'),this.getAttribute('to_date'))>View Stock Ledger</button>"""
+		
+	# 	if not filters.get('show_warehouse_wise_balance'):
+	# 		key = (row['company'],row['item_code'])
+	# 		if key not in item_company:
+	# 			item_company[key] = row
+	# 			new_data.append(item_company[key])
+	# 		else:
+	# 			for k,v in item_company[key].items():
+	# 				if v and (isinstance(v, float) or isinstance(v, int)):
+	# 					if(k=='opening_rate'):
+	# 						item_company[key].update({k:flt(item_company[key]['opening_val'])/flt(item_company[key]['opening_qty'])})
+	# 					elif(k=='in_rate'):
+	# 						item_company[key].update({k:flt(item_company[key]['in_val'])/flt(item_company[key]['in_qty'])})
+	# 					elif(k=='out_rate'):
+	# 						item_company[key].update({k:flt(item_company[key]['out_val'])/flt(item_company[key]['out_qty'])})
+	# 					elif(k=='bal_rate'):
+	# 						item_company[key].update({k:flt(item_company[key]['bal_val'])/flt(item_company[key]['bal_qty'])})
+	# 					else:
+	# 						item_company[key].update({k:flt(v)+flt(row[k])})
 	return columns, data
 
 def get_columns(filters):
@@ -139,9 +184,6 @@ def get_columns(filters):
 			{"label": _("Balance Rate"), "fieldname": "bal_rate", "fieldtype": "Float", "width": 80},
 			{"label": _("Balance Value"), "fieldname": "bal_val", "fieldtype": "Currency", "width": 100, "options": "currency"},
 		]
-	columns += [
-			{"label": _("Valuation Rate"), "fieldname": "val_rate", "fieldtype": "Currency", "width": 90, "convertible": "rate", "options": "currency"},
-	]
 	if filters.get('show_reorder_details'):
 		columns +=[
 			{"label": _("Reorder Level"), "fieldname": "reorder_level", "fieldtype": "Float", "width": 80, "convertible": "qty"},
@@ -150,10 +192,13 @@ def get_columns(filters):
 	columns +=[
 			{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 100},
 			{"label": _("Item Group"), "fieldname": "item_group", "fieldtype": "Link", "options": "Item Group", "width": 100},
-			{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90},
-			{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 130},
-			{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 130},
-			{"label": _("Stock Ledger"), "fieldname": "stock_ledger", "fieldtype": "button", "width": 120},
+			{"label": _("Stock UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 90}]
+
+	if filters.get('show_warehouse_wise_balance'):
+		columns	+= [{"label": _("Warehouse"), "fieldname": "warehouse", "fieldtype": "Link", "options": "Warehouse", "width": 130}]
+
+	columns +=[{"label": _("Company"), "fieldname": "company", "fieldtype": "Link", "options": "Company", "width": 130},
+			{"label": _("Stock Ledger"), "fieldname": "stock_ledger", "fieldtype": "button", "width": 120}
 		]
 
 	if filters.get('show_stock_ageing_data'):
@@ -207,11 +252,14 @@ def get_stock_ledger_entries(filters, items):
 
 	return frappe.db.sql("""
 		select
-			sle.item_code, warehouse, sle.posting_date, sle.actual_qty, sle.valuation_rate,
+			sle.item_code, sle.warehouse, sle.posting_date, sle.actual_qty, sle.valuation_rate,
 			sle.company, sle.voucher_type, sle.qty_after_transaction, sle.stock_value_difference,
-			sle.item_code as name, sle.voucher_no
+			sle.item_code as name, sle.voucher_no, IFNULL(se.stock_entry_type,'') as stock_entry_type
 		from
-			`tabStock Ledger Entry` sle force index (posting_sort_index)
+			`tabStock Ledger Entry` sle 
+			force index (posting_sort_index)
+			LEFT JOIN `tabStock Entry` as se on se.name = sle.voucher_no
+
 		where sle.docstatus < 2 %s %s
 		order by sle.posting_date, sle.posting_time, sle.creation, sle.actual_qty""" % #nosec
 		(item_conditions_sql, conditions), as_dict=1)
@@ -253,15 +301,23 @@ def get_item_warehouse_map(filters, sle):
 
 		elif d.posting_date >= from_date and d.posting_date <= to_date:
 			if flt(qty_diff, float_precision) >= 0:
-				qty_dict.in_qty += qty_diff
-				qty_dict.in_val += value_diff
+				if not filters.get('show_internal_transfers') and d.stock_entry_type in ["Material Transfer","Material Transfer for Manufacture","Material Transfer for Manufacturing"]:
+					qty_dict.in_qty += 0
+					qty_dict.in_val += 0
+				else:
+					qty_dict.in_qty += qty_diff
+					qty_dict.in_val += value_diff					
 				if qty_dict.in_val and qty_dict.in_qty:
 					qty_dict.in_rate = flt(qty_dict.in_val) / flt(qty_dict.in_qty)
 				else:
 					qty_dict.in_rate = 0.0
 			else:
-				qty_dict.out_qty += abs(qty_diff)
-				qty_dict.out_val += abs(value_diff)
+				if not filters.get('show_internal_transfers') and d.stock_entry_type in ["Material Transfer","Material Transfer for Manufacture","Material Transfer for Manufacturing"]:
+					qty_dict.out_qty += 0
+					qty_dict.out_val += 0
+				else:
+					qty_dict.out_qty += abs(qty_diff)
+					qty_dict.out_val += abs(value_diff)					
 				if qty_dict.out_val and qty_dict.out_qty:
 					qty_dict.out_rate = flt(qty_dict.out_val) / flt(qty_dict.out_qty)
 				else:
