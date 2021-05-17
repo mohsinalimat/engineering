@@ -116,6 +116,11 @@ def get_data():
 					"name": "Stock Ledger Engineering",
 					"is_query_report": True,
 				},
+				{
+					"type": "report",
+					"name": "Monthly Stock Summary",
+					"is_query_report": True,
+				}
 			]
 		},
 		{

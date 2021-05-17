@@ -49,6 +49,12 @@ def execute(filters=None):
 			"fieldtype": "Data",
 			"width": 150
 		},
+		{
+			"fieldname": "view_monthly_stock_balance",
+			"label": "Stock Balance",
+			"fieldtype": "Data",
+			"width": 150
+		},
 	]
 	data = get_data(filters)
 	return columns, data
@@ -114,6 +120,10 @@ def get_final_out (filters, out):
 					type='button' company='{filters.company}' item-group='{row.item_group}'
 					onClick='route_to_stock_balance(this.getAttribute("company"),this.getAttribute("item-group"))'>View Stock Balance</button>"""
 
+			row.view_monthly_stock_balance = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
+					type='button' company='{filters.company}' item-group='{row.item_group}'
+					onClick='route_to_monthly_stock_balance(this.getAttribute("company"),this.getAttribute("item-group"))'>View Monthly Stock Balance</button>"""
+
 		if not row.is_group:
 			row.view_sle = f"""
 				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
@@ -124,6 +134,11 @@ def get_final_out (filters, out):
 				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
 					type='button' company='{filters.company}' item-name='{row.item_code}'
 					onClick='route_to_stock_balance_item(this.getAttribute("company"),this.getAttribute("item-name"))'>View Stock Balance</button>"""
+
+			row.view_monthly_stock_balance = f"""
+				<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;' 
+					type='button' company='{filters.company}' item-name='{row.item_code}'
+					onClick='route_to_monthly_stock_balance_item(this.getAttribute("company"),this.getAttribute("item-name"))'>View Monthly Stock Balance</button>"""
 
 	return data
 		
