@@ -95,7 +95,7 @@ def execute(filters=None):
 			company = report_data['company']
 			warehouse = report_data['warehouse']
 			report_data['stock_ledger'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
-				target="_blank" item_code='{item_code}' company='{company}' warehouse='{warehouse}' from_date='{from_date}' to_date='{to_date}'
+				target="_blank" item_code='{item_code}' company='{company}' warehouse='{warehouse if filters.get('show_warehouse_wise_balance') else ''}' from_date='{from_date}' to_date='{to_date}'
 				onClick=view_stock_leder_report(this.getAttribute('item_code'),this.getAttribute('company'),this.getAttribute('warehouse'),this.getAttribute('from_date'),this.getAttribute('to_date'))>View Stock Ledger</button>"""
 				
 			if not filters.get('show_warehouse_wise_balance'):

@@ -65,14 +65,17 @@ frappe.query_reports["Stock Balance Engineering"] = {
 				return { 
 					filters: { 'company': company }
 				}
-			}
+			},
+			"hidden":1,
+			
 		},
 		{
 			"fieldname": "warehouse_type",
 			"label": __("Warehouse Type"),
 			"fieldtype": "Link",
 			"width": "80",
-			"options": "Warehouse Type"
+			"options": "Warehouse Type",
+			"hidden":1
 		},
 		{
 			"fieldname":"include_uom",
@@ -114,7 +117,20 @@ frappe.query_reports["Stock Balance Engineering"] = {
 			"fieldname":"show_warehouse_wise_balance",
 			"label": __("Show Warehouse Wise Balance"),
 			"fieldtype": "Check",
-		},
+			"on_change": function(){
+				if (frappe.query_report.get_filter_value('show_warehouse_wise_balance')){
+					frappe.query_report.get_filter('warehouse').toggle(true)
+					frappe.query_report.get_filter('warehouse_type').toggle(true)
+				}
+				else{
+					frappe.query_report.get_filter('warehouse').toggle(false)
+					frappe.query_report.get_filter('warehouse_type').toggle(false)
+				}
+				frappe.query_report.refresh();
+
+		}
+	},
+
 	],
 
 	"formatter": function (value, row, column, data, default_formatter) {

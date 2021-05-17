@@ -608,6 +608,34 @@ update_entries_after(args)
 frappe.db.commit()
 
 
+# Patch Start: Create New Serial Nos from Excel File
+import xlrd
+from engineering.engineering.doctype.serial_no_generator.serial_no_generator import bulk_insert
+wb = xlrd.open_workbook('Serial_No_Range DM.xlsx')
+sh = wb.sheet_by_name('Query Report')
+
+values = []
+user = frappe.session.user
+for i in range(1,sh.nrows):
+    serial_no = sh.row_values(i)[0]
+    qr_code_hash = sh.row_values(i)[1]
+    print(sh.row_values(i))
+
+    time = frappe.utils.get_datetime()
+    sr_no = ''.join(filter(lambda i: i.isdigit(), serial_no))
+    sr_no_info = sr_no[-9:]
+    values.append((serial_no, time, time, user, user, serial_no, sr_no_info, qr_code_hash))
+    if i%20000 == 0:
+        try:
+            bulk_insert("Serial No", fields=['name', "creation", "modified", "modified_by", "owner", 'serial_no', 'sr_no_info','qr_code_hash'], values=values)
+            frappe.db.commit()
+            values =[]
+        except Exception as e:
+            frappe.db.rollback()
+            print(e)
+
+# Patch End
+
 frappe.db.sql("""
 	update `tabSerial No` as sr
 	set sr.purchase_document_type = sle.voucher_type, sr.purchase_document_no = sle.voucher_no, sr.purchase_date = sle.posting_date,
