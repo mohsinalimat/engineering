@@ -446,11 +446,12 @@ def create_sales_invoice(self):
 		self.db_set('si_ref', si.name)
 
 def cancel_all(self):
-	if self.si_ref:
+	if self.si_ref and self.si_ref != self.return_against:
 		doc = frappe.get_doc("Sales Invoice", self.si_ref)
 		if doc.docstatus == 1:
 			doc.cancel()
-	
+	else:
+		frappe.db.set_value("Sales Invoice",self.name,'si_ref',None)
 	if self.pi_ref:
 		doc = frappe.get_doc("Purchase Invoice", self.pi_ref)
 		if doc.docstatus == 1:
@@ -464,7 +465,8 @@ def cancel_all(self):
 def delete_all(self):
 	si_ref = [self.si_ref, self.branch_invoice_ref]
 	pi_ref = [self.pi_ref]
-
+	if self.return_against:
+		frappe.db.set_value("Sales Invoice",self.name,"return_against",None)
 	if self.si_ref:
 		doc = frappe.get_doc("Sales Invoice", self.si_ref)
 

@@ -71,7 +71,7 @@ def execute():
                             doc.db_set('delivery_time',sle.posting_time,update_modified=False)
                         if doc.status != "Delivered":
                             doc.db_set('status',"Delivered",update_modified=False)
-
+                        doc.db_set('warehouse',None,update_modified=False)
             if not set_delivery_values:
                 doc.db_set('delivery_document_type',None,update_modified=False)
                 doc.db_set('delivery_document_no',None,update_modified=False)
