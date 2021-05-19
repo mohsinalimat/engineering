@@ -80,6 +80,12 @@ def execute(filters=None):
 	data = get_data(filters)
 	return columns, data
 
+def get_mon(dt):
+	return getdate(dt).strftime("%b")
+
+def diff_month(d1, d2):
+	return (d1.year - d2.year) * 12 + d1.month - d2.month
+
 def get_data(filters):
 	conditions = ''
 	group_by_cond = 'i.item_group'
@@ -97,13 +103,16 @@ def get_data(filters):
 		conditions += " and sle.item_code = %s" % frappe.db.escape(filters.get("item_code"))
 		group_by_cond = 'sle.item_code'
 
-
-
 	date_range = get_period_date_ranges(filters.get('period'),getdate(filters.get('from_date')),getdate(filters.get('to_date')))
-	months = get_period_month_ranges(filters.get('period'),getdate(filters.get('from_date')),getdate(filters.get('to_date')))
+	#months = get_period_month_ranges(filters.get('period'),getdate(filters.get('from_date')),getdate(filters.get('to_date')))
 	
-	month_list = [item[0] for item in months if item]
-
+	month_list = []
+	for dt in date_range:
+		if filters.get('period') == "Monthly" and get_mon(dt[0])+'-'+dt[0].strftime("%y") not in month_list:
+			month_list.append(get_mon(dt[0])+'-'+dt[0].strftime("%y"))
+		if filters.get('period') != "Monthly" and (get_mon(dt[0])+'-'+dt[0].strftime("%y")) + "-" + (get_mon(dt[1]))+'-'+dt[1].strftime("%y") not in month_list:
+			month_list.append((get_mon(dt[0])+'-'+dt[0].strftime("%y")) + "-" + (get_mon(dt[1]))+'-'+dt[1].strftime("%y"))
+				
 	result = {month_list[i]: date_range[i] for i in range(len(month_list))}
 	
 	inward_data = []
@@ -179,9 +188,9 @@ def get_period_date_ranges(period, year_start_date, year_end_date):
 		"Half-Yearly": 6,
 		"Yearly": 12
 	}.get(period)
-
+	diff = abs(diff_month(getdate(year_start_date),getdate(year_end_date)))
 	period_date_ranges = []
-	for i in range(1, 13, increment):
+	for i in range(1, diff+2, increment):
 		period_end_date = getdate(year_start_date) + relativedelta(months=increment, days=-1)
 		if period_end_date > getdate(year_end_date):
 			period_end_date = year_end_date
@@ -189,7 +198,6 @@ def get_period_date_ranges(period, year_start_date, year_end_date):
 		year_start_date = period_end_date + relativedelta(days=1)
 		if period_end_date == year_end_date:
 			break
-
 	return period_date_ranges
 
 def get_period_month_ranges(period, year_start_date,year_end_date):
@@ -199,7 +207,7 @@ def get_period_month_ranges(period, year_start_date,year_end_date):
 	for start_date, end_date in get_period_date_ranges(period, year_start_date,year_end_date):
 		months_in_this_period = []
 		while start_date <= end_date:
-			months_in_this_period.append(start_date.strftime("%B"))
+			months_in_this_period.append(start_date.strftime("%B")+ "-" +start_date.strftime("%y"))
 			start_date += relativedelta(months=1)
 		period_month_ranges.append(months_in_this_period)
 
