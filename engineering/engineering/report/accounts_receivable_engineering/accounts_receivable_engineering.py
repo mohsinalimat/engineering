@@ -60,8 +60,9 @@ class ReceivablePayableReport(object):
 	def make_data_map(self):
 		self.data_map = {}
 		for d in self.data:
-			self.data_map.setdefault(d.voucher_no, {})\
-				.setdefault(d.party, d)
+			if(d.get('voucher_no')):
+				self.data_map.setdefault(d.voucher_no, {})\
+					.setdefault(d.party, d)
 	
 	def update_data(self):
 		data = self.data
@@ -71,12 +72,12 @@ class ReceivablePayableReport(object):
 		uncovered_voucher = []
 
 		for row in data:
-			if row.company not in self.filters.company:
-				if self.filters.strictly_for_company and not row.reference_doc:
+			if row.get('company') not in self.filters.company:
+				if self.filters.strictly_for_company and not row.get('reference_doc'):
 					continue
 				elif self.filters.strictly_for_company:
 					try:
-						row_data = self.data_map[row.reference_doc][row.party]
+						row_data = self.data_map[row.get('reference_doc')][row.get('party')]
 						if row_data.company != self.filters.company:
 							continue
 					except:
@@ -110,7 +111,7 @@ class ReceivablePayableReport(object):
 
 					if (row.outstanding or row.bank_outstanding or row.cash_outstanding):
 						self.data.append(row)
-			elif row.company in self.filters.company and not row.reference_doc:
+			elif row.get('company') in self.filters.company and not row.reference_doc:
 				row.cash_amount = row.invoiced
 				row.cash_paid = row.paid
 				row.cash_outstanding = row.outstanding
@@ -139,7 +140,7 @@ class ReceivablePayableReport(object):
 		year_end_date = frappe.defaults.get_user_default("year_end_date")
 		for row in data:
 			row['view_report'] = f"""<button style='margin-left:5px;border:none;color: #fff; background-color: #5e64ff; padding: 3px 5px;border-radius: 5px;'
-				target="_blank" company='{row.company}' from_date='{year_start_date}' to_date='{year_end_date}' party_type='{row.party_type}' party='{row.party}'
+				target="_blank" company='{row.get('company')}' from_date='{year_start_date}' to_date='{year_end_date}' party_type='{row.get('party_type')}' party='{row.get('party')}'
 				onClick=open_daybook_engineering_report(this.getAttribute('company'),this.getAttribute('from_date'),this.getAttribute('to_date'),this.getAttribute('party_type'),this.getAttribute('party'))>View Daybook Engineering</button>"""
 
 			# url = frappe.utils.get_url()
@@ -797,27 +798,27 @@ class ReceivablePayableReport(object):
 			conditions.append(self.get_hierarchical_filters('Territory', 'territory'))
 
 		if self.filters.get("payment_terms_template"):
-			conditions.append("party in (select name from tabCustomer where payment_terms=%s)")
+			conditions.append("gle.party in (select name from tabCustomer where payment_terms=%s)")
 			values.append(self.filters.get("payment_terms_template"))
 
 		if self.filters.get("sales_partner"):
-			conditions.append("party in (select name from tabCustomer where default_sales_partner=%s)")
+			conditions.append("gle.party in (select name from tabCustomer where default_sales_partner=%s)")
 			values.append(self.filters.get("sales_partner"))
 
 	def add_supplier_filters(self, conditions, values):
 		if self.filters.get("supplier_group"):
-			conditions.append("""party in (select name from tabSupplier
+			conditions.append("""gle.party in (select name from tabSupplier
 				where supplier_group=%s)""")
 			values.append(self.filters.get("supplier_group"))
 
 		if self.filters.get("payment_terms_template"):
-			conditions.append("party in (select name from tabSupplier where payment_terms=%s)")
+			conditions.append("gle.party in (select name from tabSupplier where payment_terms=%s)")
 			values.append(self.filters.get("payment_terms_template"))
 
 	def get_hierarchical_filters(self, doctype, key):
 		lft, rgt = frappe.db.get_value(doctype, self.filters.get(key), ["lft", "rgt"])
 
-		return """party in (select name from tabCustomer
+		return """gle.party in (select name from tabCustomer
 			where exists(select name from `tab{doctype}` where lft >= {lft} and rgt <= {rgt}
 				and name=tabCustomer.{key}))""".format(
 					doctype=doctype, lft=lft, rgt=rgt, key=key)
