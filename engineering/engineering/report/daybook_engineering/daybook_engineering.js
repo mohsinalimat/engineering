@@ -160,4 +160,4 @@ frappe.query_reports["Daybook Engineering"] = {
 	]
 }
 
-erpnext.utils.add_dimensions('Daybook Engineering', 15)
+erpnext.utils.add_dimensions('Daybook Engineering', 15);

@@ -7,7 +7,7 @@ import datetime
 from frappe.desk.notifications import get_filters_for
 from frappe.model.mapper import get_mapped_doc
 
-from frappe.utils import getdate
+from frappe.utils import getdate, flt
 from erpnext.accounts.utils import get_fiscal_year
 from erpnext.stock.get_item_details import get_price_list_rate
 
@@ -464,3 +464,99 @@ def update_discounted_amount(self):
 # 			frappe.db.set_value("Sales Order", i.inter_company_order_reference, 'transaction_date', i.transaction_date, update_modified = False)
 	
 # 	frappe.db.commit()
+
+def get_rm_rate(self, arg):
+	"""	Get raw material rate as per selected method, if bom exists takes bom cost """
+	rate = 0
+	if not self.rm_cost_as_per:
+		self.rm_cost_as_per = "Valuation Rate"
+
+	if arg.get('scrap_items'):
+		rate = get_valuation_rate(arg)
+	elif arg:
+		#Customer Provided parts will have zero rate
+		if not frappe.db.get_value('Item', arg["item_code"], 'is_customer_provided_item'):
+			if arg.get('bom_no') and self.set_rate_of_sub_assembly_item_based_on_bom:
+				rate = flt(self.get_bom_unitcost(arg['bom_no'])) * (arg.get("conversion_factor") or 1)
+			else:
+				if self.rm_cost_as_per == 'Valuation Rate':
+					rate = get_valuation_rate(self,arg) * (arg.get("conversion_factor") or 1)
+				elif self.rm_cost_as_per == 'Last Purchase Rate':
+					rate = get_company_wise_rate(self,arg) * (arg.get("conversion_factor") or 1)
+				elif self.rm_cost_as_per == "Price List":
+					if not self.buying_price_list:
+						frappe.throw(_("Please select Price List"))
+					args = frappe._dict({
+						"doctype": "BOM",
+						"price_list": self.buying_price_list,
+						"qty": arg.get("qty") or 1,
+						"uom": arg.get("uom") or arg.get("stock_uom"),
+						"stock_uom": arg.get("stock_uom"),
+						"transaction_type": "buying",
+						"company": self.company,
+						"currency": self.currency,
+						"conversion_rate": 1, # Passed conversion rate as 1 purposefully, as conversion rate is applied at the end of the function
+						"conversion_factor": arg.get("conversion_factor") or 1,
+						"plc_conversion_rate": 1,
+						"ignore_party": True
+					})
+					item_doc = frappe.get_doc("Item", arg.get("item_code"))
+					out = frappe._dict()
+					get_price_list_rate(args, item_doc, out)
+					rate = out.price_list_rate
+
+				if not rate:
+					if self.rm_cost_as_per == "Price List":
+						frappe.msgprint(_("Price not found for item {0} in price list {1}")
+							.format(arg["item_code"], self.buying_price_list), alert=True)
+					else:
+						frappe.msgprint(_("{0} not found for item {1}")
+							.format(self.rm_cost_as_per, arg["item_code"]), alert=True)
+
+	return flt(rate) * flt(self.plc_conversion_rate or 1) / (self.conversion_rate or 1)
+
+def get_company_wise_rate(self,arg):
+	rate = flt(arg.get('last_purchase_rate'))
+		# or frappe.db.get_value("Item", arg['item_code'], "last_purchase_rate")) \
+		# 	* (arg.get("conversion_factor") or 1)
+		# Finbyz Changes: Replaced above line with below query because of get rate from company filter
+	if not rate:
+		purchase_rate_query = frappe.db.sql("""
+			select incoming_rate
+			from `tabStock Ledger Entry`
+			where item_code = '{}' and incoming_rate > 0 and voucher_type in ('Purchase Receipt','Purchase Invoice') and company = '{}'
+			order by timestamp(posting_date, posting_time) desc
+			limit 1
+		""".format(arg['item_code'],arg.get('company') or self.company))
+		if purchase_rate_query:
+			rate = purchase_rate_query[0][0]
+		else:
+			rate = frappe.db.get_value("Item", arg['item_code'], "last_purchase_rate")
+	return rate
+
+def get_valuation_rate(self, args):
+	""" Get weighted average of valuation rate from all warehouses """
+
+	total_qty, total_value, valuation_rate = 0.0, 0.0, 0.0
+	for d in frappe.db.sql("""select b.actual_qty, b.stock_value from `tabBin` as b
+		JOIN `tabWarehouse` as w on w.name = b.warehouse
+		where b.item_code=%s and w.company = '{}'""".format(self.company), args['item_code'], as_dict=1):
+			total_qty += flt(d.actual_qty)
+			total_value += flt(d.stock_value)
+
+	if total_qty:
+		valuation_rate =  total_value / total_qty
+
+	if valuation_rate <= 0:
+		last_valuation_rate = frappe.db.sql("""select valuation_rate
+			from `tabStock Ledger Entry`
+			where item_code = %s and valuation_rate > 0 and company = '{}'
+			order by posting_date desc, posting_time desc, creation desc limit 1""".format(self.company), args['item_code'])
+
+		valuation_rate = flt(last_valuation_rate[0][0]) if last_valuation_rate else 0
+
+	if not valuation_rate:
+		valuation_rate = frappe.db.get_value("Item", args['item_code'], "valuation_rate")
+
+	return flt(valuation_rate)
+

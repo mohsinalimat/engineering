@@ -235,3 +235,8 @@ Bin.update_stock = update_stock
 from erpnext.stock import stock_ledger
 from engineering.engineering.override.stock_ledger import make_sl_entries
 stock_ledger.make_sl_entries = make_sl_entries
+
+# Override get rate function for company wise rate
+from erpnext.manufacturing.doctype.bom.bom import BOM
+from engineering.api import get_rm_rate
+BOM.get_rm_rate = get_rm_rate

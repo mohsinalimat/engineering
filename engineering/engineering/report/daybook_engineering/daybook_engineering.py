@@ -2,10 +2,10 @@
 # License: GNU General Public License v3. See license.txt
 
 from __future__ import unicode_literals
-import frappe, erpnext
+import frappe
 from erpnext import get_company_currency, get_default_company
 from erpnext.accounts.report.utils import get_currency, convert_to_presentation_currency
-from frappe.utils import getdate, cstr, flt, fmt_money
+from frappe.utils import getdate, cstr, flt
 from frappe import _, _dict
 from erpnext.accounts.utils import get_account_currency
 from erpnext.accounts.report.financial_statements import get_cost_centers_with_children
