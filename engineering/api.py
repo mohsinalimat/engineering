@@ -477,7 +477,7 @@ def get_rm_rate(self, arg):
 		#Customer Provided parts will have zero rate
 		if not frappe.db.get_value('Item', arg["item_code"], 'is_customer_provided_item'):
 			if arg.get('bom_no') and self.set_rate_of_sub_assembly_item_based_on_bom:
-				rate = flt(self.get_bom_unitcost(arg['bom_no'])) * (arg.get("conversion_factor") or 1)
+				rate = flt(get_bom_unitcost(self,arg['bom_no'])) * (arg.get("conversion_factor") or 1)
 			else:
 				if self.rm_cost_as_per == 'Valuation Rate':
 					rate = get_valuation_rate(self,arg) * (arg.get("conversion_factor") or 1)
@@ -560,3 +560,8 @@ def get_valuation_rate(self, args):
 
 	return flt(valuation_rate)
 
+
+def get_bom_unitcost(self, bom_no):
+	bom = frappe.db.sql("""select name, base_total_cost/quantity as unit_cost from `tabBOM`
+		where is_active = 1 and name = %s and company = '{}'""".format(self.company), bom_no, as_dict=1)
+	return bom and bom[0]['unit_cost'] or 0
