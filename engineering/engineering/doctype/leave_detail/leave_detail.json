@@ -1,0 +1,88 @@
+{
+ "creation": "2021-06-14 11:49:01.354830",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "leave_type",
+  "total_leaves",
+  "expired_leaves",
+  "leaves_taken",
+  "pending_leaves",
+  "remaining_leaves"
+ ],
+ "fields": [
+  {
+   "columns": 2,
+   "fieldname": "leave_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Leave Type",
+   "options": "Leave Type",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "total_leaves",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Total Leaves",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "expired_leaves",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Expired Leaves",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "leaves_taken",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Used Leaves",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "pending_leaves",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Pending Leaves",
+   "read_only": 1
+  },
+  {
+   "columns": 1,
+   "fieldname": "remaining_leaves",
+   "fieldtype": "Float",
+   "in_list_view": 1,
+   "label": "Available Leaves",
+   "read_only": 1
+  }
+ ],
+ "modified": "2021-06-14 14:52:24.689920",
+ "modified_by": "Administrator",
+ "module": "Engineering",
+ "name": "Leave Detail",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "quick_entry": 1,
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "track_changes": 1
+}

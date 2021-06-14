@@ -43,7 +43,8 @@ doctype_js = {
 	"Company": "public/js/doctype_js/company.js",
 	"Batch": "public/js/doctype_js/batch.js",
 	"Serial No": "public/js/doctype_js/serial_no.js",
-	"Bank Statement Transaction Entry":"public/js/doctype_js/bank_statement_transaction_entry.js"
+	"Bank Statement Transaction Entry":"public/js/doctype_js/bank_statement_transaction_entry.js",
+	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 }
 
 doc_events = {
