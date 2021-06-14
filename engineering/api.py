@@ -445,6 +445,10 @@ def create_credit_note(company,customer_code,item_detail=None):
 		doc.submit()
 		return doc.name , abs(doc.rounded_total)
 
+@frappe.whitelist()
+def get_delivery_detail():
+	return "Hi"
+
 def update_discounted_amount(self):
 	for item in self.items:
 		item.discounted_amount = (item.discounted_rate or 0.0) * (item.real_qty or 0.0)

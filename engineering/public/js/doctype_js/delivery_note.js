@@ -67,6 +67,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 						});
 
 						if (flag == false){
+							console.log(data)
 							frappe.run_serially([
 								() =>{
 									if (frm.doc.set_warehouse != data.warehouse){
@@ -79,6 +80,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 									frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
 									frappe.model.set_value(d.doctype, d.name, 'qty', data.no_of_items);
 									frappe.model.set_value(d.doctype, d.name, 'warehouse', data.warehouse);
+									frappe.model.set_value(d.doctype, d.name, 'item_packing', data.name);
 									frappe.show_alert({message:__("Total Qty - {0} : {1} Pcs added for item {2}", [d.qty,data.no_of_items||1,data.item_code]), indicator:'green'});
 									frm.refresh_field('items');
 								}
@@ -310,7 +312,8 @@ frappe.ui.form.on('Delivery Note', {
 								var rm = remove_serial_no.split(/\r?\n/);
 								var final = removeFromArray(ks, rm)
 								frappe.model.set_value(item.doctype, item.name, 'serial_no', final.join('\n'));
-								frappe.model.set_value(item.doctype, item.name, 'qty', final.length);	
+								frappe.model.set_value(item.doctype, item.name, 'qty', final.length);
+								frappe.model.set_value(item.doctype, item.name, 'item_packing', "");	
 								frappe.show_alert({message:__("{0} Pcs removed for item {1}", [data.no_of_items||1,data.item_code]), indicator:'red'});
 								
 							}

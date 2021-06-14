@@ -14,7 +14,7 @@ def search_serial_or_batch_or_barcode_number(search_value):
 
 	# FinByz Changes Srart
 	# search package no
-	package_no_data = frappe.db.get_value('Item Packing', {'name': search_value, 'docstatus': 1}, ['serial_no as serial_no', 'item_code','no_of_items'], as_dict=True)
+	package_no_data = frappe.db.get_value('Item Packing', {'name': search_value, 'docstatus': 1}, ['serial_no as serial_no', 'item_code','no_of_items','name'], as_dict=True)
 	if package_no_data:
 		serial_no = [s.strip() for s in cstr(package_no_data['serial_no']).strip().upper().replace(',', '\n').split('\n')
 		if s.strip()][0]
