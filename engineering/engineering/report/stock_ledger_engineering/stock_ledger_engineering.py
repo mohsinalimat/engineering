@@ -72,7 +72,7 @@ def get_columns(filters):
 
 	]
 	if not filters.get('item_code'):
-		columns += [{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 150},]
+		columns += [{"label": _("Item"), "fieldname": "item_code", "fieldtype": "Link", "options": "Item", "width": 240},]
 	columns += [
 		# {"label": _("Item Name"), "fieldname": "item_name", "width": 100},
 		{"label": _("UOM"), "fieldname": "stock_uom", "fieldtype": "Link", "options": "UOM", "width": 40},

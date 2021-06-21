@@ -28,7 +28,12 @@ class ItemPacking(Document):
 	def before_validate(self):
 		values = []
 		user = frappe.session.user
-		if self.auto_create_serial_no and not self.serial_no:
+		if not self.auto_create_serial_no and self.serial_no:
+			serial_no = get_serial_nos(self.serial_no)
+			sr_found = frappe.db.sql("select name from `tabItem Packing` where name != '{}' and (serial_no = '{}' or serial_no like '{}' or serial_no like '{}' or serial_no like '{}')".format(self.name,serial_no[0], serial_no[0]+'\n%', '%\n'+serial_no[0], '%\n'+serial_no[0]+'\n%'),as_dict=1)
+			if sr_found:
+				frappe.throw("Serial No : {} already exists in this Item Packing : {}".format(frappe.bold(serial_no[0]),frappe.bold(sr_found[0].name)))
+		elif self.auto_create_serial_no and not self.serial_no:
 			serial_no_series = frappe.db.get_value("Item",self.item_code,'serial_no_series')
 			if not serial_no_series:
 				frappe.throw("Please Add Serial Number Series In Item: " + str(self.item_code))

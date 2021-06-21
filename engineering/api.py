@@ -446,8 +446,14 @@ def create_credit_note(company,customer_code,item_detail=None):
 		return doc.name , abs(doc.rounded_total)
 
 @frappe.whitelist()
-def get_delivery_detail():
-	return "Hi"
+def get_delivery_detail(delivery_note):
+	if delivery_note:
+		item_list = []
+		doc = frappe.get_doc("Delivery Note",delivery_note)
+		for row in doc.items:
+			item_list.append({'item_code':row.item_code,'item_name':row.item_name,'item_group':frappe.db.escape(row.item_group),"item_packing":row.item_packing,"technician_points":frappe.db.get_value("Item",row.item_code,'technician_points'),"dealer_points":frappe.db.get_value("Item",row.item_code,'dealer_points'),"reward_points":frappe.db.get_value("Item",row.item_code,'reward_points'),"retailer_points":frappe.db.get_value("Item",row.item_code,'retailer_points'),"brand":frappe.db.get_value("Item",row.item_code,'brand')})
+		return item_list
+
 
 def update_discounted_amount(self):
 	for item in self.items:

@@ -152,7 +152,7 @@ def execute(filters=None):
 def get_columns(filters):
 	"""return columns"""
 	columns = [
-		{"label": _("Item Name"), "fieldname": "item_name", "width": 170},
+		{"label": _("Item Name"), "fieldname": "item_name", "width": 200},
 		{"label": _("Opening Qty"), "fieldname": "opening_qty", "fieldtype": "Float", "width": 100, "convertible": "qty"},
 	]
 	if filters.get('show_rate_value'):

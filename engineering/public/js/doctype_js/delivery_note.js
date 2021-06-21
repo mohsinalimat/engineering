@@ -270,9 +270,6 @@ frappe.ui.form.on('Delivery Note', {
             if (row.real_qty > row.qty) {
                 row.real_qty = row.qty;
             }
-			if(row.qty_per_box){
-				row.no_of_boxes = flt(row.qty) / flt(row.qty_per_box)
-			}
         });
     },
     naming_series: function(frm) {
@@ -330,21 +327,21 @@ frappe.ui.form.on('Delivery Note', {
 function removeFromArray(original, remove) {
 	return original.filter(value => !remove.includes(value));
 } 
-// frappe.ui.form.on("Delivery Note Item",{
-// 	// item_code: function(frm, cdt, cdn){
-// 	// 	let d = locals[cdt][cdn];
-// 	// 	if(d.qty_per_box){
-// 	// 		d.no_of_boxes = flt(d.qty) / flt(d.qty_per_box)
-// 	// 	}
-// 	// },
-// 	qty: function(frm, cdt, cdn){
-// 		let d = locals[cdt][cdn];
-// 		if(d.qty_per_box){
-// 			d.no_of_boxes = flt(d.qty) / flt(d.qty_per_box)
-// 		}
-// 	},
+frappe.ui.form.on("Delivery Note Item",{
+	item_code: function(frm, cdt, cdn){
+		let d = locals[cdt][cdn];
+		if(d.qty_per_box){
+			d.no_of_boxes = flt(d.qty) / flt(d.qty_per_box)
+		}
+	},
+	qty: function(frm, cdt, cdn){
+		let d = locals[cdt][cdn];
+		if(d.qty_per_box){
+			d.no_of_boxes = flt(d.qty) / flt(d.qty_per_box)
+		}
+	},
 	
-// });
+});
 
 
 erpnext.show_serial_batch_selector = function(frm, d, callback, on_close, show_dialog) {

@@ -483,7 +483,6 @@ class StockEntry(StockController):
 		if not raw_material_cost and self.get("items"):
 			raw_material_cost = sum([flt(row.basic_amount) for row in self.items
 				if row.s_warehouse and not row.t_warehouse])
-			print(raw_material_cost)
 			total_fg_qty = sum([flt(row.qty) for row in self.items
 				if row.t_warehouse and not row.s_warehouse])
 
