@@ -38,8 +38,18 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 					if (r.message.item_code){
 						let data = r.message;
 						var flag = false;
+						
 						(doc.items || []).forEach(function(item, idx) {
 							if (data.item_code == item.item_code){
+								if (item.item_packing){
+									var item_packing_list = [item.item_packing]
+								}
+								else{
+									var item_packing_list =  []
+								}
+								if(item_packing_list.indexOf(data.name) == -1){
+									item_packing_list.push(data.name)
+								}
 								flag = true
 								frappe.run_serially([
 									() =>{
@@ -58,6 +68,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 										unique  = unique.filter(item => item);
 										frappe.model.set_value(item.doctype, item.name, 'serial_no', unique.join('\n'));
 										frappe.model.set_value(item.doctype, item.name, 'qty', unique.length);
+										frappe.model.set_value(item.doctype, item.name, 'item_packing', item_packing_list.join());
 										frappe.show_alert({message:__("Total Qty - {0} : {1} Pcs added for item {2}", [item.qty,data.no_of_items,data.item_code]), indicator:'green'});
 									
 									}
@@ -67,7 +78,15 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 						});
 
 						if (flag == false){
-							console.log(data)
+							if (item.item_packing){
+								var item_packing_list = [item.item_packing]
+							}
+							else{
+								var item_packing_list =  []
+							}	
+							if(item_packing_list.indexOf(data.name) == -1){
+								item_packing_list.push(data.name)
+							}
 							frappe.run_serially([
 								() =>{
 									if (frm.doc.set_warehouse != data.warehouse){
@@ -80,7 +99,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 									frappe.model.set_value(d.doctype, d.name, 'serial_no', data.serial_no);
 									frappe.model.set_value(d.doctype, d.name, 'qty', data.no_of_items);
 									frappe.model.set_value(d.doctype, d.name, 'warehouse', data.warehouse);
-									frappe.model.set_value(d.doctype, d.name, 'item_packing', data.name);
+									frappe.model.set_value(d.doctype, d.name, 'item_packing', item_packing_list.join());
 									frappe.show_alert({message:__("Total Qty - {0} : {1} Pcs added for item {2}", [d.qty,data.no_of_items||1,data.item_code]), indicator:'green'});
 									frm.refresh_field('items');
 								}
@@ -302,6 +321,10 @@ frappe.ui.form.on('Delivery Note', {
 					if (r.message.item_code){
 						let data = r.message;
 						(frm.doc.items || []).forEach(function(item, idx) {
+							if(item.item_packing.includes(data.name)){
+								var item_packing_list = item.item_packing.split(",")
+								item_packing_list.pop(data.name)
+							}
 							if (data.item_code == item.item_code){
 								let serial_no = item.serial_no
 								var ks = serial_no.split(/\r?\n/);
@@ -310,7 +333,7 @@ frappe.ui.form.on('Delivery Note', {
 								var final = removeFromArray(ks, rm)
 								frappe.model.set_value(item.doctype, item.name, 'serial_no', final.join('\n'));
 								frappe.model.set_value(item.doctype, item.name, 'qty', final.length);
-								frappe.model.set_value(item.doctype, item.name, 'item_packing', "");	
+								frappe.model.set_value(item.doctype, item.name, 'item_packing', item_packing_list.join());	
 								frappe.show_alert({message:__("{0} Pcs removed for item {1}", [data.no_of_items||1,data.item_code]), indicator:'red'});
 								
 							}
