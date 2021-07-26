@@ -678,9 +678,13 @@ def validate_no_of_boxes(self):
 	for item in self.items:
 		qty_per_box = frappe.db.get_value("Item",item.item_code,"qty_per_box")
 		if qty_per_box:
-			item.db_set("qty_per_box",flt(qty_per_box))
-			item.db_set("no_of_boxes",flt(item.qty) / flt(qty_per_box))
-			item.db_update()
+			if item.qty_per_box != flt(qty_per_box):
+				item.qty_per_box = flt(qty_per_box)
+			if item.no_of_boxes != flt(item.qty) / flt(qty_per_box):
+				item.no_of_boxes = flt(item.qty) / flt(qty_per_box)
+			# item.db_set("qty_per_box",flt(qty_per_box))
+			# item.db_set("no_of_boxes",flt(item.qty) / flt(qty_per_box))
+			# item.db_update()
 
 def serial_no_validate(self):
 	for item in self.items:
