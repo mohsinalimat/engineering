@@ -83,6 +83,12 @@ frappe.ui.form.on('Stock Entry', {
 						"docname":frm.doc.name
 					},
 					callback: function(r){
+						if (r.message){
+							frappe.msgprint({
+								title:"Items Rate Difference",
+								message: r.message,
+								wide : true})
+						}
 					}
 				})
 			})
