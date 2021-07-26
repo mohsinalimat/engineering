@@ -451,7 +451,8 @@ def get_delivery_detail(delivery_note):
 		item_list = []
 		doc = frappe.get_doc("Delivery Note",delivery_note)
 		for row in doc.items:
-			item_list.append({'item_code':row.item_code,'item_name':row.item_name,'item_group':frappe.db.escape(row.item_group),"item_packing":row.item_packing,"technician_points":frappe.db.get_value("Item",row.item_code,'technician_points'),"dealer_points":frappe.db.get_value("Item",row.item_code,'dealer_points'),"reward_points":frappe.db.get_value("Item",row.item_code,'reward_points'),"retailer_points":frappe.db.get_value("Item",row.item_code,'retailer_points'),"brand":frappe.db.get_value("Item",row.item_code,'brand')})
+			if row.item_packing:
+				item_list.append({'item_code':row.item_code,'item_name':row.item_name,'item_group':frappe.db.escape(row.item_group),"qty_per_box":row.qty_per_box,"item_packing":row.item_packing,"technician_points":frappe.db.get_value("Item",row.item_code,'technician_points'),"dealer_points":frappe.db.get_value("Item",row.item_code,'dealer_points'),"reward_points":frappe.db.get_value("Item",row.item_code,'reward_points'),"retailer_points":frappe.db.get_value("Item",row.item_code,'retailer_points'),"brand":frappe.db.get_value("Item",row.item_code,'brand')})
 		return item_list
 
 

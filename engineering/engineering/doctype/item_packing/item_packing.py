@@ -30,7 +30,7 @@ class ItemPacking(Document):
 		user = frappe.session.user
 		if not self.auto_create_serial_no and self.serial_no:
 			serial_no = get_serial_nos(self.serial_no)
-			sr_found = frappe.db.sql("select name from `tabItem Packing` where name != '{}' and (serial_no = '{}' or serial_no like '{}' or serial_no like '{}' or serial_no like '{}')".format(self.name,serial_no[0], serial_no[0]+'\n%', '%\n'+serial_no[0], '%\n'+serial_no[0]+'\n%'),as_dict=1)
+			sr_found = frappe.db.sql("select name from `tabItem Packing` where name != '{}' and docstatus = 1 and (serial_no = '{}' or serial_no like '{}' or serial_no like '{}' or serial_no like '{}')".format(self.name,serial_no[0], serial_no[0]+'\n%', '%\n'+serial_no[0], '%\n'+serial_no[0]+'\n%'),as_dict=1)
 			if sr_found:
 				frappe.throw("Serial No : {} already exists in this Item Packing : {}".format(frappe.bold(serial_no[0]),frappe.bold(sr_found[0].name)))
 		elif self.auto_create_serial_no and not self.serial_no:

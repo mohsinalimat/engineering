@@ -241,3 +241,7 @@ stock_ledger.make_sl_entries = make_sl_entries
 from erpnext.manufacturing.doctype.bom.bom import BOM
 from engineering.api import get_rm_rate
 BOM.get_rm_rate = get_rm_rate
+
+# from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
+# from engineering.engineering.doc_events.sales_invoice import validate_serial_against_sales_invoice
+# SalesInvoice.validate_serial_against_sales_invoice = validate_serial_against_sales_invoice

@@ -160,7 +160,7 @@ def create_delivery_note(self):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			target_company_abbr = frappe.db.get_value("Company", source_parent.customer, "abbr")
 
-			if source_doc.sales_order_item:
+			if source_doc.sales_order_item and frappe.db.exists("Sales Order Item",source_doc.sales_order_item):
 				target_doc.against_sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
 				target_doc.sales_order_item = source_doc.so_detail
 
@@ -172,7 +172,7 @@ def create_delivery_note(self):
 			if source_doc.cost_center:
 				target_doc.cost_center = source_doc.cost_center.replace(source_company_abbr, target_company_abbr)
 			
-			if source_doc.sales_order_item:
+			if source_doc.sales_order_item  and frappe.db.exists("Sales Order Item",source_doc.sales_order_item):
 				target_doc.rate = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'rate')
 				target_doc.discounted_rate = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'discounted_rate')
 
@@ -295,20 +295,20 @@ def delete_all(self):
 			frappe.db.set_value("Delivery Note", dn, 'dn_ref', None)
 			frappe.db.set_value("Delivery Note", dn, 'pr_ref', None)
 			frappe.db.set_value("Delivery Note", dn, 'inter_company_receipt_reference', None)
-	
+			self.db_set('dn_ref',None)
 	for pr in pr_ref:
 		if pr:
 			frappe.db.set_value("Purchase Receipt", pr, 'dn_ref', None)
 			frappe.db.set_value("Purchase Receipt", pr, 'inter_company_delivery_reference', None)
-
+			self.db_set('pr_ref',None)
 	for dn in dn_ref:
 		if dn and dn != self.name:
-			if frappe.db.exists("Delivery Note", dn):
+			if frappe.db.exists("Delivery Note", dn) and frappe.db.get_value("Delivery Note",dn,"docstatus") != 1:
 				frappe.delete_doc("Delivery Note", dn)
 	
 	for pr in pr_ref:
 		if pr:
-			if frappe.db.exists("Purchase Receipt", pr):
+			if frappe.db.exists("Purchase Receipt", pr) and frappe.db.get_value("Purchase Receipt",pr,"docstatus") != 1:
 				frappe.delete_doc("Purchase Receipt", pr)
 
 def delete_purchase_receipt(self):

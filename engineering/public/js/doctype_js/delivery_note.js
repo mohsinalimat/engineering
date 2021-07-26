@@ -78,12 +78,7 @@ erpnext.stock.DeliveryNoteController = erpnext.stock.DeliveryNoteController.exte
 						});
 
 						if (flag == false){
-							if (item.item_packing){
-								var item_packing_list = [item.item_packing]
-							}
-							else{
-								var item_packing_list =  []
-							}	
+							var item_packing_list = []
 							if(item_packing_list.indexOf(data.name) == -1){
 								item_packing_list.push(data.name)
 							}

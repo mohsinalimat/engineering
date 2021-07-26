@@ -676,3 +676,7 @@ def change_ref_purchase_receipt_rate(dn_doc,change_item_details):
 		pr_doc.change_rate = True
 		pr_doc.update_stock_ledger()
 		pr_doc.make_gl_entries()
+
+def validate_serial_against_sales_invoice(self):
+	""" check if serial number is already used in other sales invoice """
+	pass
