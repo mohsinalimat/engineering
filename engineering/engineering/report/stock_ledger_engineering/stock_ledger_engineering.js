@@ -31,6 +31,7 @@ frappe.query_reports["Stock Ledger Engineering"] = {
 			"label": __("Warehouse"),
 			"fieldtype": "Link",
 			"options": "Warehouse",
+			"default": frappe.defaults.get_user_default("Warehouse"),
 			"get_query": function() {
 				const company = frappe.query_report.get_filter_value('company');
 				return { 

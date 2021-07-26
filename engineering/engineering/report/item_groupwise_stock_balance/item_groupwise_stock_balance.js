@@ -51,7 +51,6 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 					"erpnext.financial_statements.open_general_ledger(" + JSON.stringify(data) + ")";
 				column.is_tree = true;
 			}
-	
 			value = default_formatter(value, row, column, data);
 	
 			if (!data.parent_item_group) {
@@ -64,7 +63,7 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 	
 				value = $value.wrap("<p></p>").parent().html();
 			}
-	
+			console.log(`value${value}`)
 			return value;
 		},
 	}
