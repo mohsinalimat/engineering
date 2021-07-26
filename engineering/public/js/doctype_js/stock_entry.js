@@ -73,6 +73,19 @@ frappe.ui.form.on('Stock Entry', {
 				frm.set_value("se_ref", null);
 				frm.set_value("jw_ref", null);
 			}
+		};
+		if(frm.doc.docstatus == 1){
+			frm.add_custom_button(__("Rate Diff"), function(){
+				frappe.call({
+					method:"engineering.engineering.doc_events.stock_entry.check_rate_diff",
+					args:{
+						"doctype":frm.doc.doctype,
+						"docname":frm.doc.name
+					},
+					callback: function(r){
+					}
+				})
+			})
 		}
 	},
 	remove_barcode: function(frm){

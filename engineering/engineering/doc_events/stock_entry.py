@@ -624,3 +624,43 @@ def set_serial_nos(self,work_order):
 		
 		if serial_no_final:
 			d.serial_no = serial_no_final.strip()
+
+@frappe.whitelist()
+def check_rate_diff(doctype,docname):
+	diff_list = []
+	doc = frappe.get_doc(doctype,docname)
+	for item in doc.items:
+		sle_val_diff,actual_qty = frappe.db.get_value("Stock Ledger Entry",{"voucher_type":doc.doctype,"voucher_no":doc.name,"voucher_detail_no":item.name,"actual_qty":("<",0)},["stock_value_difference","actual_qty"])
+		sle_valuation_rate = sle_val_diff / actual_qty
+		if item.valuation_rate != sle_valuation_rate:
+			diff_list.append(frappe._dict({"idx":item.idx,"item_code":item.item_code,"entry_rate":item.valuation_rate,"ledger_rate":sle_valuation_rate,"rate_diff":item.valuation_rate - sle_valuation_rate}))
+
+	table = """<table class="table table-bordered" style="margin: 0; font-size:90%;">
+		<thead>
+			<tr>
+				<th>Idx</th>
+				<th>Item</th>
+				<th>Entry Rate</th>
+				<th>Ledger Rate</th>
+				<th>Rate Diff</th>
+			<tr>
+		</thead>
+	<tbody>"""
+	for item in diff_list:
+		table += f"""
+			<tr>
+				<td>{item.idx}</td>
+				<td>{item.item_code}</td>
+				<td>{item.entry_rate}</td>
+				<td>{item.ledger_rate}</td>
+				<td>{item.rate_diff}</td>
+			</tr>
+		"""
+	
+	table += """
+	</tbody></table>
+	"""
+
+	frappe.msgprint(
+		title = "Items Rate Difference",
+		msg = str(table))
