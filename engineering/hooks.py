@@ -163,6 +163,9 @@ doc_events = {
 	"Stock Ledger Entry": {
 		'before_submit': 'engineering.engineering.doc_events.stock_ledger_entry.before_submit'
 	},
+	"Salary Slip":{
+		'validate': 'engineering.engineering.doc_events.salary_slip.validate'
+	},
 	("Sales Invoice", "Purchase Invoice", "Payment Request", "Payment Entry", "Journal Entry", "Material Request", "Purchase Order", "Work Order", "Production Plan", "Stock Entry", "Quotation", "Sales Order", "Delivery Note", "Purchase Receipt", "Packing Slip"): {
 		"before_naming": "engineering.api.docs_before_naming",
 	},

@@ -455,6 +455,16 @@ def get_delivery_detail(delivery_note):
 				item_list.append({'item_code':row.item_code,'item_name':row.item_name,'item_group':frappe.db.escape(row.item_group),"qty_per_box":row.qty_per_box,"item_packing":row.item_packing,"technician_points":frappe.db.get_value("Item",row.item_code,'technician_points'),"dealer_points":frappe.db.get_value("Item",row.item_code,'dealer_points'),"reward_points":frappe.db.get_value("Item",row.item_code,'reward_points'),"retailer_points":frappe.db.get_value("Item",row.item_code,'retailer_points'),"brand":frappe.db.get_value("Item",row.item_code,'brand')})
 		return item_list
 
+@frappe.whitelist()
+def get_item_packing_detail(item_packing):
+	from erpnext.stock.doctype.serial_no.serial_no import get_serial_nos
+	if item_packing:
+		data = []
+		doc = frappe.get_doc("Item Packing",item_packing)
+		serial_nos =  get_serial_nos(doc.serial_no)
+		dispatch_date = frappe.db.get_value("Serial No",serial_nos[0],'delivery_date')
+		data.append({'name':doc.name,'retailer_points': doc.retailer_points,'dealer_points': doc.dealer_points,'dispatch_date': dispatch_date})
+		return data
 
 def update_discounted_amount(self):
 	for item in self.items:

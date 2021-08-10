@@ -9,7 +9,7 @@ frappe.ui.form.on('Salary Slip', {
 				async: false,
 				args: {
 					employee: frm.doc.employee,
-					date: frm.doc.from_date || frm.doc.posting_date
+					date: frm.doc.start_date || frm.doc.posting_date
 				},
 				callback: function(r) {
 				    frm.doc.leave_detail = []
