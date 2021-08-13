@@ -7,19 +7,30 @@ from frappe.model.mapper import get_mapped_doc
 from frappe.utils import get_url_to_form
 from frappe.contacts.doctype.address.address import get_company_address
 from engineering.engineering.doc_events.serial_no import get_serial_nos
+from engineering.engineering.doc_events.bom import get_last_purchase_rate_company_wise 
 
 def before_validate(self,method):
 	for item in self.items:
 		item.discounted_amount = item.discounted_rate * item.real_qty
 		item.discounted_net_amount = item.discounted_amount
 			
-def on_submit(self,method):
+def before_submit(self,method):
 	validate_rate(self)
 
 def validate_rate(self):
 	for row in self.items:
 		if not row.rate:
 			frappe.throw("Row {}: Rate should not be Zero for item <b>{}</b>".format(row.idx,row.item_code))
+
+		last_purchase_rate = get_last_purchase_rate_company_wise(self,frappe._dict({"item_code":row.item_code}))
+		if last_purchase_rate and row.rate and not self.is_return:
+			value_diff = abs(last_purchase_rate - row.rate)
+			percent_diff = flt(abs((value_diff / last_purchase_rate) * 100),2)
+			allowed_variation = flt(frappe.db.get_value("Item Group",row.item_group,"allow_variation"))
+			if percent_diff > allowed_variation:
+				raise_exception = False if "HOD" in frappe.get_roles(frappe.session.user) else True
+				frappe.msgprint("In Row: {}, Purchase Rate Variation {} is highter than Allowed Variation {} in Item Group {}"
+					.format(frappe.bold(row.idx),frappe.bold(percent_diff),frappe.bold(allowed_variation),frappe.bold(row.item_group)),raise_exception=raise_exception)
 
 def get_invoiced_qty_map(purchase_receipt):
 	"""returns a map: {pr_detail: invoiced_qty}"""

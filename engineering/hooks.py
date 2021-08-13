@@ -38,6 +38,7 @@ doctype_js = {
 	"Payment Entry": "public/js/doctype_js/payment_entry.js",
 	"Journal Entry": "public/js/doctype_js/journal_entry.js",
 	"Item": "public/js/doctype_js/item.js",
+	"BOM":"public/js/doctype_js/bom.js",
 	"Work Order": "public/js/doctype_js/work_order.js",
 	"Stock Entry": "public/js/doctype_js/stock_entry.js",
 	"Company": "public/js/doctype_js/company.js",
@@ -134,7 +135,7 @@ doc_events = {
 		"before_naming": "engineering.api.before_naming",
 		"before_validate": "engineering.engineering.doc_events.purchase_receipt.before_validate",
 		"validate": "engineering.controllers.item_validation.validate_item_authority",
-		"on_submit": "engineering.engineering.doc_events.purchase_receipt.on_submit",
+		"before_submit": "engineering.engineering.doc_events.purchase_receipt.before_submit",
 		"before_cancel":"engineering.engineering.doc_events.purchase_receipt.before_cancel",
 	},
 	"Journal Entry": {
@@ -156,6 +157,9 @@ doc_events = {
 	},
 	"Fiscal Year": {
 		'before_save': 'engineering.engineering.doc_events.fiscal_year.before_save'
+	},
+	"BOM":{
+		"validate":"engineering.engineering.doc_events.bom.validate"
 	},
 	"Work Order": {
 		'validate': 'engineering.engineering.doc_events.work_order.validate'
@@ -186,6 +190,7 @@ override_whitelisted_methods = {
 	"frappe.core.page.permission_manager.permission_manager.get_users_with_role": "engineering.permission.get_users_with_role",
 	"frappe.core.page.permission_manager.permission_manager.get_standard_permissions": "engineering.permission.get_standard_permissions",
 	"frappe.desk.notifications.get_open_count": "engineering.api.get_open_count",
+	"erpnext.manufacturing.doctype.bom_update_tool.bom_update_tool.enqueue_update_cost": "engineering.engineering.doc_events.bom.enqueue_update_cost",
 }
 
 
@@ -242,7 +247,7 @@ stock_ledger.make_sl_entries = make_sl_entries
 
 # Override get rate function for company wise rate
 from erpnext.manufacturing.doctype.bom.bom import BOM
-from engineering.api import get_rm_rate
+from engineering.engineering.doc_events.bom import get_rm_rate
 BOM.get_rm_rate = get_rm_rate
 
 # from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
