@@ -27,7 +27,7 @@ def validate_rate(self):
 			value_diff = abs(last_purchase_rate - row.rate)
 			percent_diff = flt(abs((value_diff / last_purchase_rate) * 100),2)
 			allowed_variation = flt(frappe.db.get_value("Item Group",row.item_group,"allow_variation"))
-			if percent_diff > allowed_variation:
+			if percent_diff > allowed_variation and allowed_variation:
 				raise_exception = False if "HOD" in frappe.get_roles(frappe.session.user) else True
 				frappe.msgprint("In Row: {}, Purchase Rate Variation {} is highter than Allowed Variation {} in Item Group {}"
 					.format(frappe.bold(row.idx),frappe.bold(percent_diff),frappe.bold(allowed_variation),frappe.bold(row.item_group)),raise_exception=raise_exception)

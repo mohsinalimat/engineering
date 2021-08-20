@@ -18,12 +18,12 @@ def validate(self, method):
 		serial_no_validate(self)
 	if self.purpose in ['Repack','Manufacture','Material Issue']:
 		self.get_stock_and_rate()
-	#validate_additional_cost(self)
 	validate_transfer_item(self)
 	validate_item_packing(self)
 
 	if self.purpose in ['Repack','Manufacture']:
-		self.calculate_rate_and_amount(force=True)
+		self.calculate_rate_and_amount()
+	# validate_additional_cost(self)
 
 def on_trash(self, method):
 	se_list = []
@@ -588,7 +588,7 @@ def validate_transfer_item(self):
 
 def validate_additional_cost(self):
 	if self.purpose in ['Material Transfer','Material Transfer for Manufacture','Repack','Manufacture'] and self._action == "submit":
-		if round(self.value_difference/100,0) != round(self.total_additional_costs/100,0):
+		if abs(round(flt(self.value_difference,1))) != abs(round(flt(self.total_additional_costs,1))):
 			frappe.throw("ValuationError: Value difference between incoming and outgoing amount is higher than additional cost")
 
 def validate_item_packing(self):
