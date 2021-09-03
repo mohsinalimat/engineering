@@ -11,18 +11,6 @@ app_color = "grey"
 app_email = "info@finbyz.tech"
 app_license = "MIT"
 
-from erpnext.accounts.doctype.bank_statement_transaction_entry.bank_statement_transaction_entry import BankStatementTransactionEntry
-from erpnext.setup.doctype.naming_series.naming_series import NamingSeries
-
-from engineering.override_default_class_method import get_transactions
-from engineering.engineering.doc_events.bank_statement_transaction_entry import create_payment_entry, match_invoice_to_payment, populate_matching_vouchers
-NamingSeries.get_transactions = get_transactions
-BankStatementTransactionEntry.create_payment_entry = create_payment_entry
-BankStatementTransactionEntry.match_invoice_to_payment = match_invoice_to_payment
-BankStatementTransactionEntry.populate_matching_vouchers = populate_matching_vouchers
-
-from erpnext.stock.doctype.serial_no.serial_no import SerialNo
-
 
 # include js, css files in header of desk.html
 app_include_css = "/assets/css/restrict_button.css"
@@ -44,7 +32,7 @@ doctype_js = {
 	"Company": "public/js/doctype_js/company.js",
 	"Batch": "public/js/doctype_js/batch.js",
 	"Serial No": "public/js/doctype_js/serial_no.js",
-	"Bank Statement Transaction Entry":"public/js/doctype_js/bank_statement_transaction_entry.js",
+	# "Bank Statement Transaction Entry":"public/js/doctype_js/bank_statement_transaction_entry.js",
 	"Salary Slip": "public/js/doctype_js/salary_slip.js",
 }
 
@@ -196,36 +184,43 @@ override_whitelisted_methods = {
 
 # fixtures = ['Custom Field']
 
+# Naming Series Override
+from erpnext.setup.doctype.naming_series.naming_series import NamingSeries
+from engineering.override_default_class_method import get_transactions
+NamingSeries.get_transactions = get_transactions
+
+# # override default class method
+
 from erpnext.stock.stock_ledger import update_entries_after
-from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
-# from erpnext.stock.doctype.serial_no.serial_no import SerialNo
-from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
-
-from engineering.override_default_class_method import search_serial_or_batch_or_barcode_number
-
 from engineering.engineering.override.stock_ledger import raise_exceptions, set_actual_qty
-from engineering.engineering.override.serial_no import validate_warehouse
-from engineering.engineering.override.serial_no import process_serial_no
-from engineering.engineering.override.opening_invoice_creation_tool import get_invoice_dict, make_invoices
-from engineering.engineering.override.taxes_and_totals import get_current_tax_amount, determine_exclusive_rate, calculate_taxes
-
-from engineering.engineering.doc_events.stock_entry import get_items as my_get_items, set_serial_nos
-from erpnext.accounts.doctype.opening_invoice_creation_tool.opening_invoice_creation_tool import OpeningInvoiceCreationTool
-# from erpnext.stock.doctype.stock_ledger_entry.stock_ledger_entry import StockLedgerEntry
-
-OpeningInvoiceCreationTool.get_invoice_dict = get_invoice_dict
-OpeningInvoiceCreationTool.make_invoices = make_invoices
-# erpnext.selling.page.point_of_sale.point_of_sale.search_serial_or_batch_or_barcode_number = search_serial_or_batch_or_barcode_number
-# override default class method
 update_entries_after.raise_exceptions = raise_exceptions
+
+
+from erpnext.stock.doctype.stock_entry.stock_entry import StockEntry
+from engineering.engineering.doc_events.stock_entry import get_items as my_get_items, set_serial_nos
 StockEntry.set_actual_qty = set_actual_qty
 StockEntry.get_items =  my_get_items
 StockEntry.set_serial_nos =  set_serial_nos
+
+
+from erpnext.stock.doctype.serial_no.serial_no import SerialNo
+from engineering.engineering.override.serial_no import validate_warehouse, process_serial_no
 SerialNo.validate_warehouse = validate_warehouse
 SerialNo.process_serial_no = process_serial_no
+
+
+from erpnext.controllers.taxes_and_totals import calculate_taxes_and_totals
+from engineering.engineering.override.taxes_and_totals import get_current_tax_amount, determine_exclusive_rate, calculate_taxes
 calculate_taxes_and_totals.get_current_tax_amount = get_current_tax_amount
 calculate_taxes_and_totals.determine_exclusive_rate= determine_exclusive_rate
 calculate_taxes_and_totals.calculate_taxes = calculate_taxes
+
+
+# Opening Invoice Item Creation tool override
+from erpnext.accounts.doctype.opening_invoice_creation_tool.opening_invoice_creation_tool import OpeningInvoiceCreationTool
+from engineering.engineering.override.opening_invoice_creation_tool import get_invoice_dict, make_invoices
+OpeningInvoiceCreationTool.get_invoice_dict = get_invoice_dict
+OpeningInvoiceCreationTool.make_invoices = make_invoices
 
 
 # Override for Change rate of purchase_receipt from purchase_invoice
@@ -233,23 +228,39 @@ from erpnext.controllers.buying_controller import BuyingController
 from engineering.engineering.override.buying_controller import update_stock_ledger
 BuyingController.update_stock_ledger = update_stock_ledger
 
+
 from erpnext.stock.doctype.stock_ledger_entry.stock_ledger_entry import StockLedgerEntry
 from engineering.engineering.override.stock_ledger_entry import on_submit
 StockLedgerEntry.on_submit = on_submit
+
 
 from erpnext.stock.doctype.bin.bin import Bin
 from engineering.engineering.override.bin import update_stock
 Bin.update_stock = update_stock
 
+
 from erpnext.stock import stock_ledger
 from engineering.engineering.override.stock_ledger import make_sl_entries
 stock_ledger.make_sl_entries = make_sl_entries
+
 
 # Override get rate function for company wise rate
 from erpnext.manufacturing.doctype.bom.bom import BOM
 from engineering.engineering.doc_events.bom import get_rm_rate
 BOM.get_rm_rate = get_rm_rate
 
+
+
+# from erpnext.accounts.doctype.bank_statement_transaction_entry.bank_statement_transaction_entry import BankStatementTransactionEntry
+# from engineering.engineering.doc_events.bank_statement_transaction_entry import create_payment_entry, match_invoice_to_payment, populate_matching_vouchers
+# BankStatementTransactionEntry.create_payment_entry = create_payment_entry
+# BankStatementTransactionEntry.match_invoice_to_payment = match_invoice_to_payment
+# BankStatementTransactionEntry.populate_matching_vouchers = populate_matching_vouchers
+
+
 # from erpnext.accounts.doctype.sales_invoice.sales_invoice import SalesInvoice
 # from engineering.engineering.doc_events.sales_invoice import validate_serial_against_sales_invoice
 # SalesInvoice.validate_serial_against_sales_invoice = validate_serial_against_sales_invoice
+
+# from engineering.override_default_class_method import search_serial_or_batch_or_barcode_number
+# # erpnext.selling.page.point_of_sale.point_of_sale.search_serial_or_batch_or_barcode_number = search_serial_or_batch_or_barcode_number

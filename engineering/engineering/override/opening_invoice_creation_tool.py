@@ -2,8 +2,11 @@ import frappe
 from frappe import _
 from frappe.utils import flt
 from frappe import scrub
+from erpnext.accounts.doctype.accounting_dimension.accounting_dimension import get_accounting_dimensions
 
+@frappe.whitelist()
 def make_invoices(self):
+	self.validate_company()
 	names = []
 	authority = frappe.db.get_value("Company", self.company, 'authority')
 
@@ -17,8 +20,12 @@ def make_invoices(self):
 
 		# always mandatory fields for the invoices
 		if not row.temporary_opening_account:
-			row.temporary_opening_account = get_temporary_opening_account(self.company)
+			row.temporary_opening_account = row.temporary_opening_account or get_temporary_opening_account(self.company)
 		row.party_type = "Customer" if self.invoice_type == "Sales" else "Supplier"
+
+		row.item_name = row.item_name or _("Opening Invoice Item")
+		row.posting_date = row.posting_date or nowdate()
+		row.due_date = row.due_date or nowdate()
 
 		# Allow to create invoice even if no party present in customer or supplier.
 		if not frappe.db.exists(row.party_type, row.party):
@@ -27,19 +34,12 @@ def make_invoices(self):
 			else:
 				frappe.throw(_("{0} {1} does not exist.").format(frappe.bold(row.party_type), frappe.bold(row.party)))
 
-		if not row.item_name:
-			row.item_name = _("Opening Invoice Item")
-		if not row.posting_date:
-			row.posting_date = nowdate()
-		if not row.due_date:
-			row.due_date = nowdate()
-
 		if authority == "Unauthorized":
 			for d in ("Party", "Outstanding Amount", "Temporary Opening Account"):
 				if not row.get(scrub(d)):
 					frappe.throw(mandatory_error_msg.format(row.idx, _(d), self.invoice_type))
 
-		args = self.get_invoice_dict(row=row)
+		args = get_invoice_dict(row=row)
 
 		if args.get('branch'):
 			alternate_company = args['branch']
@@ -234,12 +234,13 @@ def make_invoices(self):
 
 def get_invoice_dict(self, row=None):
 	def get_item_dict():
-		default_uom = frappe.db.get_single_value("Stock Settings", "stock_uom") or _("Nos")
-		cost_center = frappe.get_cached_value('Company',  self.company,  "cost_center")
+		cost_center = row.get('cost_center') or frappe.get_cached_value('Company', self.company,  "cost_center")
 		if not cost_center:
-			frappe.throw(
-				_("Please set the Default Cost Center in {0} company.").format(frappe.bold(self.company))
-			)
+			frappe.throw(_("Please set the Default Cost Center in {0} company.").format(frappe.bold(self.company)))
+
+		income_expense_account_field = "income_account" if row.party_type == "Customer" else "expense_account"
+		default_uom = frappe.db.get_single_value("Stock Settings", "stock_uom") or _("Nos")
+
 		row.outstanding_amount = flt(row.outstanding_amount)
 		row.full_amount = flt(row.full_amount)
 		rate = flt(row.outstanding_amount) / flt(row.qty)
@@ -259,15 +260,6 @@ def get_invoice_dict(self, row=None):
 			"cost_center": cost_center
 		})
 
-	if not row:
-		return None
-
-	party_type = "Customer"
-	income_expense_account_field = "income_account"
-	if self.invoice_type == "Purchase":
-		party_type = "Supplier"
-		income_expense_account_field = "expense_account"
-
 	item = get_item_dict()
 
 
@@ -276,17 +268,23 @@ def get_invoice_dict(self, row=None):
 		"is_opening": "Yes",
 		"set_posting_time": 1,
 		"company": self.company,
+		"cost_center": self.cost_center,
 		"due_date": row.due_date,
 		"posting_date": row.posting_date,
-		frappe.scrub(party_type): row.party,
+		frappe.scrub(row.party_type): row.party,
+		"is_pos": 0,
 		"doctype": "Sales Invoice" if self.invoice_type == "Sales" else "Purchase Invoice",
-		"currency": frappe.get_cached_value('Company',  self.company,  "default_currency")
+		"currency": frappe.get_cached_value('Company',  self.company,  "default_currency"),
+		"update_stock": 0
 	})
 
 	if frappe.db.exists("Branch", {"name": row.branch, 'company': self.company}):
 		args['branch'] = row.branch
-
-	if self.invoice_type == "Sales":
-		args["is_pos"] = 0
+		
+	accounting_dimension = get_accounting_dimensions()
+	for dimension in accounting_dimension:
+		args.update({
+			dimension: item.get(dimension)
+		})
 
 	return args

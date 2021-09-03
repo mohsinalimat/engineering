@@ -295,10 +295,11 @@ def cancel_delivery_note(self):
 				
 			dn = frappe.get_doc("Delivery Note", self.inter_company_delivery_reference)
 			dn.flags.ignore_permissions = True
-			try:
-				dn.cancel()
+			if dn.docstatus == 1:
+				try:
+					dn.cancel()
 
-				url = get_url_to_form("Delivery Note", dn.name)
-				frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=pr.name)), title="Purchase Receipt Cancelled", indicator="red")
-			except:
-				pass
+					url = get_url_to_form("Delivery Note", dn.name)
+					frappe.msgprint(_("Purchase Receipt <b><a href='{url}'>{name}</a></b> has been cancelled!".format(url=url, name=pr.name)), title="Purchase Receipt Cancelled", indicator="red")
+				except:
+					pass

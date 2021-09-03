@@ -233,7 +233,7 @@ frappe.ui.keys.on('ctrl+i', function(e) {
 	frappe.call({
 		method: "engineering.engineering.doc_events.purchase_order.get_last_5_transaction_details",
 		args: {
-			url:window.location.href.split("#")[0] + "#Form/Purchase Order" + "/",
+			url:window.location.href.split('app')[0] + "app/Purchase Order" + "/",
 			name:d.name,
 			item_code: d.item_code,
 			supplier: cur_frm.doc.supplier

@@ -32,7 +32,7 @@ def get_batch_no(doctype, txt, searchfield, start, page_len, filters):
 				where
 					sle.item_code = %(item_code)s
 					and sle.warehouse = %(warehouse)s
-					and batch.docstatus < 2
+					and batch.docstatus < 2 and is_cancelled = 0
 					and (sle.batch_no like %(txt)s or {searchfields})
 					{0}
 					{match_conditions}

@@ -151,5 +151,5 @@ erpnext.dimension_filters.forEach((dimension) => {
 	});
 });
 function open_acc_receivabale_engineering_report(company,ageing_based_on,report_date,party) {
-	window.open(window.location.href.split("#")[0] + "#query-report/Accounts Receivable Engineering" + "/?" +"company="+company +"&" + "ageing_based_on="+ageing_based_on +"&"+ "report_date="+report_date +"&"+ "customer="+party,"_blank")	
+	window.open(window.location.href.split('app')[0] + "app/query-report/Accounts Receivable Engineering" + "/?" +"company="+company +"&" + "ageing_based_on="+ageing_based_on +"&"+ "report_date="+report_date +"&"+ "customer="+party,"_blank")	
 }

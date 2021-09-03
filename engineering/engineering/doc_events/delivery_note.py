@@ -148,8 +148,8 @@ def create_delivery_note(self):
 			target.posting_time = source.posting_time + datetime.timedelta(0,10)
 			if self.amended_from:
 				target.amended_from = frappe.db.get_value("Delivery Note", {'dn_ref': self.amended_from}, "name")
-			if source.set_target_warehouse:
-				target.set_warehouse = source.set_target_warehouse
+			if source.target_warehouse:
+				target.set_warehouse = source.target_warehouse
 			else:
 				target.set_warehouse = source.set_warehouse.replace(source_company_abbr, target_company_abbr)
 
@@ -164,8 +164,8 @@ def create_delivery_note(self):
 				target_doc.against_sales_order = frappe.db.get_value("Sales Order Item", source_doc.sales_order_item, 'parent')
 				target_doc.sales_order_item = source_doc.so_detail
 
-			if source_parent.set_target_warehouse:
-				target_doc.warehouse = source_parent.set_target_warehouse
+			if source_parent.target_warehouse:
+				target_doc.warehouse = source_parent.target_warehouse
 			else:
 				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 			
@@ -212,7 +212,7 @@ def create_delivery_note(self):
 					"company_address_display",
 					"company_address",
 					"final_customer",
-					"set_target_warehouse"
+					"target_warehouse"
 				]
 			},
 			"Delivery Note Item": {
@@ -345,8 +345,8 @@ def create_purchase_receipt(self):
 				target.amended_from = name
 			target.set_posting_time = 1
 			target.posting_time = source.posting_time + datetime.timedelta(0,5)
-			if source.set_target_warehouse:
-				target.set_warehouse = source.set_target_warehouse
+			if source.target_warehouse:
+				target.set_warehouse = source.target_warehouse
 			else:
 				target.set_warehouse = source.set_warehouse.replace(source_company_abbr, target_company_abbr)
 			target.run_method("set_missing_values")
@@ -356,8 +356,8 @@ def create_purchase_receipt(self):
 			source_company_abbr = frappe.db.get_value("Company", source_parent.company, "abbr")
 			target_company_abbr = frappe.db.get_value("Company", source_parent.customer, "abbr")
 
-			if source_parent.set_target_warehouse:
-				target_doc.warehouse = source_parent.set_target_warehouse
+			if source_parent.target_warehouse:
+				target_doc.warehouse = source_parent.target_warehouse
 			else:
 				target_doc.warehouse = source_doc.warehouse.replace(source_company_abbr, target_company_abbr)
 
@@ -388,6 +388,7 @@ def create_purchase_receipt(self):
 					"customer_gstin": "company_gstin",
 					"shipping_address": "shipping_address_display",
 					"is_return":"is_return",
+					"customer_address":"billing_address"
 				},
 				"field_no_map": [
 					"taxes_and_charges",
@@ -735,7 +736,7 @@ def serial_no_validate(self):
 									frappe.throw(_("Serial No {0} does not belong to Item {1}").format(serial_no,
 										item.item_code), SerialNoItemError)
 
-							if has_duplicate_serial_no(self,sr, item):
+							if item.qty > 0 and has_serial_no_exists(self,sr, item):
 								frappe.throw(_("Serial No {0} has already been received").format(serial_no),
 									SerialNoDuplicateError)
 
@@ -747,6 +748,9 @@ def serial_no_validate(self):
 							if sr.warehouse!=item_warehouse:
 								frappe.throw(_("Serial No {0} does not belong to Warehouse {1}").format(serial_no,
 									item_warehouse), SerialNoWarehouseError)
+
+							if not sr.purchase_document_no:
+								frappe.throw(_("Serial No {0} not in stock").format(serial_no), SerialNoNotExistsError)
 
 							if self.doctype in ["Delivery Note"]:
 								if sr.batch_no and sr.batch_no != item.batch_no:
@@ -795,20 +799,6 @@ def serial_no_validate(self):
 						frappe.throw(_("Cannot cancel {0} {1} because Serial No {2} does not belong to the warehouse {3}")
 							.format(self.doctype, self.name, serial_no, item_warehouse))
 
-
-def has_duplicate_serial_no(self,sr, item):
-	# if sr.warehouse:
-	# 	return True
-
+def has_serial_no_exists(self, sr,item):
 	if sr.company != self.company:
 		return False
-
-	status = False
-	if sr.purchase_document_no:
-		if self.doctype in ['Purchase Receipt', 'Stock Entry', "Purchase Invoice"] and sr.delivery_document_type not in ['Purchase Receipt', 'Stock Entry', 'Purchase Invoice']:
-			status = True
-
-		if status and self.doctype == 'Stock Entry' and self.purpose != 'Material Receipt':
-				status = False
-
-	return status

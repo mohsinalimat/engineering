@@ -484,3 +484,38 @@ def update_discounted_amount(self):
 # 			frappe.db.set_value("Sales Order", i.inter_company_order_reference, 'transaction_date', i.transaction_date, update_modified = False)
 	
 # 	frappe.db.commit()
+
+
+# Multiprocessing Start
+
+import frappe.database.mariadb.database
+import os, time
+from multiprocessing import Pool
+pool = None
+
+def init():
+	global pool
+	print("PID %d: initializing pool..." % os.getpid())
+	pool = frappe.db
+
+def do_work(q):
+	# con = pool.get_connection()
+	# print("PID %d: using connection %s" % (os.getpid(), con))
+	# c = con.cursor()
+	print(frappe.db.get_list('DefaultValue',{"name":"0ed848240e"}))
+	# c.execute(q)
+	# res = c.fetchall()
+	# con.close()
+	time.sleep(5)
+
+def main():
+	p = Pool(2,initializer=init)
+	for res in p.map(do_work,['a','b','c','d','e']):
+		print(res)
+	p.close()
+	p.join()
+
+def call_main():
+	main()
+
+# Multiprocessing End

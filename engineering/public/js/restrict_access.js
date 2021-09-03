@@ -17,7 +17,7 @@ if (frappe.user.has_role("Local Admin")){
             let check = r.message.restricted_access;
             if (check == 0){
                 $(window).load(function () {
-                    $("#toolbar-help").append('<li><a href="#" onclick="return engineering.restrict_access.restrict_access();">Restrict Access</a></li>');
+                    $("#toolbar-help").append('<a class="dropdown-item" href="#" onclick="return engineering.restrict_access.restrict_access();">Restrict Access</a>');
                 });
             }
         });

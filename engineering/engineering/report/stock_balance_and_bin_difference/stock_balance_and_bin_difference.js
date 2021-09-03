@@ -116,5 +116,5 @@ frappe.query_reports["Stock Balance and Bin Difference"] = {
 	}
 };
 function view_stock_leder_report(item_code, company, warehouse,from_date, to_date) {
-	window.open(window.location.href.split("#")[0] + "#query-report/Stock Ledger Engineering" + "/?" + "item_code=" + item_code + "&" +  "company="+company + "&" + "warehouse=" + warehouse + "&" +  "from_date=" + from_date + "&" + "to_date=" + to_date,"_blank")	
+	window.open(window.location.href.split('app')[0] + "app/query-report/Stock Ledger Engineering" + "/?" + "item_code=" + item_code + "&" +  "company="+company + "&" + "warehouse=" + warehouse + "&" +  "from_date=" + from_date + "&" + "to_date=" + to_date,"_blank")	
 }

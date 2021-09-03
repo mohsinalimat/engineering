@@ -174,7 +174,7 @@ def get_last_purchase_rate_company_wise(self,arg):
 		purchase_rate_query = frappe.db.sql("""
 			select incoming_rate
 			from `tabStock Ledger Entry`
-			where item_code = '{}' and incoming_rate > 0 and voucher_type in ('Purchase Receipt','Purchase Invoice') and company = '{}'
+			where is_cancelled = 0 and item_code = '{}' and incoming_rate > 0 and voucher_type in ('Purchase Receipt','Purchase Invoice') and company = '{}'
 			order by timestamp(posting_date, posting_time) desc
 			limit 1
 		""".format(arg['item_code'],arg.get('company') or self.company))
@@ -200,7 +200,7 @@ def get_valuation_rate(self, args):
 	if valuation_rate <= 0:
 		last_valuation_rate = frappe.db.sql("""select valuation_rate
 			from `tabStock Ledger Entry`
-			where item_code = %s and valuation_rate > 0 and company = '{}'
+			where is_cancelled = 0 and item_code = %s and valuation_rate > 0 and company = '{}'
 			order by posting_date desc, posting_time desc, creation desc limit 1""".format(self.company), args['item_code'])
 
 		valuation_rate = flt(last_valuation_rate[0][0]) if last_valuation_rate else 0

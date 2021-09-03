@@ -147,7 +147,7 @@ class SerialNo(StockController):
 		sle_dict = {}
 		if not serial_no:
 			serial_no = self.name
-		# Finbyz CHanges START: use of Index: company_warehouse_item_index with filters company warehouse item_code
+		# Finbyz CHanges START: use of Index: company_w_item_posting_creation_index with filters company warehouse item_code
 
 		incoming_sle = frappe.db.sql("""
 			SELECT voucher_type, voucher_no,

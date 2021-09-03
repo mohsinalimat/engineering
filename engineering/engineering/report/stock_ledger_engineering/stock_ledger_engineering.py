@@ -126,7 +126,7 @@ def get_stock_ledger_entries(filters, items):
 		LEFT JOIN `tabSales Invoice` as si on si.name = sle.voucher_no
 		LEFT JOIN `tabStock Entry` as se on se.name = sle.voucher_no
 		where
-			sle.posting_date between %(from_date)s and %(to_date)s
+			sle.posting_date between %(from_date)s and %(to_date)s and sle.is_cancelled = 0
 			{sle_conditions}
 			{item_conditions_sql}
 			{serial_no_condition}

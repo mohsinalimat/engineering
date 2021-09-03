@@ -32,8 +32,8 @@ frappe.require("assets/erpnext/js/financial_statements.js", function() {
 });
 
 function open_report(company, account_show_report) {
-	window.open(window.location.href.split("#")[0] + "#query-report/" + account_show_report + "/?" + "company="+company,"_blank")	
+	window.open(window.location.href.split('app')[0] + "app/query-report/" + account_show_report + "/?" + "company="+company,"_blank")	
 }
 function open_daybook_engineering_report(company,from_date,to_date,account) {
-	window.open(window.location.href.split("#")[0] + "#query-report/Daybook Engineering" + "/?" + "company="+company +"&" +  "from_date="+from_date +"&"+ "to_date="+to_date +"&"+ "account="+account,"_blank")	
+	window.open(window.location.href.split('app')[0] + "app/query-report/Daybook Engineering" + "/?" + "company="+company +"&" +  "from_date="+from_date +"&"+ "to_date="+to_date +"&"+ "account="+account,"_blank")	
 }

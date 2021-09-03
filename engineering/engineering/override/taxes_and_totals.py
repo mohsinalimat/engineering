@@ -28,7 +28,8 @@ def get_current_tax_amount(self, item, tax, item_tax_map):
 	elif tax.charge_type == "On Item Quantity":
 		current_tax_amount = tax_rate * item.stock_qty
 
-	self.set_item_wise_tax(item, tax, tax_rate, current_tax_amount)
+	if not (self.doc.get("is_consolidated") or tax.get("dont_recompute_tax")):
+		self.set_item_wise_tax(item, tax, tax_rate, current_tax_amount)
 
 	return current_tax_amount
 
@@ -39,8 +40,9 @@ def determine_exclusive_rate(self):
 	for item in self.doc.get("items"):
 		item_tax_map = self._load_item_tax_rate(item.item_tax_rate)
 		cumulated_tax_fraction = 0
+		total_inclusive_tax_amount_per_qty = 0
 		for i, tax in enumerate(self.doc.get("taxes")):
-			tax.tax_fraction_for_current_item = self.get_current_tax_fraction(tax, item_tax_map)[0]
+			tax.tax_fraction_for_current_item, inclusive_tax_amount_per_qty = self.get_current_tax_fraction(tax, item_tax_map)
 
 			if i==0:
 				tax.grand_total_fraction_for_current_item = 1 + tax.tax_fraction_for_current_item
@@ -50,16 +52,20 @@ def determine_exclusive_rate(self):
 					+ tax.tax_fraction_for_current_item
 
 			cumulated_tax_fraction += tax.tax_fraction_for_current_item
-		if cumulated_tax_fraction and not self.discount_amount_applied and item.qty:
+			total_inclusive_tax_amount_per_qty += inclusive_tax_amount_per_qty * flt(item.qty)
+
+		if not self.discount_amount_applied and item.qty and (cumulated_tax_fraction or total_inclusive_tax_amount_per_qty):
+			amount = flt(item.amount) - total_inclusive_tax_amount_per_qty
+
 			# Finbyz Changes for Tax Calculation on Real Rate
 			if self.doc.authority == "Unauthorized":
-				amount_diff = item.amount - item.discounted_amount
+				amount_diff = amount - item.discounted_amount
 				if tax.tax_exclusive == 1:
-					item.discounted_net_amount = flt(item.amount - amount_diff)
-					item.net_amount = item.amount - ((flt(item.amount - amount_diff)) * cumulated_tax_fraction)
+					item.discounted_net_amount = flt(amount - amount_diff)
+					item.net_amount = amount - ((flt(amount - amount_diff)) * cumulated_tax_fraction)
 				else:
-					item.discounted_net_amount = flt((item.amount - amount_diff) / (1 + cumulated_tax_fraction))
-					item.net_amount = item.amount - (item.discounted_amount - item.discounted_net_amount)
+					item.discounted_net_amount = flt((amount - amount_diff) / (1 + cumulated_tax_fraction))
+					item.net_amount = amount - (item.discounted_amount - item.discounted_net_amount)
 				
 				try:
 					item.discounted_net_rate = flt(item.discounted_net_amount / item.real_qty)
@@ -68,7 +74,9 @@ def determine_exclusive_rate(self):
 				item.net_rate = flt(item.net_amount / item.qty, item.precision("net_rate"))
 			# Finbyz Changes end here.
 			else:
-				item.net_amount = flt(item.amount / (1 + cumulated_tax_fraction))
+				amount = flt(item.amount) - total_inclusive_tax_amount_per_qty
+
+				item.net_amount = flt(amount / (1 + cumulated_tax_fraction))
 				item.net_rate = flt(item.net_amount / item.qty, item.precision("net_rate"))
 			item.discount_percentage = flt(item.discount_percentage,
 				item.precision("discount_percentage"))
@@ -123,10 +131,13 @@ def calculate_taxes(self):
 			# set precision in the last item iteration
 			if n == len(self.doc.get("items")) - 1:
 				self.round_off_totals(tax)
+				self._set_in_company_currency(tax,
+					["tax_amount", "tax_amount_after_discount_amount"])
+
+				self.round_off_base_values(tax)
 				self.set_cumulative_total(i, tax)
 
-				self._set_in_company_currency(tax,
-					["total", "tax_amount", "tax_amount_after_discount_amount"])
+				self._set_in_company_currency(tax, ["total"])
 
 				# adjust Discount Amount loss in last tax iteration
 				if i == (len(self.doc.get("taxes")) - 1) and self.discount_amount_applied \

@@ -260,7 +260,7 @@ cur_frm.fields_dict.taxes_and_charges.get_query = function (doc) {
 
 frappe.ui.form.on('Delivery Note', {
 	onload: function(frm){
-		frm.fields_dict.set_target_warehouse.get_query = function (doc) {
+		frm.fields_dict.target_warehouse.get_query = function (doc) {
 			return {
 				filters: {
 					"company": doc.customer
